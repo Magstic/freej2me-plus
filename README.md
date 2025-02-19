@@ -41,7 +41,18 @@ Latest build:
 ----
 **編譯 FreeJ2ME Jar:**
 
-> 操作將在 Windows 中完成。
+> **Linux:**
+>
+> 為了完成編譯，您需要準備 [Java 8](https://docs.azul.com/core/install/debian) 以及 [Apache Ant](https://ant.dev.org.tw/manual/install.html)。
+>
+> 打開終端機，執行以下操作（`freej2me/`替換為專案的絕對根路徑）：
+>
+>```
+> > cd freej2me/
+> > ant
+>```
+>
+> **Windows:**
 >
 > 為了完成編譯，您需要準備 [Java 8](https://www.java.com/zh-TW/download/) 以及 [Apache Ant](https://ant.dev.org.tw/manual/install.html)。
 >
@@ -51,7 +62,7 @@ Latest build:
 > > cd freej2me/
 > > ant
 >```
-> 編譯結束后，打開根路徑下出現的 `build` 資料夾:
+> 編譯結果保存在根路徑下出現的 `build` 資料夾:
 >
 > `freej2me.jar` -> 獨立的 AWT 可執行檔，目前主要的獨立版本。
 > 
@@ -104,20 +115,22 @@ Latest build:
 >NOTE: Windows 核心已在 Windows 10 和 11 x64 上測試。
 
 ----
-**Usage (applies to AWT and SDL):**
 
-Launching the AWT frontend (freej2me.jar) will bring up a filepicker to select the MIDlet to run.
+**使用方式（適用於 AWT 與 SDL 前端）：**
 
-Alternatively it can be launched from the command line: `java -jar freej2me.jar 'file:///path/to/midlet.jar' [width] [height] [scale]`
-Where _width_, _height_ (dimensions of the simulated screen) and _scale_ (initial scale factor of the window) are optional arguments.
+啟動 AWT 前端（freej2me.jar）時會顯示 MIDlet 軟體檔案選擇器。
 
-The SDL2 frontend (freej2me-sdl.jar) accepts the same command-line arguments format, aside from the _scale_ option which is unavailable. **NOTE**: This flavor requires libSDL 2.24.0-1 or newer in order to even launch. Make sure you have it installed in your system, or placed alongside the jar for it to load.
+亦可透過終端直接啟動：`java -jar freej2me.jar 'file:///path/to/midlet.jar' [width] [height] [scale]`，其中，`[width] [height] [scale]` 為可選參數。
 
-When running under Microsoft Windows please do note paths require an additional `/` prefixed. For example, `C:\path\to\midlet.jar` should be passed as `file:///C:\path\to\midlet.jar`
+SDL2 前端（freej2me-sdl.jar）使用相同命令列參數格式，惟不支援縮放比例選項。
 
-Special note for Windows: It is recommended to use Adoptium's [OpenJDK JRE](https://adoptium.net/temurin/releases/?os=windows&arch=x64&package=jre), instead of Oracle JRE. Late versions of Oracle introduced a bootstrapper javaw.exe, which will leave the actual javaw.exe process behind once the game is closed in RetroArch. Unfortunately, there is no good way for the core to determine which javaw is the _actual_ one, so you will either need to edit your system env to add the actual javaw.exe's path and delete the `javapath` one, or simply use Adoptium's JRE which does not have this issue.
+注意：此版本需 libSDL 2.24.0-1 或更高版本。請確認系統已安裝該函式庫，或將其置於 jar 檔案同目錄。
 
-FreeJ2ME keeps savedata and config at the working directory it is run from. Currently any resolution specified at the config file takes precedence over the values passed via command-line.
+在 Windows 系統執行時請注意：檔案路徑需額外添加 `/` 前綴。例如 `C:\path\to\midlet.jar` 應鍵入為 `file:///C:\path\to\midlet.jar`
+
+Windows 系統特別提示：建議使用 Adoptium 的 [OpenJDK JRE](https://adoptium.net/temurin/releases/?os=windows&arch=x64&package=jre) 替代 Oracle JRE。Oracle 後期版本引入的 javaw.exe 引導程式，會導致 RetroArch 關閉遊戲後殘留 javaw.exe 进程。由於核心程式無法有效判別 javaw 是否運作，建議解決方式為：為系統環境變數加入 javaw.exe 路徑，並刪除 javapath，或直接使用無此問題的 Adoptium JRE。
+
+FreeJ2ME 將存檔資料與設定檔儲存於執行時的工作目錄。當前若設定檔中指定解析度，將優先使用設定檔數值而非命令列傳入參數。
 
 ---
 
