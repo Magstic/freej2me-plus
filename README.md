@@ -59,17 +59,18 @@ Latest build:
 >
 >`freej2me-sdl.jar` -> SDL2 可執行檔，支援 libTAS 和 手把搖桿。在未來可能會成為獨立版本。
 >
-> 如果您想在 Libretro 中使用 jar，您仍需按照以下步驟編譯核心文件。
+> 如果您想在 Libretro 中使用 jar，您仍需按照以下步驟編譯核心檔案。
 
 **編譯 Libretro 核心**
 
 > **Linux:**
+> 
 > 請在該專案的根路徑下打開終端，並執行以下命令：
 >```
 > > cd src/libretro
 > > make
 >```
-> 該命令將在 `src/libretro/` 下建立 `freej2me_libretro.so` 文件，這需要和上文中編譯的 `freej2me-lr.jar` 協同使用。
+> 該命令將在 `src/libretro/` 下建立 `freej2me_libretro.so` 檔案，這需要和上文中編譯的 `freej2me-lr.jar` 協同使用。
 >
 > 把 `freej2me_libretro.so` 放在 `cores/`，`freej2me-lr.jar` 放在 `system`—— 現在，RetroArch 中應該可以正常執行 J2ME 程式。
 >
@@ -77,6 +78,7 @@ Latest build:
 >
 
 > **Windows:**
+> 
 > 若想在 Windows 上編譯核心，您需要使用 mingw 或 MSYS2 64 模擬 Linux 環境。
 >
 > 本指南使用 MSYS2 64，因為其設定簡單，且更接近 Linux 的語法。
@@ -95,7 +97,7 @@ Latest build:
 > > cd freej2me-plus/src/libretro
 > > make
 >```
-> 該命令將在 `src/libretro/` 下建立 `freej2me_libretro.dll` 文件，這需要和上文中編譯的 `freej2me-lr.jar` 協同使用。
+> 該命令將在 `src/libretro/` 下建立 `freej2me_libretro.dll` 檔案，這需要和上文中編譯的 `freej2me-lr.jar` 協同使用。
 >
 > 把 `freej2me_libretro.dll` 放在 `cores/`，`freej2me-lr.jar` 放在 `system`—— 現在，RetroArch 中應該可以正常執行 J2ME 程式。
 >
