@@ -92,18 +92,18 @@ struct retro_core_option_v2_category option_categories[] =
 {
     {
         "system_settings",
-        "System",
-        "Options related to FreeJ2ME's internal phone emulation such as screen resolution, rotation and game FPS limit."
+        "系统",
+        "Free-J2ME 模拟相关设置。"
     },
     {
         "advanced_settings",
-        "Advanced Settings",
-        "Options related to FreeJ2ME's libretro core, such as the on-screen pointer type and speed, as well as logging."
+        "高级",
+        "Free-J2ME 核心相关设置。"
     },
     {
         "speed_hacks",
-        "Speed Hacks",
-        "Options that can increase FreeJ2ME's performance in exchange for lower compatibility by going out of J2ME specifications."
+        "优化",
+        "Free-J2ME 优化相关设置。"
     },
 };
 
@@ -113,9 +113,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_resolution",
         "System > Phone Resolution (Core Restart may be required)",
-        "Phone Resolution (Core Restart may be required)",
-        "Not all J2ME games run at the same screen resolution. If the game's window is too small, or has sections of it cut off, try increasing or decreasing the internal screen resolution. Some games also break when the screen size is updated while it's running, so in those cases, a restart is required.",
-        "Not all J2ME games run at the same screen resolution. If the game's window is too small, or has sections of it cut off, try increasing or decreasing the internal screen resolution. Some games also break when the screen size is updated while it's running, so in those cases, a restart is required.",
+        "系统分辨率（需重启核心）",
+        "J2ME 游戏的分辨率并非固定。若游戏窗口过小或被截断，请尝试调整该选项。若游戏在运行时更改分辨率出现错误，请重启游戏。",
+        "J2ME 游戏的分辨率并非固定。若游戏窗口过小或被截断，请尝试调整该选项。若游戏在运行时更改分辨率出现错误，请重启游戏。",
         "system_settings",
         {
             { "96x65",     NULL },
@@ -152,13 +152,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_rotate",
         "System > Rotate Screen",
-        "Rotate Screen",
-        "Some games, especially ones that support touch controls, tend to expect the screen to be rotated. This option comes in handy on those cases.",
-        "Some games, especially ones that support touch controls, tend to expect the screen to be rotated. This option comes in handy on those cases.",
+        "屏幕旋转",
+        "一些游戏（特别是触屏游戏）通常需要旋转屏幕。",
+        "一些游戏（特别是触屏游戏）通常需要旋转屏幕。",
         "system_settings",
         {
-            { "off", "Disabled" },
-            { "on",  "Enabled"  },
+            { "off", "禁用" },
+            { "on",  "启用"  },
             { NULL, NULL },
         },
         "off"
@@ -166,9 +166,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_phone",
         "System > Phone Key Layout",
-        "Phone Key Layout",
-        "Due to the different mobile phone manufacturers on the J2ME space, it's usual to have some games expecting a certain phone's key layout like Nokia's for example. If a game is not responding to the inputs correctly, try changing this option.",
-        "Due to the different mobile phone manufacturers on the J2ME space, it's usual to have some games expecting a certain phone's key layout like Nokia's for example. If a game is not responding to the inputs correctly, try changing this option.",
+        "键值布局",
+        "J2ME 平台存在不同的手机制造商，这导致游戏之间的按键布局也不尽相同。若游戏的按键响应非常奇怪，请尝试调整该选项。",
+        "J2ME 平台存在不同的手机制造商，这导致游戏之间的按键布局也不尽相同。若游戏的按键响应非常奇怪，请尝试调整该选项。",
         "system_settings",
         {
             { "Default",             NULL },
@@ -187,17 +187,17 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_backlightcolor",
         "System > LCD Backlight Color",
-        "LCD Backlight Color",
-        "Mostly used for monochrome games, where they request the screen to be lit/unlit for additional effects. This option allows you to select a color for the backlight to mimic some of these devices, like Green (Nokia 3410), Cyan (Nokia 6310i), Orange (Siemens C55), etc. If the game you're running has colored graphics and requests screen backlight anyway, or you don't like those backlight effects, disable this option.",
-        "Mostly used for monochrome games, where they request the screen to be lit/unlit for additional effects. This option allows you to select a color for the backlight to mimic some of these devices, like Green (Nokia 3410), Cyan (Nokia 6310i), Orange (Siemens C55), etc. If the game you're running has colored graphics and requests screen backlight anyway, or you don't like those backlight effects, disable this option.",
+        "LCD 背光",
+        "单色游戏适用。这些游戏会点亮 / 熄灭屏幕以产生额外效果（如『诺基亚 3410（绿）』、『诺基亚 6310i（青）』、『西门子 C55（橙）』）。若游戏为全彩或是您不喜欢背光效果，请禁用该选项。",
+        "单色游戏适用。这些游戏会点亮 / 熄灭屏幕以产生额外效果（如『诺基亚 3410（绿）』、『诺基亚 6310i（青）』、『西门子 C55（橙）』）。若游戏为全彩或是您不喜欢背光效果，请禁用该选项。",
         "system_settings",
         {
-            { "Disabled", NULL },
-            { "Green",    NULL },
-            { "Cyan",     NULL },
-            { "Orange",   NULL },
-            { "Violet",   NULL },
-            { "Red",      NULL },
+            { "Disabled", "禁用" },
+            { "Green",    "绿色" },
+            { "Cyan",     "青色" },
+            { "Orange",   "橘色" },
+            { "Violet",   "紫色" },
+            { "Red",      "红色" },
             { NULL, NULL },
         },
         "Green"
@@ -205,12 +205,12 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_fps",
         "System > Game FPS Limit",
-        "Game FPS Limit",
-        "The J2ME platform allows a great deal of freedom when dealing with synchronization, so while many games are locked to a certain framerate internally, others allow for variable framerates when uncapped at the cost of higher CPU usage, and some even run faster than intended when they get over a certain FPS threshold. Use the option that best suits the game at hand.",
-        "The J2ME platform allows a great deal of freedom when dealing with synchronization, so while many games are locked to a certain framerate internally, others allow for variable framerates when uncapped at the cost of higher CPU usage, and some even run faster than intended when they get over a certain FPS threshold. Use the option that best suits the game at hand.",
+        "FPS 限制",
+        "J2ME 在处理同步时的自由度很大，一些 FPS 不设限的游戏在运行时帧率可能会爆炸。请根据实际情况酌情配置该选项。",
+        "J2ME 在处理同步时的自由度很大，一些 FPS 不设限的游戏在运行时帧率可能会爆炸。请根据实际情况酌情配置该选项。",
         "system_settings",
         {
-            { "Auto", "Disabled" },
+            { "Auto", "自动" },
             { "60",   "60 FPS"   },
             { "30",   "30 FPS"   },
             { "15",   "15 FPS"   },
@@ -221,13 +221,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_sound",
         "System > Virtual Phone Sound (Core Restart required)",
-        "Virtual Phone Sound (Core Restart required)",
-        "Enables or disables the virtual phone's ability to load and play audio samples/tones. Some games require support for codecs not yet implemented, or have issues that can be worked around by disabling audio in FreeJ2ME. If a game doesn't run or has issues during longer sessions, try disabling this option.",
-        "Enables or disables the virtual phone's ability to load and play audio samples/tones. Some games require support for codecs not yet implemented, or have issues that can be worked around by disabling audio in FreeJ2ME. If a game doesn't run or has issues during longer sessions, try disabling this option.",
+        "模拟手机声音",
+        "一些游戏的音频尚未被编解码器支持，该选项可模拟手机加载和播放音频 / 音调的功能。若出现音频未被支持的情况，请尝试禁用核心的音频。若游戏无法运行或是打开过久出现错误，请尝试禁用该选项。",
+        "一些游戏的音频尚未被编解码器支持，该选项可模拟手机加载和播放音频 / 音调的功能。若出现音频未被支持的情况，请尝试禁用核心的音频。若游戏无法运行或是打开过久出现错误，请尝试禁用该选项。",
         "system_settings",
         {
-            { "on",  "On"  },
-            { "off", "Off" },
+            { "on",  "启用"  },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "on"
@@ -235,13 +235,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_midifont",
         "System > MIDI Soundfont",
-        "MIDI Soundfont",
-        "Selects which kind of MIDI soundfont to use. 'Default' uses the soundfont bundled with the system or Java VM, while 'Custom' allows you to place a custom soundfont on '<freej2me-lr.jar folder>/freej2me_system/customMIDI' and use it on J2ME apps to simulate a specific phone or improve MIDI sound quality. WARNING: Big soundfonts greatly increase the emulator's RAM footprint and processing requirements, while smaller ones can actually help it perform better.",
-        "Selects which kind of MIDI soundfont to use. 'Default' uses the soundfont bundled with the system or Java VM, while 'Custom' allows you to place a custom soundfont on '<freej2me-lr.jar folder>/freej2me_system/customMIDI' and use it on J2ME apps to simulate a specific phone or improve MIDI sound quality. WARNING: Big soundfonts greatly increase the emulator's RAM footprint and processing requirements, while smaller ones can actually help it perform better.",
+        "MIDI 音色库",
+        "『默认』使用系统或者虚拟机自带的音色库，而『自订』则允许您在『<freej2me-lr.jar folder>/freej2me_system/customMIDI』路径下放置 SF2 音色库来获得更好的听感体验。警告：大型音色库可能无法正常工作！",
+        "『默认』使用系统或者虚拟机自带的音色库，而『自订』则允许您在『<freej2me-lr.jar folder>/freej2me_system/customMIDI』路径下放置 SF2 音色库来获得更好的听感体验。警告：大型音色库可能无法正常工作！",
         "system_settings",
         {
-            { "off", "Default" },
-            { "on",  "Custom" },
+            { "off", "默认" },
+            { "on",  "自订" },
             { NULL, NULL },
         },
         "off"
@@ -249,13 +249,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_analogasentirekeypad",
         "System > Use Analog As Entire Keypad",
-        "Use Analog As Entire Keypad",
-        "A few games like Time Crisis Elite and Rayman Raving Rabbids can benefit from having the analog serve as the entire keypad for smoother gameplay (in TC Elite's case, with num 5 as pressing the analog too). If you have a game that appears to benefit from this by using the diagonal keypad keys instead of allowing for num2 and num4 to be pressed simultaneously for the same effect for example, try enabling it.",
-        "A few games like Time Crisis Elite and Rayman Raving Rabbids can benefit from having the analog serve as the entire keypad for smoother gameplay (in TC Elite's case, with num 5 as pressing the analog too). If you have a game that appears to benefit from this by using the diagonal keypad keys instead of allowing for num2 and num4 to be pressed simultaneously for the same effect for example, try enabling it.",
+        "使用摇杆作为数字键盘",
+        "在一些游戏中，可以通过将摇杆映射为完整的数字键盘，以此获取更为舒适的游戏体验。代表性游戏：《Time Crisis Elite》，《Rayman Raving Rabbids》。",
+        "在一些游戏中，可以通过将摇杆映射为完整的数字键盘，以此获取更为舒适的游戏体验。代表性游戏：《Time Crisis Elite》，《Rayman Raving Rabbids》。",
         "system_settings",
         {
-            { "off", "Disabled" },
-            { "on",  "Enabled" },
+            { "off", "禁用" },
+            { "on",  "启用" },
             { NULL, NULL },
         },
         "off"
@@ -263,16 +263,16 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_logginglevel",
         "Advanced Settings > Logging Level",
-        "Logging Level",
-        "When enabled, this option allows FreeJ2ME to log messages of the specified level and higher into 'freej2me_system/FreeJ2ME.log' to facilitate debugging",
-        "When enabled, this option allows FreeJ2ME to log messages of the specified level and higher into 'freej2me_system/FreeJ2ME.log' to facilitate debugging",
+        "日志级别",
+        "*调试用* 该选项允许核心将指定或更高级别的日志记录到『freej2me_system/FreeJ2ME.log』。",
+        "*调试用* 该选项允许核心将指定或更高级别的日志记录到『freej2me_system/FreeJ2ME.log』。",
         "advanced_settings",
         {
-            { "0",  "Disable"           },
-            { "1",  "Debug"             },
-            { "2",  "Info"              },
-            { "3",  "Warning"           },
-            { "4",  "Error"             },
+            { "0",  "Disable_禁用"           },
+            { "1",  "Debug_调试"             },
+            { "2",  "Info_信息"              },
+            { "3",  "Warning_警告"           },
+            { "4",  "Error_错误"             },
             { NULL, NULL },
         },
         "0"
@@ -280,13 +280,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_dumpaudiostreams",
         "Advanced Settings > Dump Audio Streams",
-        "Dump Audio Streams",
-        "This option allows FreeJ2ME to dump incoming Audio Data into $SYSTEM/FreeJ2MEDumps/Audio/appname/*, mostly useful for debugging",
+        "音频导出",
+        "*调试用* 该选项允许核心将音频流数据导出至『$SYSTEM/FreeJ2MEDumps/Audio/appname/*』。",
         "This option allows FreeJ2ME to dump incoming Audio Data into $SYSTEM/FreeJ2MEDumps/Audio/appname/*, mostly useful for debugging",
         "advanced_settings",
         {
-            { "off",  "Disable"            },
-            { "on",  "Enable"              },
+            { "off",  "禁用"            },
+            { "on",  "启用"              },
             { NULL, NULL },
         },
         "off"
@@ -294,30 +294,30 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointertype",
         "Advanced Settings > Pointer Type",
-        "Pointer Type",
-        "This option sets the type of pointer used by FreeJ2ME, can be set to use a Mouse, a Touchscreen or neither. Please note that only Mouse supports drag and drop motions",
-        "This option sets the type of pointer used by FreeJ2ME, can be set to use a Mouse, a Touchscreen or neither. Please note that only Mouse supports drag and drop motions",
+        "光标类型",
+        "设置核心所用的光标类型。请注意，仅有鼠标支持缩放操作。",
+        "设置核心所用的光标类型。请注意，仅有鼠标支持缩放操作。",
         "advanced_settings",
         {
-            { "Mouse",  "Mouse"                    },
-            { "Touch",  "Touchscreen"              },
-            { "None",   "No Pointer/Joypad Analog" },
+            { "Mouse",  "鼠标"                    },
+            { "Touch",  "触摸屏"              },
+            { "None",   "无光标 / 手柄模拟" },
             { NULL, NULL },
         },
-        "Mouse"
+        "Touch"
     },
     {
         "freej2me_pointerxspeed",
         "Advanced Settings > Pointer X Speed",
-        "Pointer X Speed",
-        "This option sets the horizontal speed of the on-screen pointer when controlled by a joypad's analog stick.",
-        "This option sets the horizontal speed of the on-screen pointer when controlled by a joypad's analog stick.",
+        "光标 X 轴速度",
+        "设置使用摇杆操控光标时，其在 X 轴上的速度。",
+        "设置使用摇杆操控光标时，其在 X 轴上的速度。",
         "advanced_settings",
         {
-            { "2",  "Slow"    },
-            { "4",  "Normal"  },
-            { "8",  "Fast"    },
-            { "16", "Faster"  },
+            { "2",  "慢速"    },
+            { "4",  "正常"  },
+            { "8",  "快速"    },
+            { "16", "极快"  },
             { NULL, NULL },
         },
         "4"
@@ -325,15 +325,15 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointeryspeed",
         "Advanced Settings > Pointer Y Speed",
-        "Pointer Y Speed",
-        "This option sets the vertical speed of the on-screen pointer when controlled by a joypad's analog stick.",
-        "This option sets the vertical speed of the on-screen pointer when controlled by a joypad's analog stick.",
+        "光标 Y 轴速度",
+        "设置使用摇杆操控光标时，其在 Y 轴上的速度。",
+        "设置使用摇杆操控光标时，其在 Y 轴上的速度。",
         "advanced_settings",
         {
-            { "2",  "Slow"    },
-            { "4",  "Normal"  },
-            { "8",  "Fast"    },
-            { "16", "Faster"  },
+            { "2",  "慢速"    },
+            { "4",  "正常"  },
+            { "8",  "快速"    },
+            { "16", "极快"  },
             { NULL, NULL },
         },
         "4"
@@ -341,19 +341,19 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointerinnercolor",
         "Advanced Settings > Pointer Inner Color",
-        "Pointer Inner Color",
-        "This option sets the on-screen pointer's inner color.",
-        "This option sets the on-screen pointer's inner color.",
+        "光标内部颜色",
+        "设置光标的内部颜色。",
+        "设置光标的内部颜色。",
         "advanced_settings",
         {
-            { "Black",  "Black"            },
-            { "Red",    "Red"              },
-            { "Green",  "Green"            },
-            { "Blue",   "Blue"             },
-            { "Yellow", "Yellow"           },
-            { "Pink",   "Pink"             },
-            { "Cyan",   "Cyan"             },
-            { "White",  "White (Default)"  },
+            { "Black",  "黑"            },
+            { "Red",    "红"              },
+            { "Green",  "绿"            },
+            { "Blue",   "蓝"             },
+            { "Yellow", "黄"           },
+            { "Pink",   "粉"             },
+            { "Cyan",   "青"             },
+            { "White",  "白"  },
             { NULL, NULL },
         },
         "White"
@@ -361,19 +361,19 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointeroutercolor",
         "Advanced Settings > Pointer Outline Color",
-        "Pointer Outline Color",
-        "This option sets the on-screen pointer's outline color.",
-        "This option sets the on-screen pointer's outline color.",
+        "光标轮廓颜色",
+        "设置光标的轮廓颜色。",
+        "设置光标的轮廓颜色。",
         "advanced_settings",
         {
-            { "Black",  "Black (Default)"  },
-            { "Red",    "Red"              },
-            { "Green",  "Green"            },
-            { "Blue",   "Blue"             },
-            { "Yellow", "Yellow"           },
-            { "Pink",   "Pink"             },
-            { "Cyan",   "Cyan"             },
-            { "White",  "White"            },
+            { "Black",  "黑"            },
+            { "Red",    "红"              },
+            { "Green",  "绿"            },
+            { "Blue",   "蓝"             },
+            { "Yellow", "黄"           },
+            { "Pink",   "粉"             },
+            { "Cyan",   "青"             },
+            { "White",  "白"  },
             { NULL, NULL },
         },
         "Black"
@@ -381,19 +381,19 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointerclickcolor",
         "Advanced Settings > Pointer Click Indicator Color",
-        "Pointer Click Indicator Color",
-        "This option sets the on-screen pointer's click indicator color.",
-        "This option sets the on-screen pointer's click indicator color.",
+        "光标点击颜色",
+        "设置光标的内部颜色。",
+        "设置光标的内部颜色。",
         "advanced_settings",
         {
-            { "Black",  "Black"            },
-            { "Red",    "Red"              },
-            { "Green",  "Green"            },
-            { "Blue",   "Blue"             },
-            { "Yellow", "Yellow (Default)" },
-            { "Pink",   "Pink"             },
-            { "Cyan",   "Cyan"             },
-            { "White",  "White"            },
+            { "Black",  "黑"            },
+            { "Red",    "红"              },
+            { "Green",  "绿"            },
+            { "Blue",   "蓝"             },
+            { "Yellow", "黄"           },
+            { "Pink",   "粉"             },
+            { "Cyan",   "青"             },
+            { "White",  "白"  },
             { NULL, NULL },
         },
         "Yellow"
@@ -401,13 +401,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_spdhacknoalpha",
         "Speed Hacks > No Alpha on Blank Images (Restart Required)",
-        "No Alpha on Blank Images (Restart Required)",
-        "J2ME dictates that all images, including fully blank ones, have to be created with an alpha channel, and this includes the virtual phone's LCD screen. However, FreeJ2ME can create those without an alpha channel instead, cutting back on alpha processing for those images that usually are always fully painted with no transparency. Provides a Moderate to Large performance boost depending on the app with little to no side effects",
-        "J2ME dictates that all images, including fully blank ones, have to be created with an alpha channel, and this includes the virtual phone's LCD screen. However, FreeJ2ME can create those without an alpha channel instead, cutting back on alpha processing for those images that usually are always fully painted with no transparency. Provides a Moderate to Large performance boost depending on the app with little to no side effects",
+        "无 Alpha 空白图像（需重启核心）",
+        "J2ME 规定所有图像都必须有 Alpha 通道。Free-J2ME 可以避免 Alpha 通道创建这些图像，从而为部分游戏提供优良的性能提升。",
+        "J2ME 规定所有图像都必须有 Alpha 通道。Free-J2ME 可以避免 Alpha 通道创建这些图像，从而为部分游戏提供优良的性能提升。",
         "speed_hacks",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "启用"            },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
