@@ -109,8 +109,8 @@ struct retro_core_option_v2_category option_categories[] =
     },
     {
         "compat_settings",
-        "Compatibility Settings",
-        "Options that help some specific games run, but that may break others."
+        "兼容",
+        "Free-J2ME 兼容相关设置。"
     },
 };
 
@@ -422,13 +422,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_compatnonfatalnullimages",
         "Compatibility Settings > Don't throw Exception on null images",
-        "Don't throw Exception on null images",
-        "In the J2ME spec, processing or loading null images must result in a NullPointerException being thrown. This has the effect of basically freezing the app's execution unless the jar has some sort of exception handling in place (which is often the case). However, 'House M.D.', for one, doesn't, and results in the app freezing by not handling the exception it just received. Enabling this allows it to be playable, at the cost of breaking games that handle null images properly.",
-        "In the J2ME spec, processing or loading null images must result in a NullPointerException being thrown. This has the effect of basically freezing the app's execution unless the jar has some sort of exception handling in place (which is often the case). However, 'House M.D.', for one, doesn't, and results in the app freezing by not handling the exception it just received. Enabling this allows it to be playable, at the cost of breaking games that handle null images properly.",
+        "不对 Null 图像抛出异常",
+        "根据 J2ME 规范，处理或加载 Null 图像时必须抛出 NullPointerException。如果游戏没有异常处理机制（少数情况），那么游戏将会卡死。如：无异常处理机制的《House M.D.》启用该选项即可正常运行。不过，这可能会使进行异常处理机制的游戏出现错误。）",
+        "根据 J2ME 规范，处理或加载 Null 图像时必须抛出 NullPointerException。如果游戏没有异常处理机制（少数情况），那么游戏将会卡死。如：无异常处理机制的《House M.D.》启用该选项即可正常运行。不过，这可能会使进行异常处理机制的游戏出现错误。",
         "compat_settings",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "启用"            },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
