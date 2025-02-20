@@ -74,7 +74,6 @@ public class Mobile
     public static final byte LOG_FATAL = 4;
 
 
-
 	//LCDUI colors
 	public static int lcduiBGColor = 0xFFFFFF;
 	public static int lcduiStrokeColor = 0x555555;
@@ -97,6 +96,9 @@ public class Mobile
 		0x88FFFFFE, // Sidebands Region
 	};
 	public static byte funLightRegionSize = 8;
+
+	// Compatibility settings
+	public static boolean compatNonFatalNullImages = false;
 
 	// Keycode modifiers
 	public static boolean lg = false;
@@ -628,10 +630,6 @@ public class Mobile
 		if(midiSoundfont.equals("Custom"))       { useCustomMidi = true; }
 		else if(midiSoundfont.equals("Default")) { useCustomMidi = false; }
 
-		String speedHackNoAlpha = config.settings.get("spdhacknoalpha");
-		if(speedHackNoAlpha.equals("on"))        { noAlphaOnBlankImages = true; }
-		else if (speedHackNoAlpha.equals("off")) { noAlphaOnBlankImages = false; };
-
 		String lcdBacklightColor = config.settings.get("backlightcolor");
 		if(lcdBacklightColor.equals("Disabled"))    { maskIndex = 0; }
 		else if(lcdBacklightColor.equals("Green"))  { maskIndex = 1; }
@@ -640,6 +638,18 @@ public class Mobile
 		else if(lcdBacklightColor.equals("Violet")) { maskIndex = 4; }
 		else if(lcdBacklightColor.equals("Red"))    { maskIndex = 5; }
 
+		// Speedhacks
+		String speedHackNoAlpha = config.settings.get("spdhacknoalpha");
+		if(speedHackNoAlpha.equals("on"))        { noAlphaOnBlankImages = true; }
+		else if (speedHackNoAlpha.equals("off")) { noAlphaOnBlankImages = false; };
+
+		// Compatibility settings (this will probably expand in the future)
+		String nonFatalNullImage = config.settings.get("compatnonfatalnullimage");
+		if(nonFatalNullImage.equals("on"))        { compatNonFatalNullImages = true; }
+		else if (nonFatalNullImage.equals("off")) { compatNonFatalNullImages = false; };
+
+
+		// Rotation is left at the end since it governs this method's return value
 		String rotate = config.settings.get("rotate");
 		if(rotate.equals("on") && rotateDisplay != true) 
 		{

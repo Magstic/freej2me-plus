@@ -212,7 +212,6 @@ public abstract class Canvas extends Displayable
 
 	public void setFullScreenMode(boolean mode)
 	{
-		fullscreen = mode;
 		if (mode != fullscreen) 
 		{
 			fullscreen = mode;

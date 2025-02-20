@@ -74,6 +74,7 @@ public final class AWTGUI
 	Menu fileMenu = new Menu("File");
 	Menu optionMenu = new Menu("Settings");
 	Menu speedHackMenu = new Menu("SpeedHacks"); 
+	Menu compatSettingsMenu = new Menu("Compatibility Settings"); 
 	Menu debugMenu = new Menu("Debug");
 
 	/* Sub menus (for now, all of them are located in "Settings") */
@@ -181,7 +182,7 @@ public final class AWTGUI
 	
 	final CheckboxMenuItem[] backlightOptions = 
 	{
-		new CheckboxMenuItem("Disabled", false),
+		new CheckboxMenuItem("White/Disabled", false),
 		new CheckboxMenuItem("Green", true),
 		new CheckboxMenuItem("Cyan", false),
 		new CheckboxMenuItem("Orange", false),
@@ -218,8 +219,12 @@ public final class AWTGUI
 		new CheckboxMenuItem("Error", false)
 	};
 
+	// Speedhacks
 	final CheckboxMenuItem noAlphaOnBlankImages = new CheckboxMenuItem("No alpha on blank images");
 	
+	// Compatibility settings
+	final CheckboxMenuItem NonFatalNullImages = new CheckboxMenuItem("Don't throw Exception on null images");
+
 	final CheckboxMenuItem dumpAudioData = new CheckboxMenuItem("Dump Audio Streams");
 	final CheckboxMenuItem dumpGraphicsData = new CheckboxMenuItem("Dump Graphics Objects");
 	final CheckboxMenuItem showMemoryUsage = new CheckboxMenuItem("Show VM Memory Usage");
@@ -454,12 +459,26 @@ public final class AWTGUI
 			}
 		});
 
+		// Speedhacks
 		noAlphaOnBlankImages.addItemListener(new ItemListener() 
 		{
 			public void itemStateChanged(ItemEvent e) 
 			{
 				if(noAlphaOnBlankImages.getState()){ config.updateAlphaSpeedHack("on"); hasPendingChange = true; }
 				else{ config.updateAlphaSpeedHack("off"); hasPendingChange = true; }
+
+				awtDialogs[3].setLocationRelativeTo(main);
+				awtDialogs[3].setVisible(true);
+			}
+		});
+
+		// Compatibility settings
+		NonFatalNullImages.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(NonFatalNullImages.getState()){ config.updateCompatNonFatalNullImage("on"); hasPendingChange = true; }
+				else{ config.updateCompatNonFatalNullImage("off"); hasPendingChange = true; }
 
 				awtDialogs[3].setLocationRelativeTo(main);
 				awtDialogs[3].setVisible(true);
@@ -621,6 +640,7 @@ public final class AWTGUI
 		optionMenu.add(fpsCap);
 		optionMenu.add(mapInputs);
 		optionMenu.add(speedHackMenu);
+		optionMenu.add(compatSettingsMenu);
 
 		debugMenu.add(dumpAudioData);
 		debugMenu.add(dumpGraphicsData);
@@ -641,6 +661,8 @@ public final class AWTGUI
 		for(int i = 0; i < fpsCounterPos.length; i++) { showFPS.add(fpsCounterPos[i]); }
 
 		speedHackMenu.add(noAlphaOnBlankImages);
+
+		compatSettingsMenu.add(NonFatalNullImages);
 		
 		// add menus to menubar
 		menuBar.add(fileMenu);
@@ -667,6 +689,8 @@ public final class AWTGUI
 			}
 
 			noAlphaOnBlankImages.setState(config.settings.get("spdhacknoalpha").equals("on"));
+
+			NonFatalNullImages.setState(config.settings.get("compatnonfatalnullimage").equals("on"));
 
 			resChoice.select(""+ Integer.parseInt(config.settings.get("width")) + "x" + ""+ Integer.parseInt(config.settings.get("height")));
 

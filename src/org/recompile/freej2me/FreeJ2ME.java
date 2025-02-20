@@ -62,8 +62,6 @@ public class FreeJ2ME
 	// AWT GUI
 	private AWTGUI awtGUI;
 
-	private boolean[] pressedKeys = new boolean[128];
-
 	public static void main(String args[])
 	{
 		Mobile.clearOldLog();

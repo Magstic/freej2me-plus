@@ -93,11 +93,12 @@ public class Config
 				settings.put("height", ""+height);
 				settings.put("sound", "on");
 				settings.put("phone", "Standard");
-				settings.put("backlightcolor", "Green");
+				settings.put("backlightcolor", "Disabled");
 				settings.put("rotate", "off");
 				settings.put("fps", "0");
 				settings.put("soundfont", "Default");
 				settings.put("spdhacknoalpha", "off");
+				settings.put("compatnonfatalnullimage", "off");
 				saveConfig();
 			}
 		}
@@ -131,11 +132,12 @@ public class Config
 			if(!settings.containsKey("height")) { settings.put("height", ""+height); }
 			if(!settings.containsKey("sound")) { settings.put("sound", "on"); }
 			if(!settings.containsKey("phone")) { settings.put("phone", "Standard"); }
-			if(!settings.containsKey("backlightcolor")) { settings.put("backlightcolor", "Green"); }
+			if(!settings.containsKey("backlightcolor")) { settings.put("backlightcolor", "Disabled"); }
 			if(!settings.containsKey("rotate")) { settings.put("rotate", "off"); }
 			if(!settings.containsKey("fps")) { settings.put("fps", "0"); }
 			if(!settings.containsKey("soundfont")) { settings.put("soundfont", "Default"); }
 			if(!settings.containsKey("spdhacknoalpha")) { settings.put("spdhacknoalpha", "off"); }
+			if(!settings.containsKey("compatnonfatalnullimage")) { settings.put("compatnonfatalnullimage", "off"); }
 
 		}
 		catch (Exception e)
@@ -221,6 +223,14 @@ public class Config
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: spdhacknoalpha "+value);
 		settings.put("spdhacknoalpha", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateCompatNonFatalNullImage(String value)
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatnonfatalnullimage "+value);
+		settings.put("compatnonfatalnullimage", value);
 		saveConfig();
 		onChange.run();
 	}

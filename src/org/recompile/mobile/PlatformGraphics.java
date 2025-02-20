@@ -560,7 +560,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 
 	private int colorAlpha;
 
-	public int getNativePixelFormat() { return DirectGraphics.TYPE_INT_8888_ARGB; }
+	public int getNativePixelFormat() { return DirectGraphics.TYPE_USHORT_565_RGB; }
 
 	public int getAlphaComponent() { return colorAlpha; }
 

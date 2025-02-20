@@ -87,12 +87,22 @@ public class MIDletLoader extends URLClassLoader
 		{
 			System.setProperty("microedition.platform", "j2me");
 			System.setProperty("microedition.profiles", "MIDP-2.0");
-			System.setProperty("microedition.configuration", "CLDC-1.0");
+			System.setProperty("microedition.configuration", "CLDC-1.1");
 			System.setProperty("microedition.locale", "en-US");
 			System.setProperty("microedition.encoding", "ISO-8859-1");
+			System.setProperty("microedition.io.file.FileConnection.version", "1.0");
+			System.setProperty("com.nokia.mid.ui.DirectGraphics.PIXEL_FORMAT", "565");
 			System.setProperty("microedition.m3g.version", "1.1");
 			System.setProperty("wireless.messaging.sms.smsc", "+8613800010000");
 			System.setProperty("device.imei", "000000000000000");
+			System.setProperty("com.siemens.IMEI", "000000000000000");
+			System.setProperty("com.sonyericsson.imei", "IMEI9 00460101-501594-5-00");
+			System.setProperty("com.siemens.OSVersion", "11");
+			System.setProperty("microedition.media.version", "1.1");
+			System.setProperty("supports.mixing", "true");
+			System.setProperty("supports.audio.capture", "false");
+			System.setProperty("supports.video.capture", "false");
+			System.setProperty("supports.recording", "false");
 		}
 		catch (Exception e)
 		{
@@ -110,12 +120,22 @@ public class MIDletLoader extends URLClassLoader
 
 		properties.put("microedition.platform", "j2me");
 		properties.put("microedition.profiles", "MIDP-2.0");
-		properties.put("microedition.configuration", "CLDC-1.0");
+		properties.put("microedition.configuration", "CLDC-1.1");
 		properties.put("microedition.locale", "en-US");
 		properties.put("microedition.encoding", "ISO-8859-1");
+		properties.put("microedition.io.file.FileConnection.version", "1.0");
+		properties.put("com.nokia.mid.ui.DirectGraphics.PIXEL_FORMAT", "565");
 		properties.put("microedition.m3g.version", "1.1");
 		properties.put("wireless.messaging.sms.smsc", "+8613800010000");
 		properties.put("device.imei", "000000000000000");
+		properties.put("com.siemens.IMEI", "000000000000000");
+		properties.put("com.sonyericsson.imei", "IMEI9 00460101-501594-5-00");
+		properties.put("com.siemens.OSVersion", "11");
+		properties.put("microedition.media.version", "1.1");
+		properties.put("supports.mixing", "true");
+		properties.put("supports.audio.capture", "false");
+		properties.put("supports.video.capture", "false");
+		properties.put("supports.recording", "false");
 
 		if (className == null) { className = findMainClassInJars(urls); }
 	}
@@ -203,7 +223,6 @@ public class MIDletLoader extends URLClassLoader
 			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Problem Constructing " + name + " class: " +className);
 			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Reason: "+e.getMessage());
 			e.printStackTrace();
-			System.exit(0);
 			return;
 		}
 
@@ -227,9 +246,8 @@ public class MIDletLoader extends URLClassLoader
 		}
 		catch (Exception e)
 		{
-			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't Find startApp Method");
+			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't Find startApp Method: " + e.getMessage());
 			e.printStackTrace();
-			System.exit(0);
 			return;
 		}
 
@@ -239,8 +257,8 @@ public class MIDletLoader extends URLClassLoader
 		}
 		catch (Exception e)
 		{
+			Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Failed to invoke startApp: " + e.getMessage());
 			e.printStackTrace();
-			System.exit(0);
 		}
 	}
 

@@ -26,6 +26,7 @@ import java.util.TimerTask;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 import javax.microedition.midlet.MIDlet;
 
@@ -46,7 +47,6 @@ public class Libretro
 	 * StringBuilder used to get the updated configs from the libretro core
 	 * String[] used to tokenize each setting as its own string.
 	 */
-	private StringBuilder cfgs;
 	String[] cfgtokens;
 
 	LibretroIO lio;
@@ -119,6 +119,10 @@ public class Libretro
 		/* LCD Backlight Mask color index. */
 		Mobile.maskIndex = Integer.parseInt(args[10]);
 
+		/* The Non-Fatal Null Images compat setting is also a per-game config */
+		if(Integer.parseInt(args[11]) == 0) { Mobile.compatNonFatalNullImages = false; }
+		else { Mobile.compatNonFatalNullImages = true; }
+
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
 
 		Mobile.setPlatform(new MobilePlatform(lcdWidth, lcdHeight));
@@ -152,8 +156,9 @@ public class Libretro
 			private int[] din = new int[5];
 			private int count = 0;
 			private int code;
-			private StringBuilder path;
-			private URL url;
+			private byte[] buffer;
+			private int bytesRead = 0;
+			private String path;
 
 			public void run()
 			{
@@ -240,14 +245,12 @@ public class Libretro
 								break;
 
 								case 10: // load jar
-									path = new StringBuilder();
-									for(int i=0; i<code; i++)
-									{
-										bin = System.in.read();
-										path.append((char)bin);
-									}
-									url = (new File(path.toString())).toURI().toURL();
-									if(Mobile.getPlatform().load(url.toString()))
+									buffer = new byte[code];
+									bytesRead = System.in.read(buffer);
+
+									path = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
+
+									if(Mobile.getPlatform().load(getFormattedLocation(path.toString())))
 									{
 										// Check config
 										Mobile.config.init();
@@ -287,6 +290,9 @@ public class Libretro
 										else if(Mobile.maskIndex == 4) { Mobile.config.settings.put("backlightcolor", "Violet"); }
 										else if(Mobile.maskIndex == 5) { Mobile.config.settings.put("backlightcolor", "Red"); }
 
+										if(!Mobile.compatNonFatalNullImages) { Mobile.config.settings.put("compatnonfatalnullimage", "off"); }
+										else                                 { Mobile.config.settings.put("compatnonfatalnullimage", "on"); }
+
 										Mobile.config.saveConfig();
 										settingsChanged();
 
@@ -301,24 +307,18 @@ public class Libretro
 								break;
 
 								case 11: // set save path //
-									path = new StringBuilder();
-									for(int i=0; i<code; i++)
-									{
-										bin = System.in.read();
-										path.append((char)bin);
-									}
-									Mobile.getPlatform().dataPath = path.toString();
+									buffer = new byte[code];
+									bytesRead = System.in.read(buffer);
+
+									Mobile.getPlatform().dataPath = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
 								break;
 
 								case 13:
 									/* Received updated settings from libretro core */
-									cfgs = new StringBuilder();
-									for(int i=0; i<code; i++)
-									{
-										bin = System.in.read();
-										cfgs.append((char)bin);
-									}
-									String cfgvars = cfgs.toString();
+									buffer = new byte[code];
+									bytesRead = System.in.read(buffer);
+									
+									String cfgvars = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
 									/* Tokens: [0]="FJ2ME_LR_OPTS:", [1]=width, [2]=height, [3]=rotate, [4]=phone, [5]=fps, ... */
 									cfgtokens = cfgvars.split("[| x]", 0);
 									/* 
@@ -365,6 +365,9 @@ public class Libretro
 									if(Integer.parseInt(cfgtokens[11])==3) { Mobile.config.settings.put("backlightcolor", "Orange"); }
 									if(Integer.parseInt(cfgtokens[11])==4) { Mobile.config.settings.put("backlightcolor", "Violet"); }
 									if(Integer.parseInt(cfgtokens[11])==5) { Mobile.config.settings.put("backlightcolor", "Red"); }
+
+									if(Integer.parseInt(cfgtokens[12])==0) { Mobile.compatNonFatalNullImages = false;  }
+									else { Mobile.compatNonFatalNullImages = true; }
 
 									Mobile.config.saveConfig();
 									settingsChanged();
@@ -421,6 +424,21 @@ public class Libretro
 			}
 		} // timer
 	} // LibretroIO
+
+	private static String getFormattedLocation(String loc)
+	{
+		if (loc.startsWith("file://") || loc.startsWith("http://") || loc.startsWith("https://"))
+			return loc;
+
+		File file = new File(loc);
+		if(!file.isFile())
+		{
+			Mobile.log(Mobile.LOG_ERROR, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + "File '" + loc + "' not found...");
+			System.exit(0);
+		}
+
+		return file.toURI().toString();
+	}
 
 	private void settingsChanged()
 	{

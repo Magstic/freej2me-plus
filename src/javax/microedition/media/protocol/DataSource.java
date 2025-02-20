@@ -19,12 +19,16 @@ package javax.microedition.media.protocol;
 import javax.microedition.media.Control;
 import javax.microedition.media.Controllable;
 
+import org.recompile.mobile.Mobile;
+
 public abstract class DataSource implements Controllable
 {
+	String locator;
 
 	public DataSource(java.lang.String locator)
 	{
-
+		Mobile.log(Mobile.LOG_DEBUG, DataSource.class.getPackage().getName() + "." + DataSource.class.getSimpleName() + ": " + "Media DataSource Locator:" + locator);
+		this.locator = locator;
 	}
 
 	public abstract void connect();
@@ -37,7 +41,7 @@ public abstract class DataSource implements Controllable
 
 	public abstract Control[] getControls();
 
-	public java.lang.String getLocator() { return null; }
+	public java.lang.String getLocator() { return locator; }
 
 	public abstract SourceStream[] 	getStreams();
 

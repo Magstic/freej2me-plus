@@ -33,8 +33,8 @@ import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.Synthesizer;
+import javax.microedition.media.protocol.DataSource;
 
-import org.recompile.freej2me.FreeJ2ME;
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformPlayer;
 import org.recompile.mobile.JavaxPlatformPlayer;
@@ -88,6 +88,15 @@ public class Manager
 		else { return new JavaxPlatformPlayer(locator); } // If it's a dedicated locator, PlatformPlayer can handle it directly
 	}
 
+	public static Player createPlayer(DataSource data) throws MediaException
+	{
+		checkCustomMidi();
+
+		if(data == null) { throw new IllegalArgumentException("Cannot create a player with a null DataSource"); }
+
+		return createPlayer(data.getLocator());
+	}
+
 	// Siemens-Specific Manager stuff
 
 	public static Player createSiemensPlayer(com.siemens.mp.media.protocol.DataSource source) throws MediaException
@@ -96,9 +105,9 @@ public class Manager
 
 		if(source == null) { throw new IllegalArgumentException("Cannot create a player with a null DataSource"); }
 
-		Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Create Player DataSource");
+		Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Create Player DataSource (Siemens)");
 
-		return null; // mew SiemensPlatformPlayer(TODO)
+		return new SiemensPlatformPlayer(source.getLocator());
 	}
 
 	public static synchronized Player createSiemensPlayer(InputStream stream, String type) throws IOException, MediaException
@@ -130,14 +139,13 @@ public class Manager
 			dumpAudioStream(stream, locator); // Using the locator, we can try find out what this is by parsing the file extension
 		}
 
-		Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Create Player "+locator);
+		Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Create Player "+locator);
 		if(!locator.equals(Manager.TONE_DEVICE_LOCATOR) && !locator.equals(Manager.MIDI_DEVICE_LOCATOR)) { return new SiemensPlatformPlayer(stream, ""); } // Empty type, let PlatformPlayer handle it
 		else { return new SiemensPlatformPlayer(locator); } // If it's a dedicated locator, PlatformPlayer can handle it directly
 	}
 
 
 	// Manager's helper functions
-	
 	public static String[] getSupportedContentTypes(String protocol)
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Get Supported Media Content Types");

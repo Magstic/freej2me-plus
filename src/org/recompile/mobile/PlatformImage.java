@@ -107,18 +107,29 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 
 		InputStream stream = Mobile.getPlatform().loader.getMIDletResourceAsStream(name);
 
-		if(stream==null) 
+		if(stream == null) 
 		{
 			// We should really throw an exception here, but House M.D is one game that explicitly tries to load null images without proper exception handling 
-			//throw new NullPointerException("Can't load image from resource, as the returned image is null.");
-			Mobile.log(Mobile.LOG_WARNING, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image From Resource Name failed, is NULL. Might not render properly unless the jar expects it");
+			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image from resource, as the returned image is null."); }
+			else 
+			{
+				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from Resource Name is NULL, ignoring due to Non Fatal Null Images being enabled.");
+			}
+			
 		}
 		else
 		{
 			try { temp = ImageIO.read(stream); } 
 			catch (IOException e) { throw new IllegalArgumentException("Failed to read image from resource:" + e.getMessage()); }
 			
-			if(temp == null) { throw new NullPointerException("Couldn't load image from resource: Image is null"); }
+			if(temp == null) 
+			{ 
+				if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image from resource, as the returned image is null."); }
+				else 
+				{
+					Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from Resource Name is NULL, ignoring due to Non Fatal Null Images being enabled.");
+				}
+			}
 			
 			width = (int)temp.getWidth();
 			height = (int)temp.getHeight();
@@ -139,7 +150,14 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 		try { temp = ImageIO.read(stream); } 
 		catch (IOException e) { throw new IllegalArgumentException("Failed to read image from InputStream:" + e.getMessage()); }
 		
-		if(temp == null) { throw new NullPointerException("Couldn't load image from InputStream: Image is null"); }
+		if(temp == null) 
+		{ 
+			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image from stream, as the stream is null."); }
+			else 
+			{
+				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from stream is NULL, ignoring due to Non Fatal Null Images being enabled.");
+			}
+		}
 
 		width = (int)temp.getWidth();
 		height = (int)temp.getHeight();
@@ -155,7 +173,14 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 	public PlatformImage(Image source)
 	{
 		// Create Image from Image
-		if(source == null) { throw new NullPointerException("Couldn't load image: Image is null"); }
+		if(source == null) 
+		{ 
+			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image, it is null."); }
+			else 
+			{
+				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image is NULL, ignoring due to Non Fatal Null Images being enabled.");
+			}
+		}
 
 		width = source.platformImage.width;
 		height = source.platformImage.height;
@@ -178,7 +203,14 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 		try { temp = ImageIO.read(stream); } 
 		catch (IOException e) { throw new IllegalArgumentException("Failed to read image from Byte Array." + e.getMessage()); }
 		
-		if(temp == null) { throw new NullPointerException("Couldn't load image from byte array: Image is null"); }
+		if(temp == null) 
+		{ 
+			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't load image from byte array, as the returned image is null."); }
+			else 
+			{
+				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "Image from byte array is NULL, ignoring due to Non Fatal Null Images being enabled.");
+			}
+		}
 		
 		width = temp.getWidth();
 		height = temp.getHeight();
@@ -251,7 +283,14 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 
 	public void getRGB(int[] rgbData, int offset, int scanlength, int x, int y, int width, int height) 
 	{
-		if (rgbData == null) { throw new NullPointerException("rgbData cannot be null"); }
+		if (rgbData == null) 
+		{ 
+			if(!Mobile.compatNonFatalNullImages) { throw new NullPointerException("Can't use getRGB, as the returned image is null."); }
+			else 
+			{
+				Mobile.log(Mobile.LOG_DEBUG, PlatformImage.class.getPackage().getName() + "." + PlatformImage.class.getSimpleName() + ": " + "tried to use getRGB on NULL image, ignoring due to Non Fatal Null Images being enabled.");
+			}
+		}
 		if (width <= 0 || height <= 0) { return; } // No pixels to copy
 		if (x < 0 || y < 0 || x + width > canvas.getWidth() || y + height > canvas.getHeight()) 
 		{
