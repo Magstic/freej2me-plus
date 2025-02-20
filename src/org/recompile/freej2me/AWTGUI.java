@@ -71,17 +71,17 @@ public final class AWTGUI
 	final MenuBar menuBar = new MenuBar();
 
 	/* MenuBar's menus */
-	Menu fileMenu = new Menu("File");
-	Menu optionMenu = new Menu("Settings");
-	Menu speedHackMenu = new Menu("SpeedHacks"); 
-	Menu compatSettingsMenu = new Menu("Compatibility Settings"); 
-	Menu debugMenu = new Menu("Debug");
+	Menu fileMenu = new Menu("文件");
+	Menu optionMenu = new Menu("设置");
+	Menu speedHackMenu = new Menu("速度"); 
+	Menu compatSettingsMenu = new Menu("兼容"); 
+	Menu debugMenu = new Menu("调试");
 
 	/* Sub menus (for now, all of them are located in "Settings") */
-	final Menu fpsCap = new Menu("FPS Limit");
-	final Menu showFPS = new Menu("Show FPS Counter");
-	final Menu phoneType = new Menu("Phone Key Layout");
-	final Menu backlightColor = new Menu("Backlight Color");
+	final Menu fpsCap = new Menu("FPS 限制");
+	final Menu showFPS = new Menu("FPS 显示");
+	final Menu phoneType = new Menu("键值布局");
+	final Menu backlightColor = new Menu("背光颜色");
 
 	/* Dialogs for resolution changes, restart notifications, MemStats and info about FreeJ2ME */
 	final Dialog[] awtDialogs = 
@@ -95,12 +95,12 @@ public final class AWTGUI
 	
 	final Button[] awtButtons = 
 	{
-		new Button("Close"),
-		new Button("Apply"),
-		new Button("Cancel"),
-		new Button("Close FreeJ2ME"),
-		new Button("Restart later"),
-		new Button("Apply Inputs")
+		new Button("关闭"),
+		new Button("应用"),
+		new Button("返回"),
+		new Button("关闭 FreeJ2ME"),
+		new Button("稍后重启"),
+		new Button("保存映射")
 	};
 	
 
@@ -153,22 +153,22 @@ public final class AWTGUI
 	/* Items for each of the bar's menus */
 	final UIListener menuItemListener = new UIListener();
 
-	final MenuItem aboutMenuItem = new MenuItem("About FreeJ2ME");
-	final MenuItem resChangeMenuItem = new MenuItem("Change Phone Resolution");
+	final MenuItem aboutMenuItem = new MenuItem("关于 FreeJ2ME");
+	final MenuItem resChangeMenuItem = new MenuItem("分辨率设定");
 
-	final MenuItem openMenuItem = new MenuItem("Open JAR/JAD File");
-	final MenuItem closeMenuItem = new MenuItem("Close Jar (Stub)");
-	final MenuItem scrShot = new MenuItem("Take Screenshot");
-	final MenuItem exitMenuItem = new MenuItem("Exit FreeJ2ME");
-	final MenuItem mapInputs = new MenuItem("Manage Inputs");
+	final MenuItem openMenuItem = new MenuItem("打开 JAR/JAD 文件");
+	final MenuItem closeMenuItem = new MenuItem("关闭 JAR (Stub)");
+	final MenuItem scrShot = new MenuItem("屏幕截图");
+	final MenuItem exitMenuItem = new MenuItem("离开 FreeJ2ME");
+	final MenuItem mapInputs = new MenuItem("键值映射");
 
-	final CheckboxMenuItem enableAudio = new CheckboxMenuItem("Enable Audio", false);
-	final CheckboxMenuItem enableRotation = new CheckboxMenuItem("Rotate Screen", false);
-	final CheckboxMenuItem useCustomMidi = new CheckboxMenuItem("Use custom midi soundfont", false);
+	final CheckboxMenuItem enableAudio = new CheckboxMenuItem("音讯启用", false);
+	final CheckboxMenuItem enableRotation = new CheckboxMenuItem("屏幕旋转", false);
+	final CheckboxMenuItem useCustomMidi = new CheckboxMenuItem("自订 MIDI 音色库", false);
 
 	final CheckboxMenuItem[] layoutOptions = 
 	{
-		new CheckboxMenuItem("Default", true),
+		new CheckboxMenuItem("默认", true),
 		new CheckboxMenuItem("LG", false),
 		new CheckboxMenuItem("Motorola/SoftBank", false),
 		new CheckboxMenuItem("Motorola V8", false),
@@ -182,18 +182,18 @@ public final class AWTGUI
 	
 	final CheckboxMenuItem[] backlightOptions = 
 	{
-		new CheckboxMenuItem("White/Disabled", false),
-		new CheckboxMenuItem("Green", true),
-		new CheckboxMenuItem("Cyan", false),
-		new CheckboxMenuItem("Orange", false),
-		new CheckboxMenuItem("Violet", false),
-		new CheckboxMenuItem("Red", false)
+		new CheckboxMenuItem("白/禁用", false),
+		new CheckboxMenuItem("绿", true),
+		new CheckboxMenuItem("青", false),
+		new CheckboxMenuItem("橘", false),
+		new CheckboxMenuItem("紫", false),
+		new CheckboxMenuItem("红", false)
 	};
 	final String[] backlightValues = {"Disabled", "Green", "Cyan", "Orange", "Violet", "Red"};
 
 	final CheckboxMenuItem[] fpsOptions = 
 	{
-		new CheckboxMenuItem("No Limit", true),
+		new CheckboxMenuItem("无限制", true),
 		new CheckboxMenuItem("60 FPS", false),
 		new CheckboxMenuItem("30 FPS", false),
 		new CheckboxMenuItem("15 FPS", false)
@@ -202,17 +202,17 @@ public final class AWTGUI
 
 	final CheckboxMenuItem[] fpsCounterPos = 
 	{
-		new CheckboxMenuItem("Off", true),
-		new CheckboxMenuItem("Top Left", false),
-		new CheckboxMenuItem("Top Right", false),
-		new CheckboxMenuItem("Bottom Left", false),
-		new CheckboxMenuItem("Bottom Right", false)
+		new CheckboxMenuItem("隐藏", true),
+		new CheckboxMenuItem("左上角", false),
+		new CheckboxMenuItem("右上角", false),
+		new CheckboxMenuItem("左下角", false),
+		new CheckboxMenuItem("右下角", false)
 	};
 	final String[] showFPSValues = {"Off", "TopLeft", "TopRight", "BottomLeft", "BottomRight"};
 
 	final CheckboxMenuItem[] logLevels = 
 	{
-		new CheckboxMenuItem("Disabled", false),
+		new CheckboxMenuItem("禁用", false),
 		new CheckboxMenuItem("Debug", false),
 		new CheckboxMenuItem("Info", false),
 		new CheckboxMenuItem("Warning", false),
@@ -220,10 +220,10 @@ public final class AWTGUI
 	};
 
 	// Speedhacks
-	final CheckboxMenuItem noAlphaOnBlankImages = new CheckboxMenuItem("No alpha on blank images");
+	final CheckboxMenuItem noAlphaOnBlankImages = new CheckboxMenuItem("无 Alpha 空白图像");
 	
 	// Compatibility settings
-	final CheckboxMenuItem NonFatalNullImages = new CheckboxMenuItem("Don't throw Exception on null images");
+	final CheckboxMenuItem NonFatalNullImages = new CheckboxMenuItem("不对 Null 图像抛出异常");
 
 	final CheckboxMenuItem dumpAudioData = new CheckboxMenuItem("Dump Audio Streams");
 	final CheckboxMenuItem dumpGraphicsData = new CheckboxMenuItem("Dump Graphics Objects");
@@ -270,8 +270,8 @@ public final class AWTGUI
 		awtDialogs[0].setSize(230, 175);
 		awtDialogs[0].setResizable(false);
 		awtDialogs[0].setLocationRelativeTo(main);
-		awtDialogs[0].add(new Label("Select a Resolution from the Dropdown"));
-		awtDialogs[0].add(new Label("Then hit 'Apply'!"));
+		awtDialogs[0].add(new Label("在下拉列表中选择分辨率"));
+		awtDialogs[0].add(new Label("点击应用即可"));
 		awtDialogs[0].add(resChoice);
 		awtDialogs[0].add(awtButtons[1]);
 		awtDialogs[0].add(awtButtons[2]);
@@ -292,9 +292,9 @@ public final class AWTGUI
 		awtDialogs[4].setSize(240, 320);
 		awtDialogs[4].setResizable(false);
 
-		awtDialogs[4].add(new Label("Map keys by"));
-		awtDialogs[4].add(new Label("clicking each"));
-		awtDialogs[4].add(new Label("button below"));
+		awtDialogs[4].add(new Label("通过点击"));
+		awtDialogs[4].add(new Label("按键"));
+		awtDialogs[4].add(new Label("进行映射"));
 
 		awtDialogs[4].add(new Label(""));
 		awtDialogs[4].add(awtButtons[5]);
