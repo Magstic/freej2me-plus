@@ -3,9 +3,9 @@
 ![Java CI](https://github.com/TASEmulators/freej2me-plus/actions/workflows/ant.yml/badge.svg)
 ![Libretro Cores](https://github.com/TASEmulators/freej2me-plus/actions/workflows/libretro.yml/badge.svg)
 
-J2ME 模擬器，自帶 libretro、awt 以及 sdl2 前端.
+J2ME 模擬器，自帶 Libretro、AWT 以及 SDL2 前端.
 
-該 Fork 將 libretro 前端進行了簡體中文翻譯。
+該 Fork 將 Libretro & AWT 前端進行了簡體中文翻譯。
 
 我不懂程式碼，所以無法為該專案做出實質性的貢獻，非常抱歉。
 
