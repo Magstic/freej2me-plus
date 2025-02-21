@@ -51,6 +51,7 @@ import org.recompile.mobile.Mobile;
 
 public final class AWTGUI 
 {
+	final String VERSION = "1.44";
 	/* This is used to indicate to FreeJ2ME that it has to call "settingsChanged()" to apply changes made here */
 	private boolean hasPendingChange;
 
@@ -250,10 +251,11 @@ public final class AWTGUI
 		awtDialogs[1].setBackground(Color.white);
 		awtDialogs[1].setLayout( new FlowLayout(FlowLayout.CENTER, 200, 0));  
 		awtDialogs[1].setUndecorated(true); /* Whenever a Dialog is undecorated, it's because it's meant to look like an internal menu on FreeJ2ME's main Frame */
-		awtDialogs[1].setSize(230, 225);
+		awtDialogs[1].setSize(230, 235);
 		awtDialogs[1].setResizable(false);
 		awtDialogs[1].setLocationRelativeTo(main);
 		awtDialogs[1].add(new Label("FreeJ2ME-Plus - A free J2ME emulator"));
+		awtDialogs[1].add(new Label("Version " + VERSION));
 		awtDialogs[1].add(new Label("--------------------------------"));
 		awtDialogs[1].add(new Label("Original Project Authors:"));
 		awtDialogs[1].add(new Label("David Richardson (Recompile)"));

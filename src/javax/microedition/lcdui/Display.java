@@ -22,10 +22,9 @@ import javax.microedition.midlet.MIDlet;
 
 import javax.microedition.lcdui.Image;
 
-import java.util.Vector;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import org.recompile.mobile.Mobile;
 
@@ -45,11 +44,9 @@ public class Display
 
 	private static Display display;
 
-	public Vector<Runnable> serialCalls;
-
-	private Timer timer;
-
-	private SerialCallTimerTask timertask;
+	private final Queue<Runnable> serialCalls;
+	private final Thread serialThread;
+	private volatile boolean processingCalls;
 
 	private boolean isSettingCurrent = false;
 
@@ -61,31 +58,38 @@ public class Display
 
 		Mobile.setDisplay(this);
 
-		serialCalls = new Vector<Runnable>(16);
-		timer = new Timer();
-		timertask = new SerialCallTimerTask();
-		timer.schedule(timertask, 0, 17);
+		serialCalls = new LinkedList<>();
+		processingCalls = true;
+		serialThread = new Thread(this::processSerialCalls);
+		serialThread.start();
 	}
 
-	public void callSerially(Runnable r)
+	public void callSerially(Runnable r) 
 	{
-		serialCalls.add(r);
+		synchronized (serialCalls) { serialCalls.add(r); }
 	}
 
-	private class SerialCallTimerTask extends TimerTask
+	private void processSerialCalls() 
 	{
-		public void run()
+		while (processingCalls) 
 		{
-			if(!serialCalls.isEmpty())
+			Runnable runnable = null;
+
+			synchronized (serialCalls) 
 			{
-				try
-				{
-					serialCalls.get(0).run();
-					serialCalls.removeElement(0);
-				}
-				catch (Exception e) { }
+				if (!serialCalls.isEmpty()) { runnable = serialCalls.poll(); }
+				
+				if (runnable != null) { runnable.run(); } 
 			}
 		}
+	}
+
+	public void stop() // Didn't find an use for this yet
+	{
+		processingCalls = false;
+		serialThread.interrupt();
+		try { serialThread.join(); } 
+		catch (InterruptedException e) { Thread.currentThread().interrupt(); }
 	}
 
 	public boolean flashBacklight(int duration) 

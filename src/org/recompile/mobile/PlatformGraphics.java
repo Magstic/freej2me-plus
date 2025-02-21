@@ -28,6 +28,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.awt.image.ConvolveOp;
 import java.awt.image.DataBufferInt;
@@ -42,7 +43,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	protected Color awtColor;
 
 	// Gaussian blur kernel (7x7) for Motorola's FunLights
-	final float[] gaussianKernel = 
+	protected final float[] gaussianKernel = 
 	{
 		1f / 159,  2f / 159,  3f / 159,  2f / 159,  1f / 159, 0, 0,
 		2f / 159,  5f / 159,  8f / 159,  5f / 159,  2f / 159, 0, 0,
@@ -90,6 +91,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		setStrokeStyle(SOLID);
 		gc.setBackground(new Color(0, 0, 0, 0));
 		gc.setFont(font.platformFont.awtFont);
+		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
 	}
 
 	public void reset() //Internal use method, resets the Graphics object to its inital values
@@ -224,44 +226,56 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	public void flushGraphics(Image image, int x, int y, int width, int height)
 	{
 		// called by MobilePlatform.flushGraphics/repaint
+
+		// Ensure image's width and height are still positive
+		if (width <= 0 || height <= 0) { return; }
+
 		try
 		{
 			BufferedImage sub = image.platformImage.getCanvas().getSubimage(x, y, width, height);
 			final int[] pixels = ((DataBufferInt) sub.getRaster().getDataBuffer()).getData();
+			int[] overlayData = null;
 
-			// Apply the backlight mask if Display, nokia's DeviceControl, or others request it for backlight effects.
-			if(Mobile.renderLCDMask)
+			// This one is rather costly, as it has to draw overlays on the corners of the screen with gaussian filtering applied.
+			if(Mobile.funLightsEnabled)
 			{
-				for(int i = 0; i < pixels.length; i++) { pixels[i] = pixels[i] & Mobile.lcdMaskColors[Mobile.maskIndex]; }
+				overlayData = new int[width * height];
+				drawFunLights(overlayData, width, height);
 			}
-
-			// Render the resulting image
-			// Ensure adjusted width and height are still positive
-			if (width <= 0 || height <= 0) { return; }
 		
+			// Render the resulting image
 			for (int j = 0; j < height; j++) 
 			{
 				for (int i = 0; i < width; i++) 
 				{
 					int destIndex = j * canvas.getWidth() + i;
 					int srcIndex = j * width + i;
+
 					// The image data CAN go out of the destination bounds, we just can't draw it whenever it does.
 					if (x + i < 0 || x + i >= canvas.getWidth()) { continue; }
 					if (y + j < 0 || y + j >= canvas.getHeight()) { continue; }
 					if (destIndex < 0 || destIndex >= canvasData.length) { continue; }
 					if (srcIndex < 0 || srcIndex >= pixels.length) { continue; }
 
-					canvasData[destIndex] = pixels[srcIndex];
-				}
-			}
+					// Only apply the backlight mask if Display, nokia's DeviceControl, or others request it for backlight effects.
+					canvasData[destIndex] = pixels[srcIndex] & (Mobile.renderLCDMask ? Mobile.lcdMaskColors[Mobile.maskIndex] : 0xFFFFFFFF);
 
-			// This one is rather costly, as it has to draw overlays on the corners of the screen with gaussian filtering applied.
-			// TODO: Also has flickering, this shouldn't happen.
-			if(Mobile.funLightsEnabled)
-			{
-				int[] overlayData = new int[width * height];
-				drawFunLights(overlayData, width, height);
-				System.arraycopy(overlayData, 0, canvasData, y * canvas.getWidth() + x, overlayData.length);
+					// If funLights overlay is requested by the game, apply its pixels to the screen area
+					if(Mobile.funLightsEnabled) 
+					{
+						int srcAlpha = (overlayData[srcIndex] >> 24) & 0xFF; // Source alpha
+						int existingPixel = canvasData[destIndex]; // Current pixel in the canvas
+						int destAlpha = (existingPixel >> 24) & 0xFF;
+	
+						// Blend alpha and color values using the srcOver alpha compositing method
+						int newAlpha = Math.min(255, srcAlpha + destAlpha);
+						int newRed = (((overlayData[srcIndex] >> 16) & 0xFF) * srcAlpha + ((existingPixel >> 16) & 0xFF) * (255 - srcAlpha)) / newAlpha;
+						int newGreen = (((overlayData[srcIndex] >> 8) & 0xFF) * srcAlpha + ((existingPixel >> 8) & 0xFF) * (255 - srcAlpha)) / newAlpha;
+						int newBlue = ((overlayData[srcIndex] & 0xFF) * srcAlpha + (existingPixel & 0xFF) * (255 - srcAlpha)) / newAlpha;
+
+						canvasData[destIndex] = (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
+					}
+				}
 			}
 		}
 		catch (Exception e)
@@ -332,7 +346,8 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		{
 			int rowOffset = offset + (i * scanlength); // Calculate the starting index for the current row
 	
-			for (int j = 0; j < width; j++) {
+			for (int j = 0; j < width; j++) 
+			{
 				int pixelIndex = rowOffset + j; // Source index in rgbData
 				int destIndex = (y + i) * canvasWidth + (x + j);
 	
@@ -393,7 +408,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 			int ascent = gc.getFontMetrics().getAscent();
 			int height = gc.getFontMetrics().getHeight();
 
-			y += ascent;
+			y += ascent - 1;
 			
 			if((anchor & Graphics.VCENTER)>0) { y = y+height/2; }
 			if((anchor & Graphics.BOTTOM)>0) { y = y-height; }
@@ -1002,14 +1017,17 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	private void applyGaussianBlur(int[] pixels, int width, int height) 
 	{
 		final int[] result = new int[pixels.length];
+
+		final int kernelSize = 7;
+		final int kernelRadius = kernelSize / 2;
 	
-		int kernelSize = 7;
-		int kernelRadius = kernelSize / 2;
-	
+		// Horizontal blur
 		for (int y = 0; y < height; y++) 
 		{
 			for (int x = 0; x < width; x++) 
 			{
+				if(x > Mobile.funLightRegionSize - kernelRadius && x < width - Mobile.funLightRegionSize + kernelRadius && y < height - Mobile.funLightRegionSize + kernelRadius) { continue; }
+
 				float r = 0, g = 0, b = 0, a = 0;
 				float weightSum = 0;
 	
@@ -1020,20 +1038,12 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 					if (pixelX >= 0 && pixelX < width) 
 					{
 						int pixelColor = pixels[y * width + pixelX];
-						int alpha = (pixelColor >> 24) & 0xff;
-						int red = (pixelColor >> 16) & 0xff;
-						int green = (pixelColor >> 8) & 0xff;
-						int blue = pixelColor & 0xff;
-	
-						int premultipliedRed = (red * alpha) / 255;
-						int premultipliedGreen = (green * alpha) / 255;
-						int premultipliedBlue = (blue * alpha) / 255;
-	
 						float kernelWeight = gaussianKernel[kx + kernelRadius];
-						r += premultipliedRed * kernelWeight;
-						g += premultipliedGreen * kernelWeight;
-						b += premultipliedBlue * kernelWeight;
-						a += alpha * kernelWeight;
+
+						r += ((pixelColor >> 16) & 0xff) * kernelWeight;
+						g += ((pixelColor >> 8) & 0xff) * kernelWeight;
+						b += (pixelColor & 0xff) * kernelWeight;
+						a += ((pixelColor >> 24) & 0xff) * kernelWeight;
 						weightSum += kernelWeight;
 					}
 				}
@@ -1047,10 +1057,13 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 			}
 		}
 	
+		// vertical blur
 		for (int x = 0; x < width; x++) 
 		{
 			for (int y = 0; y < height; y++) 
 			{
+				if(x > Mobile.funLightRegionSize - kernelRadius && x < width - Mobile.funLightRegionSize + kernelRadius && y < height - Mobile.funLightRegionSize + kernelRadius) { continue; }
+
 				float r = 0, g = 0, b = 0, a = 0;
 				float weightSum = 0;
 	
@@ -1061,16 +1074,12 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 					if (pixelY >= 0 && pixelY < height) 
 					{
 						int pixelColor = result[pixelY * width + x];
-						int alpha = (pixelColor >> 24) & 0xff;
-						int red = (pixelColor >> 16) & 0xff;
-						int green = (pixelColor >> 8) & 0xff;
-						int blue = pixelColor & 0xff;
-	
 						float kernelWeight = gaussianKernel[ky + kernelRadius];
-						r += red * kernelWeight;
-						g += green * kernelWeight;
-						b += blue * kernelWeight;
-						a += alpha * kernelWeight;
+
+						r += ((pixelColor >> 16) & 0xff) * kernelWeight;
+						g += ((pixelColor >> 8) & 0xff) * kernelWeight;
+						b += (pixelColor & 0xff) * kernelWeight;
+						a += ((pixelColor >> 24) & 0xff) * kernelWeight;
 						weightSum += kernelWeight;
 					}
 				}
@@ -1083,7 +1092,6 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 				result[y * width + x] = (newAlpha << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
 			}
 		}
-	
 		System.arraycopy(result, 0, pixels, 0, pixels.length);
 	}
 }

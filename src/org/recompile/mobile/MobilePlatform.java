@@ -377,10 +377,12 @@ public class MobilePlatform
 	}
 
 	// For now, the logic here works by updating the framerate counter every second
-	private final void showFPS() {
+	private final void showFPS() 
+	{
 		frameCount++;
 	
-		if (System.nanoTime() - lastFpsTime >= 1_000_000_000) { 
+		if (System.nanoTime() - lastFpsTime >= 1_000_000_000) 
+		{ 
 			fps = frameCount; 
 			frameCount = 0; 
 			lastFpsTime = System.nanoTime(); 
@@ -390,7 +392,7 @@ public class MobilePlatform
 		Graphics2D overlayGraphics = overlayImage.createGraphics();
 
 		// Enable font AA for better text quality (GASP uses font resource information to apply AA when appropriate)
-        gc.getGraphics2D().setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        gc.getGraphics2D().setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
 		gc.getGraphics2D().setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 		
 		// Set the overlay background

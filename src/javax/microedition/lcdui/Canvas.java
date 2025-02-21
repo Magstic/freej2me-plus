@@ -183,32 +183,29 @@ public abstract class Canvas extends Displayable
 			graphics.reset();
 			isPainting = true;
 
-			try { paint(graphics); }
+			try 
+			{ 
+				paint(graphics);
+				
+				// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
+				if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
+
+				Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height);
+			}
 			catch (Exception e) 
 			{
-				Mobile.log(Mobile.LOG_WARNING, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Exception hit in paint(graphics)" + e.getMessage());
+				Mobile.log(Mobile.LOG_WARNING, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Exception hit when painting graphics: " + e.getMessage());
 			}
 			finally { isPainting = false; }
-			
-			// Draw command bar whenever the canvas is not fullscreen and there are commands in the bar
-			if (!fullscreen && !commands.isEmpty()) { paintCommandsBar(); }
-
-			Mobile.getPlatform().flushGraphics(platformImage, x, y, width, height);
 		}
 		catch (Exception e) 
 		{
-			Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Serious Exception hit in repaint()" + e.getMessage());
+			Mobile.log(Mobile.LOG_ERROR, Canvas.class.getPackage().getName() + "." + Canvas.class.getSimpleName() + ": " + "Serious Exception hit in repaint(): " + e.getMessage());
 			e.printStackTrace();
 		}
 	}
 
-	public void serviceRepaints()
-	{
-		if (Mobile.getDisplay().getCurrent() == this)
-		{
-			Mobile.getPlatform().flushGraphics(platformImage, 0, 0, width, height);
-		}
-	}
+	public void serviceRepaints() { } // repaint() should synchronize itself whenever needed (at least that's the plan).
 
 	public void setFullScreenMode(boolean mode)
 	{
