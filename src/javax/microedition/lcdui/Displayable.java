@@ -79,7 +79,7 @@ public abstract class Displayable
 
 	public void setTitle(String text) { title = text; }        
 
-	public boolean isShown() { return true; }
+	public boolean isShown() { return Mobile.getDisplay().getCurrent() == this; }
 
 	public Ticker getTicker() { return ticker; }
 
@@ -349,20 +349,20 @@ public abstract class Displayable
 
 	protected void _invalidate() 
 	{
-		// zb3: TODO: consider queuing this
-		// the code below ensures this function is not reentrant
 		if (getDisplay().getCurrent() != this) { return; }
 
-		if (isValidating) 
+		if (isValidating) // Shouldn't happen, but if it does, treat it like Canvas does and queue this next invalidate for later.
 		{
-			Mobile.log(Mobile.LOG_ERROR, Displayable.class.getPackage().getName() + "." + Displayable.class.getSimpleName() + ": " + "Recursive invalidation attempt detected.");
-			Thread.dumpStack();
+			Mobile.log(Mobile.LOG_WARNING, Displayable.class.getPackage().getName() + "." + Displayable.class.getSimpleName() + ": " + "Recursive invalidation attempt detected.");
+			//Thread.dumpStack();
+			Mobile.getDisplay().callSerially(() -> { _invalidate(); });
+			return;
 		} 
 		else 
 		{
 			isValidating = true;
 
-			try { render(); } 
+			try { Mobile.getDisplay().callSerially(() -> { render(); }); }
 			finally { isValidating = false; }
 		}
 	}

@@ -155,6 +155,7 @@ public class Display
 
 	public void setCurrent(Displayable next)
 	{
+		Displayable prev;
 		if (next == null) { return; }
 
 		try 
@@ -165,16 +166,21 @@ public class Display
 				isSettingCurrent = true;
 				try 
 				{
-					if (current != null) { current.hideNotify(); }
+					prev = current;
+					if(next instanceof Alert) { ((Alert) next).setNextScreen(current); }
+					current = next;
+					if (prev != null) { callSerially(() -> { prev.hideNotify(); }); }
 					Mobile.getPlatform().keyState = 0; // reset keystate
-					next.showNotify();
+					callSerially(() -> 
+					{ 
+						current.showNotify();
+						current.notifySetCurrent();
+						Mobile.getPlatform().flushGraphics(current.platformImage, 0,0, current.width, current.height);
+						Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current "+current.width+", "+current.height);
+					});
+					
 				} 
 				finally { isSettingCurrent = false; }
-				if(next instanceof Alert) { ((Alert) next).setNextScreen(current); }
-				current = next;
-				current.notifySetCurrent();
-				Mobile.getPlatform().flushGraphics(current.platformImage, 0,0, current.width, current.height);
-				Mobile.log(Mobile.LOG_DEBUG, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": " + "Set Current "+current.width+", "+current.height);
 			}
 			catch (Exception e)
 			{

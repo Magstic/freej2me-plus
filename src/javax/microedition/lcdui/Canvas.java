@@ -205,7 +205,14 @@ public abstract class Canvas extends Displayable
 		}
 	}
 
-	public void serviceRepaints() { } // repaint() should synchronize itself whenever needed (at least that's the plan).
+	public void serviceRepaints() 
+	{
+		// TODO: Flesh this out properly, some games might need it.
+		if(!isShown() || !isPainting) { return; }
+
+		// Right now all this does is force a redraw, no queue consideration is made.
+		Mobile.getPlatform().flushGraphics(platformImage, 0, 0, width, height);
+	}
 
 	public void setFullScreenMode(boolean mode)
 	{

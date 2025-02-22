@@ -40,7 +40,7 @@ public final class Font
 	private static final int[] fontSizes = 
 	{
 		10, 12, 14, // < 128 minimum px dimension
-		12, 14, 15, // < 176 minimum px dimension
+		12, 14, 16, // < 176 minimum px dimension
 		14, 16, 18, // < 220 minimum px dimension
 		16, 18, 20, // >= 220 minimum px dimension
 	};

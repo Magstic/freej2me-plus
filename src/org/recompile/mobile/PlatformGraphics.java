@@ -91,7 +91,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		setStrokeStyle(SOLID);
 		gc.setBackground(new Color(0, 0, 0, 0));
 		gc.setFont(font.platformFont.awtFont);
-		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
+		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 	}
 
 	public void reset() //Internal use method, resets the Graphics object to its inital values
@@ -708,7 +708,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 			{
 				int index = offset + (col) + (row * scanlength);
 				data[row * width + col] = pixelToColor(pixels[index], format);
-				if (!transparency) { data[row * width + col] &= 0x00FFFFFF; } // Clear the alpha channel
+				if (!transparency) { data[row * width + col] = (data[row * width + col] & 0x00FFFFFF) | 0xFF000000; } // Set alpha to 255
 			}
 		}
 	

@@ -159,8 +159,8 @@ public class Sound
 
 	public void play(int loop) 
 	{
+		if(player == null || getState() == SOUND_UNINITIALIZED) { return; }
 		if(getState() == SOUND_PLAYING) { player.stop(); }
-		if(getState() == SOUND_UNINITIALIZED) { return; }
 		if(loop < 0) { throw new IllegalArgumentException("Cannot play media, invalid loop value received"); }
 		else if(loop == 0) { loop = -1; }
 
@@ -169,11 +169,11 @@ public class Sound
 		player.start();
 	}
 
-	public void release() { player.close(); }
+	public void release() { if(player != null) { player.close(); } }
 
 	public void resume() 
 	{
-		if(getState() == SOUND_UNINITIALIZED || getState() == SOUND_PLAYING) { return; }
+		if(player == null || getState() == SOUND_UNINITIALIZED || getState() == SOUND_PLAYING) { return; }
 		player.start(); 
 	}
 
@@ -191,7 +191,7 @@ public class Sound
 
 	public void setSoundListener(SoundListener soundListener) { if(player != null) { ((PlatformPlayer) player).setSoundListener(this, soundListener); } }
 
-	public void stop() { player.stop(); }
+	public void stop() { if(player != null) { player.stop(); } }
 
 	/* From here on out, will be only methods to decode Nokia's OTT/OTA format into MIDI. */
 
