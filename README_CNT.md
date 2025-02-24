@@ -28,7 +28,7 @@ J2ME 模擬器，自帶 Libretro、AWT 以及 SDL2 前端.
 這裡提供了更多的鍵值映射資訊： [here](KEYMAP.md) 
 
 ## 連結
-Latest build:
+Latest build (English Core):
 
   Java: https://nightly.link/TASEmulators/freej2me-plus/workflows/ant/devel
 
@@ -134,7 +134,7 @@ FreeJ2ME 將存檔資料與設定檔儲存於執行時的工作目錄。當前�
 
 ---
 
-## Modules and external dependencies used:
+## 使用的模組和依賴:
 
 ### JLayer(MPEG Player): - LGPLv2.1 License, compatible with GPLv3
 
