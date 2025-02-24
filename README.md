@@ -7,6 +7,10 @@
 
 A free J2ME emulator with libretro, awt and sdl2 frontends.
 
+This Fork translates the Libretro & AWT frontend into Simplified Chinese.
+
+I don't know how to code, so it's difficult for me to make a substantial contribution to the project. Very sorry.
+
 Original authors :
 - David Richardson [Recompile@retropie]
 - Saket Dandawate  [Hex@retropie]
