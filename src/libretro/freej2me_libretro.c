@@ -673,7 +673,7 @@ void pauseFreeJ2ME(bool pause)
 {
 #ifdef __linux__
 	// NOTE: Despite being a "kill" function, it really just sends a signal to stop and continue the process here 
-	if(pause) { kill(javaProcess, SIGTSTP); }
+	if(pause) { kill(javaProcess, SIGSTOP); }
 	else { kill(javaProcess, SIGCONT); }
 #elif _WIN32
 	// NOTE: Untested, tries to suspend/resume java app's main thread.

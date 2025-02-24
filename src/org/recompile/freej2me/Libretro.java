@@ -141,13 +141,11 @@ public class Libretro
 	private class LibretroIO
 	{
 		private Timer keytimer;
-		private TimerTask keytask;
 
 		public void start()
 		{
 			keytimer = new Timer();
-			keytask = new LibretroTimerTask();
-			keytimer.schedule(keytask, 0, 1);
+			keytimer.schedule(new LibretroTimerTask(), 0, 1);
 		}
 
 		private class LibretroTimerTask extends TimerTask

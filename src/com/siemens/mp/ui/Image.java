@@ -98,6 +98,43 @@ public class Image extends javax.microedition.lcdui.Image
         return javax.microedition.lcdui.Image.createImage(name);
     }
 
+    // Karma Studios' Hoverball uses this in one of its versions, works.
+    public static javax.microedition.lcdui.Image createRGBImage(byte[] imageData, int imageWidth, int imageHeight, int BitmapType) throws ArrayIndexOutOfBoundsException, IOException
+    {
+        if (imageWidth <= 0 || imageHeight <= 0) { throw new ArrayIndexOutOfBoundsException("Width and height must be greater than zero."); }
+        if (imageData.length < imageWidth * imageHeight) { throw new ArrayIndexOutOfBoundsException("Image data is not sufficient for the specified dimensions."); }
+
+        final int[] imgData = new int[imageWidth * imageHeight];
+        boolean hasAlpha = false;
+        
+        for (int y = 0; y < imageHeight; y++) 
+        {
+            for (int x = 0; x < imageWidth; x++) 
+            {
+                int index = y * imageWidth + x;
+                byte pixel = imageData[index];
+
+                if (pixel == (byte) 0xC0) { imgData[x + y * imageWidth] = 0x00000000; hasAlpha = true; } // Special byte code: Fully transparent pixel 
+                else 
+                {
+                    int red = (pixel >> 5) & 0x07;   // Upper 3 bits for red
+                    int green = (pixel >> 2) & 0x07; // Next 3 bits for green
+                    int blue = pixel & 0x03;         // Lower 2 bits for blue
+
+                    // Since this isn't full 8-bit values (0-255 range), we have to scale them properly
+                    red = (red * 255) / 7;
+                    green = (green * 255) / 7;
+                    blue = (blue * 255) / 3;
+
+                    int rgb = (0xFF << 24) | (red << 16) | (green << 8) | blue;
+
+                    imgData[x + y * imageWidth] = rgb;
+                }
+            }
+        }
+        return javax.microedition.lcdui.Image.createRGBImage(imgData, imageWidth, imageHeight, hasAlpha);
+    }
+
     /* This one is barely documented */
     public static javax.microedition.lcdui.Image getNativeImage(Image img) 
     {

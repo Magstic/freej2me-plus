@@ -232,8 +232,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 
 		try
 		{
-			BufferedImage sub = image.platformImage.getCanvas().getSubimage(x, y, width, height);
-			final int[] pixels = ((DataBufferInt) sub.getRaster().getDataBuffer()).getData();
+			final int[] pixels = ((DataBufferInt) image.platformImage.getCanvas().getRaster().getDataBuffer()).getData();
 			int[] overlayData = null;
 
 			// This one is rather costly, as it has to draw overlays on the corners of the screen with gaussian filtering applied.
@@ -244,16 +243,16 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 			}
 		
 			// Render the resulting image
-			for (int j = 0; j < height; j++) 
+			for (int j = y; j < height+y; j++) 
 			{
-				for (int i = 0; i < width; i++) 
+				for (int i = x; i < width+x; i++) 
 				{
 					int destIndex = j * canvas.getWidth() + i;
-					int srcIndex = j * width + i;
+					int srcIndex = j * image.getWidth() + i;
 
 					// The image data CAN go out of the destination bounds, we just can't draw it whenever it does.
-					if (x + i < 0 || x + i >= canvas.getWidth()) { continue; }
-					if (y + j < 0 || y + j >= canvas.getHeight()) { continue; }
+					if (i < 0 || i >= canvas.getWidth()) { continue; }
+					if (j < 0 || j >= canvas.getHeight()) { continue; }
 					if (destIndex < 0 || destIndex >= canvasData.length) { continue; }
 					if (srcIndex < 0 || srcIndex >= pixels.length) { continue; }
 
@@ -575,7 +574,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 
 	private int colorAlpha;
 
-	public int getNativePixelFormat() { return DirectGraphics.TYPE_USHORT_565_RGB; }
+	public int getNativePixelFormat() { return 0; } // Don't explicitly set any native format for color, let the jar send in whatever it has and we'll convert.
 
 	public int getAlphaComponent() { return colorAlpha; }
 
@@ -698,20 +697,29 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		if (pixels == null) { throw new NullPointerException("drawPixels(short) received a null pixel array"); }
 		if (offset < 0 || offset >= pixels.length) { throw new ArrayIndexOutOfBoundsException("drawPixels(short) index out of bounds:" + width + " * " + height + "| len:" + pixels.length); }
 
+		if (scanlength > 0) 
+		{
+			if (offset + scanlength * (height - 1) + width > pixels.length) { throw new ArrayIndexOutOfBoundsException(); }
+		} 
+		else 
+		{
+			if (offset + width > pixels.length || offset + scanlength * (height - 1) < 0) { throw new ArrayIndexOutOfBoundsException(); }
+		}
+
 		BufferedImage temp = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
     	int[] data = ((DataBufferInt) temp.getRaster().getDataBuffer()).getData();
-
+		
 		// Prepare the pixel data
 		for (int row = 0; row < height; row++) 
 		{
+			int srcIndex = offset + row * scanlength;
 			for (int col = 0; col < width; col++) 
 			{
-				int index = offset + (col) + (row * scanlength);
-				data[row * width + col] = pixelToColor(pixels[index], format);
+				data[row * width + col] = pixelToColor(pixels[srcIndex + col], format);
 				if (!transparency) { data[row * width + col] = (data[row * width + col] & 0x00FFFFFF) | 0xFF000000; } // Set alpha to 255
 			}
 		}
-	
+
 		gc.drawImage(manipulateImage(temp, manipulation), x, y, null);
 	}
 
@@ -824,17 +832,31 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 
 	public void getPixels(int[] pixels, int offset, int scanlength, int x, int y, int width, int height, int format)
 	{
+		if (width <= 0 || height <= 0) { return; } // We have no pixels to copy
+		if (pixels == null) { throw new NullPointerException("int array cannot be null"); }
+		if (x < 0 || y < 0 || x + width > canvas.getWidth() || y + height > canvas.getHeight()) 
+		{
+			throw new IllegalArgumentException("Requested copy area exceeds bounds of the image");
+		}
+		
 		canvas.getRGB(x, y, width, height, pixels, offset, scanlength);
 	}
 
 	public void getPixels(short[] pixels, int offset, int scanlength, int x, int y, int width, int height, int format)
 	{
+		if (width <= 0 || height <= 0) { return; } // We have no pixels to copy
+		if (pixels == null) { throw new NullPointerException("short array cannot be null"); }
+		if (x < 0 || y < 0 || x + width > canvas.getWidth() || y + height > canvas.getHeight()) 
+		{
+			throw new IllegalArgumentException("Requested copy area exceeds bounds of the image");
+		}
+		
 		for(int row=0; row<height; row++)
 		{
 			for (int col=0; col<width; col++)
 			{
-				int pixelIndex = offset + (col) + (row * scanlength);
-				pixels[pixelIndex] = colorToShortPixel(canvas.getRGB(col+x, row+y), format);
+				int pixelIndex = offset + col + (row * scanlength);
+				pixels[pixelIndex] = colorToShortPixel(canvasData[col+x + (row+y)*canvas.getWidth()], format);
 			}
 		}
 	}

@@ -145,7 +145,12 @@ public class Display
 
 	public Displayable getCurrent() { return current; }
 
-	public static Display getDisplay(MIDlet m) { return display; }
+	public static Display getDisplay(MIDlet m) 
+	{
+		if(m == null) { throw new NullPointerException("Cannot get a unique Display for a null MIDlet"); } 
+		
+		return display; 
+	}
 
 	public boolean isColor() { return true; }
 

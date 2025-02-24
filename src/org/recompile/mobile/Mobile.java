@@ -64,6 +64,7 @@ public class Mobile
 	// Enable/disable logging to the console and optionally to a file
 	public static boolean logging = true; 
 	private static final String LOG_FILE = "freej2me_system" + File.separatorChar + "FreeJ2ME.log";
+	public static final String SIEMENS_DATA_PATH = "freej2me_system" + File.separatorChar + "SiemensData" + File.separatorChar;
 	public static byte minLogLevel = 1;
 
 	// Log Levels

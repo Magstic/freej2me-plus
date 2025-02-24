@@ -91,7 +91,6 @@ public class MIDletLoader extends URLClassLoader
 			System.setProperty("microedition.locale", "en-US");
 			System.setProperty("microedition.encoding", "ISO-8859-1");
 			System.setProperty("microedition.io.file.FileConnection.version", "1.0");
-			System.setProperty("com.nokia.mid.ui.DirectGraphics.PIXEL_FORMAT", "565");
 			System.setProperty("microedition.m3g.version", "1.1");
 			System.setProperty("wireless.messaging.sms.smsc", "+8613800010000");
 			System.setProperty("device.imei", "000000000000000");
@@ -124,7 +123,6 @@ public class MIDletLoader extends URLClassLoader
 		properties.put("microedition.locale", "en-US");
 		properties.put("microedition.encoding", "ISO-8859-1");
 		properties.put("microedition.io.file.FileConnection.version", "1.0");
-		properties.put("com.nokia.mid.ui.DirectGraphics.PIXEL_FORMAT", "565");
 		properties.put("microedition.m3g.version", "1.1");
 		properties.put("wireless.messaging.sms.smsc", "+8613800010000");
 		properties.put("device.imei", "000000000000000");
