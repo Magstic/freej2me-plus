@@ -3,7 +3,7 @@
 ![Java CI](https://github.com/TASEmulators/freej2me-plus/actions/workflows/ant.yml/badge.svg)
 ![Libretro Cores](https://github.com/TASEmulators/freej2me-plus/actions/workflows/libretro.yml/badge.svg)
 
-**繁體中文** | [简体中文](https://github.com/Magstic/freej2me-plus_CN/blob/devel/README_CNS.md) | [English](https://github.com/Magstic/freej2me-plus_CN/blob/devel/README_CN.md)
+**繁體中文** | [简体中文](https://github.com/Magstic/freej2me-plus_CN/blob/devel/README_CNS.md) | [English](https://github.com/Magstic/freej2me-plus_CN/blob/devel/README.md)
 
 J2ME 模擬器，自帶 Libretro、AWT 以及 SDL2 前端.
 
