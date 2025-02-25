@@ -178,23 +178,31 @@ public class Manager
 				if(Mobile.useCustomMidi && !hasLoadedToneSynth) { dedicatedTonePlayer.loadAllInstruments(customSoundfont); hasLoadedToneSynth = true; }
 
 				dedicatedToneChannel = dedicatedTonePlayer.getChannels()[0]; 
+				dedicatedToneChannel.programChange(80); // Set it to use the square wave instrument, just so all tones formats are using the same
 			} 
 			catch (MidiUnavailableException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Couldn't open Tone Player: " + e.getMessage()); return;}
 		}
+		else 
+		{
+			for (int stopNote = 0; stopNote <= 127; stopNote++) { dedicatedToneChannel.noteOff(note);}
+		}
 
-		dedicatedToneChannel.programChange(80); // Set it to use the square wave instrument, just so all tones formats are using the same
+		// Notes that are too short can't even be heard in FreeJ2ME (some Karma Studios games use 10ms for sound, which is barely enough time for the media to start playing). A reasonable minimum duration is 50ms.
+		if(duration < 50) { Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Tone duration too short (" + duration + " ms), changing to the 50ms min."); }
+		final int effectiveDuration = (duration < 50 ? 50 : duration);
+
 		/* 
 		 * There's no need to calculate the note frequency as per the MIDP Manager docs,
 		 * they are pretty much the note numbers used by Java's Built-in MIDI library. 
 		 * Just play the note straight away, mapping the volume from 0-100 to 0-127.
 		 */ 
 		dedicatedToneChannel.controlChange(7, volume * 127 / 100);
-		dedicatedToneChannel.noteOn(note, duration); // Make the decay just long enough for the note not to fade shorter than expected
+		dedicatedToneChannel.noteOn(note, effectiveDuration); // Make the decay just long enough for the note not to fade shorter than expected
 
 		/* Since it has to be non-blocking, wait for the specified duration in a separate Thread before stopping the note. */
 		new Thread(() -> 
 		{
-            try { Thread.sleep(duration); } 
+            try { Thread.sleep(effectiveDuration); } 
 			catch (InterruptedException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Failed to keep playing note for its specified duration: " + e.getMessage()); }
             dedicatedToneChannel.noteOff(note);
         }).start();
