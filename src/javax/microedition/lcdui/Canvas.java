@@ -168,7 +168,7 @@ public abstract class Canvas extends Displayable
 	{
 		try 
 		{
-			if (getDisplay().getCurrent() != this || listCommands) { return; }
+			if (!isShown() || listCommands) { return; }
 			
 			// TODO: This might be an issue
 			if (isPainting) 

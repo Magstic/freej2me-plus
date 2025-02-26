@@ -46,13 +46,13 @@ public class Manager
 	public static final String MIDI_DEVICE_LOCATOR = "device://midi";
 
 	/* Custom MIDI variables */
-	public static boolean hasLoadedSynth = false;
+	public static boolean hasLoadedSoundfont = false;
 	public static boolean hasLoadedToneSynth = false;
 	public static File soundfontDir = new File("freej2me_system" + File.separatorChar + "customMIDI" + File.separatorChar);
-	private static Soundbank customSoundfont;
-	public static Synthesizer mainSynth;
+	public static Soundbank customSoundfont;
 	private static Synthesizer dedicatedTonePlayer = null;
 	private static MidiChannel dedicatedToneChannel;
+	private static Thread toneThread;
 
 	public static synchronized Player createPlayer(InputStream stream, String type) throws IOException, MediaException
 	{
@@ -161,6 +161,8 @@ public class Manager
 	
 	public static void playTone(int note, int duration, int volume) throws MediaException
 	{
+		if(Mobile.sound == false) { return; }
+		
 		checkCustomMidi();
 		Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Play Tone");
 
@@ -182,10 +184,8 @@ public class Manager
 			} 
 			catch (MidiUnavailableException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Couldn't open Tone Player: " + e.getMessage()); return;}
 		}
-		else 
-		{
-			for (int stopNote = 0; stopNote <= 127; stopNote++) { dedicatedToneChannel.noteOff(note);}
-		}
+
+		if(toneThread != null && toneThread.isAlive()) { toneThread.interrupt(); } // Interrupt the currently playing tone if one is playing
 
 		// Notes that are too short can't even be heard in FreeJ2ME (some Karma Studios games use 10ms for sound, which is barely enough time for the media to start playing). A reasonable minimum duration is 50ms.
 		if(duration < 50) { Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Tone duration too short (" + duration + " ms), changing to the 50ms min."); }
@@ -200,12 +200,14 @@ public class Manager
 		dedicatedToneChannel.noteOn(note, effectiveDuration); // Make the decay just long enough for the note not to fade shorter than expected
 
 		/* Since it has to be non-blocking, wait for the specified duration in a separate Thread before stopping the note. */
-		new Thread(() -> 
+		toneThread = new Thread(() -> 
 		{
-            try { Thread.sleep(effectiveDuration); } 
-			catch (InterruptedException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Failed to keep playing note for its specified duration: " + e.getMessage()); }
-            dedicatedToneChannel.noteOff(note);
-        }).start();
+			try { Thread.sleep(effectiveDuration); } 
+			catch (InterruptedException e) { dedicatedToneChannel.noteOff(note); } // Stop playing earlier if interrupted
+			dedicatedToneChannel.noteOff(note);
+		});
+		
+		toneThread.start();
 	}
 
 	public static final InputStream dumpAudioStream(InputStream stream, String type) 
@@ -279,15 +281,15 @@ public class Manager
 	private static final void checkCustomMidi() 
 	{
 		/* 
-		 * Check if the user wants to run a custom MIDI soundfont. Also, there's no harm 
-		 * in checking if the directory exists again. If it has already been loaded, jsut return.
-		 */
-		if(hasLoadedSynth) { return; }
+			* Check if the user wants to run a custom MIDI soundfont. Also, there's no harm 
+			* in checking if the directory exists again. If it has already been loaded, jsut return.
+			*/
+		if(hasLoadedSoundfont) { return; }
 
 		/* 
-		 * If the directory for custom soundfonts doesn't exist, create it, no matter if the user
-		 * is going to use it or not.
-		 */
+			* If the directory for custom soundfonts doesn't exist, create it, no matter if the user
+			* is going to use it or not.
+			*/
 		if(!soundfontDir.isDirectory()) 
 		{
 			try 
@@ -307,55 +309,25 @@ public class Manager
 		});
 
 		/* 
-		 * Only really set the player to use a custom midi soundfont if there is
-		 * at least one inside the directory.
-		 */
+			* Only really set the player to use a custom midi soundfont if there is
+			* at least one inside the directory.
+			*/
 		if(Mobile.useCustomMidi && fontfile != null && fontfile.length > 0) 
 		{
 			try 
 			{
 				// Load the first .sf2 font available, if there's none that's valid, don't set any and use JVM's default
 				customSoundfont = MidiSystem.getSoundbank(new File(soundfontDir, fontfile[0]));
-				mainSynth = MidiSystem.getSynthesizer();
-				mainSynth.open();
-				mainSynth.loadAllInstruments(customSoundfont);
 
-				PlatformPlayer.synthesizer = mainSynth;
-				PlatformPlayer.receiver = mainSynth.getReceiver();
-
-				hasLoadedSynth = true; // We have now loaded the custom midi soundfont, mark as such so we don't waste time entering here again
+				hasLoadedSoundfont = true; // We have now loaded the custom midi soundfont, mark as such so we don't waste time entering here again
 			} 
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Could not load soundfont into synth: " + e.getMessage());}
 		}
-		else if (!Mobile.useCustomMidi) 
-		{
-			try 
-			{
-				mainSynth = MidiSystem.getSynthesizer();
-				mainSynth.open();
-
-				PlatformPlayer.synthesizer = mainSynth;
-				PlatformPlayer.receiver = mainSynth.getReceiver();
-
-				hasLoadedSynth = true;
-			}
-			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Could not load default synth: " + e.getMessage());}
-		}
+		else if (!Mobile.useCustomMidi) { hasLoadedSoundfont = true; }
 		else 
 		{ 
 			Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Custom MIDI enabled but there's no soundfont in" + (soundfontDir.getPath() + File.separatorChar)); 
-
-			try 
-			{
-				mainSynth = MidiSystem.getSynthesizer();
-				mainSynth.open();
-
-				PlatformPlayer.synthesizer = mainSynth;
-				PlatformPlayer.receiver = mainSynth.getReceiver();
-
-				hasLoadedSynth = true;
-			}
-			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Could not load default synth: " + e.getMessage());}
+			hasLoadedSoundfont = true;
 		}
 	}
 }

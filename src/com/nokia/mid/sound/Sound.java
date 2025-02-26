@@ -104,6 +104,9 @@ public class Sound
 
 	public void init(byte[] data, int type) 
 	{
+		if(type != FORMAT_TONE && type != FORMAT_WAV) { throw new IllegalArgumentException("Cannot init player with unsupported format"); }
+		if(data == null) { throw new NullPointerException("Cannot init player with null data"); }
+
 		try 
 		{
 			if (type == FORMAT_TONE) 
@@ -145,12 +148,10 @@ public class Sound
 		catch (MediaException exception) { } catch (IOException exception) { }
 	}
 
-	/* 
-	 * Haven't found a jar using this yet, but forcing it through the one above does indicate that it works even if incorrectly
-	 * Also, based on the j2megame source, this is just javax.microedition.media.Manager.playTone() on MIDP 2.0
-	 */
 	public void init(int freq, long duration) 
-	{ 
+	{
+		if(duration <= 0 || convertFreqToNote(freq) > 127 || convertFreqToNote(freq) < 0) { throw new IllegalArgumentException("Cannot init tone with invalid parameters"); }
+		
 		Mobile.log(Mobile.LOG_DEBUG, Sound.class.getPackage().getName() + "." + Sound.class.getSimpleName() + ": " + "Nokia Sound: Single Note:" + freq);
 
 		try { Manager.playTone(convertFreqToNote(freq), (int) duration, TONE_MAX_VOLUME);  }

@@ -81,10 +81,6 @@ public class PlatformPlayer implements Player
 
 	protected Control[] controls;
 
-	// Manager already sets these two
-	public static Synthesizer synthesizer;
-	public static Receiver receiver;
-
 	public PlatformPlayer(InputStream stream, String type)
 	{
 		listeners = new Vector<PlayerListener>();
@@ -414,6 +410,8 @@ public class PlatformPlayer implements Player
 	{
 		private Sequencer midi;
 		private Sequence midiSequence;
+		public Synthesizer synthesizer;
+		public Receiver receiver;
 		private int numLoops = 0;
 		private MetaEventListener metaListener = null;
 
@@ -433,7 +431,14 @@ public class PlatformPlayer implements Player
 		public midiPlayer(InputStream stream) 
 		{
 			try 
-			{ 
+			{
+				synthesizer = MidiSystem.getSynthesizer();
+				synthesizer.open();
+				if(Mobile.useCustomMidi) 
+				{
+					synthesizer.loadAllInstruments(Manager.customSoundfont);
+				}
+				receiver = synthesizer.getReceiver();
 				midi = MidiSystem.getSequencer(false);
 				midiSequence = MidiSystem.getSequence(stream); 
 			} 
@@ -444,11 +449,11 @@ public class PlatformPlayer implements Player
 		}
 
 		public void realize() 
-		{ 
+		{
 			try 
 			{
 				midi = MidiSystem.getSequencer(false);
-				midi.getTransmitter().setReceiver(PlatformPlayer.receiver);
+				midi.getTransmitter().setReceiver(receiver);
 				midi.open();
 				midi.setSequence(midiSequence);
 
@@ -944,7 +949,7 @@ public class PlatformPlayer implements Player
 			// This is VERY costly, and might not even be correct as it relies on getProgramList and getBankList, which themselves are untested.
 			try
 			{
-				MidiChannel[] channels = PlatformPlayer.synthesizer.getChannels();
+				MidiChannel[] channels = player.synthesizer.getChannels();
 
 				if(channel < 0 || channel > channels.length) {throw new IllegalArgumentException("midiControl: Tried to call getProgram with invalid channel");}
 		
@@ -1004,7 +1009,7 @@ public class PlatformPlayer implements Player
 			// Java doesn't even have a concept of having names for programs, only instruments. So let's return the instrument's name instead.
 			try 
 			{
-				Soundbank soundbank = PlatformPlayer.synthesizer.getDefaultSoundbank();
+				Soundbank soundbank = player.synthesizer.getDefaultSoundbank();
 		
 				Instrument[] instruments = soundbank.getInstruments();
 				for (Instrument instrument : instruments)
@@ -1040,7 +1045,7 @@ public class PlatformPlayer implements Player
 
 					// Create the SysexMessage
 					SysexMessage sysexMessage = new SysexMessage(0xF0, sysExData, sysExData.length);
-					PlatformPlayer.receiver.send(sysexMessage, player.getMediaTime() + 50_000L); // Send the message
+					player.receiver.send(sysexMessage, player.getMediaTime() + 50_000L); // Send the message
 				}
 				else // If it is not, send data as a series of short messages (probably implemented incorrectly, and being untested only makes things worse)
 				{
@@ -1053,7 +1058,7 @@ public class PlatformPlayer implements Player
 						else if (msgLength == 2) { shortMessage.setMessage(data[i] & 0xFF, data[i + 1] & 0xFF, 0); } // Status byte + one data byte
 						else if (msgLength == 3) { shortMessage.setMessage(data[i] & 0xFF, data[i + 1] & 0xFF, data[i + 2] & 0xFF); } // Full short message
 
-						PlatformPlayer.receiver.send(shortMessage, player.getMediaTime() + 50_000L);
+						player.receiver.send(shortMessage, player.getMediaTime() + 50_000L);
 					}
 				}
 				return length; // Return the number of bytes sent
@@ -1071,7 +1076,7 @@ public class PlatformPlayer implements Player
 
 			try 
 			{
-				MidiChannel[] channels = PlatformPlayer.synthesizer.getChannels();
+				MidiChannel[] channels = player.synthesizer.getChannels();
 
 				if(channel < 0 || channel > channels.length || volume < 0 || volume > 127) {throw new IllegalArgumentException("midiControl: Tried to call setChannelVolume with invalid args");}
 
@@ -1117,7 +1122,7 @@ public class PlatformPlayer implements Player
 				midiMessage.setMessage(type, data1, data2);
 		
 				// Send the MIDI message to the receiver
-				PlatformPlayer.receiver.send(midiMessage, player.getMediaTime() + 50_000L); // Send message after 50ms
+				player.receiver.send(midiMessage, player.getMediaTime() + 50_000L); // Send message after 50ms
 			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to send short MIDI event: " + e.getMessage()); }
 		}
@@ -1140,49 +1145,23 @@ public class PlatformPlayer implements Player
 
 		public int setLevel(int level) 
 		{
-			/* 
-			 * EXPERIMENTAL: Not sure if this is the correct approach, but: 
-			 * 
-			 * Only save the new level value if the stream isn't muted.
-			 * 
-			 * My logic here is that if this check isn't in place, we would
-			 * hit cases where a jar goes into mute (sets level to 0 because of that)
-			 * then goes out of mute but is still silent since setMute() will call this
-			 * method with 0 as its level, which was the one that was saved.
-			 */
-			if(!isMuted()) 
-			{
-				/* Some Digital Chocolate games actually go all the way to level = 120. E.g. Tornado Mania */
-				if(level > 100) { this.level = 100; }
-				else if(level < 0) { this.level = 0; }
-				else { this.level = level; }
-			}
+			/* Some Digital Chocolate games actually go all the way to level = 120. E.g. Tornado Mania */
+			if(level > 100) { level = 100; }
+			else if(level < 0) { level = 0; }
 
-			/* 
-			 * Checking if the current level is the same as the one received isn't particularly useful for us,
-			 * as no exceptions will be thrown, and it's not like we're hurting for cpu cycles here to benefit
-			 * from only making effective changes if needed.
-			 */
+			// Return early if there's no level change as we shouldn't notify listeners of changes nor waste time setting up the same volume.
+			if(level == getLevel()) { return getLevel(); }
 
 			if (player instanceof midiPlayer) 
 			{
 				midiPlayer sequencer = (midiPlayer) player;
-				int midiVolume = isMuted() ? 0 : (int) (this.level * 127 / 100); // Convert to MIDI volume range
+				int midiVolume = isMuted() ? 0 : (int) (level * 127 / 100); // Convert to MIDI volume range
 
-				ShortMessage volumeMessage = new ShortMessage();			
+				MidiChannel channels[] = sequencer.synthesizer.getChannels();
 				// Set volume for all channels through Control Change command 7 (volume)
-				for (int channel = 0; channel < 16; channel++) 
+				for (int channel = 0; channel < channels.length; channel++) 
 				{
-					try 
-					{
-						volumeMessage.setMessage(ShortMessage.CONTROL_CHANGE, channel, 7, midiVolume);
-						// Apply volume change 50ms after the current playback time, to give sequencer some time to breathe.
-						PlatformPlayer.receiver.send(volumeMessage, sequencer.getMediaTime() + 50_000L);
-					} 
-					catch (Exception e) 
-					{
-						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Midi setLevel failed: " + e.getMessage());
-					}
+					channels[channel].controlChange(7, level);
 				}
 			}
 			else if(player instanceof wavPlayer) /* Haven't found a jar that actually makes use of this yet - Scratch that: Shadow Shoot again */
@@ -1190,18 +1169,17 @@ public class PlatformPlayer implements Player
 				wavPlayer wav = (wavPlayer) player;
 
 				/* We have to map 0 <= value <= 100 to a clip's range of -20dB to 0dB  */
-				float dB = isMuted() ? -80.0f : -20.0f + ((this.level / 100.0f) * (20.0f));
+				float dB = isMuted() ? -80.0f : -20.0f + ((level / 100.0f) * (20.0f));
 
 				FloatControl volumeControl = (FloatControl) wav.wavClip.getControl(FloatControl.Type.MASTER_GAIN);
 				volumeControl.setValue(dB);
 			}
 			else if(player instanceof MP3Player) { ((MP3Player)player).mp3Player.setLevel(level); }
 
-			notifyListeners(PlayerListener.VOLUME_CHANGED, this);
-			
-			if(isMuted()) { return 0; }
+			notifyListeners(PlayerListener.VOLUME_CHANGED, this); 
+			this.level = level;
 
-			return this.level; 
+			return getLevel(); 
 		}
 
 		public void setMute(boolean mute) 
@@ -1210,8 +1188,8 @@ public class PlatformPlayer implements Player
 			{
 				muted = mute;
 
-				if(muted) { setLevel(0); }
-				else { setLevel(level); }
+				setLevel(level);
+				notifyListeners(PlayerListener.VOLUME_CHANGED, this);
 			}
 		}
 
