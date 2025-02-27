@@ -17,6 +17,7 @@
 package javax.microedition.lcdui;
 
 import org.recompile.mobile.PlatformGraphics;
+import java.awt.Rectangle;
 
 public class Graphics
 {
@@ -34,10 +35,7 @@ public class Graphics
 	protected int translateX = 0;
 	protected int translateY = 0;
 
-	protected int clipX = 0;
-	protected int clipY = 0;
-	protected int clipWidth = 0;
-	protected int clipHeight = 0;
+	protected Rectangle rect = new Rectangle();
 
 	protected int color = 0xFFFFFF;
 	protected Font font = Font.getDefaultFont();
@@ -105,29 +103,19 @@ public class Graphics
 
 	public void setClip(int x, int y, int width, int height) { }
 
-	public int getClipHeight() { return clipHeight; }
+	public int getClipHeight() { return rect.height; }
 
-	public int getClipWidth() { return clipWidth; }
+	public int getClipWidth() { return rect.width; }
 
-	public int getClipX() { return clipX; }
+	public int getClipX() { return rect.x; }
 
-	public int getClipY() { return clipY; }
+	public int getClipY() { return rect.y; }
 
-	public void translate(int x, int y)
-	{
-		translateX += x;
-		translateY += y;
-	}
+	public void translate(int x, int y) { }
 
-	public int getTranslateX()
-	{
-		return translateX;
-	}
+	public int getTranslateX() { return translateX; }
 
-	public int getTranslateY()
-	{
-		return translateY;
-	}
+	public int getTranslateY() { return translateY; }
 
 	public void setColor(int RGB) { color = RGB; }
 

@@ -27,7 +27,6 @@ import com.nokia.mid.ui.DirectGraphics;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.awt.image.ConvolveOp;
@@ -79,25 +78,21 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 
 		canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 
-
-		platformGraphics = this;
-
-		clipX = 0;
-		clipY = 0;
-		clipWidth = canvas.getWidth();
-		clipHeight = canvas.getHeight();
+		clipRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
 		setColor(0,0,0);
 		setStrokeStyle(SOLID);
 		gc.setBackground(new Color(0, 0, 0, 0));
 		gc.setFont(font.platformFont.awtFont);
 		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+	
+		platformGraphics = this;
 	}
 
 	public void reset() //Internal use method, resets the Graphics object to its inital values
 	{
 		translate(-1 * translateX, -1 * translateY);
-		setClip(0, 0, canvas.getWidth(), canvas.getHeight());
+		clipRect(0, 0, canvas.getWidth(), canvas.getHeight());
 		setColor(0,0,0);
 		setFont(Font.getDefaultFont());
 		setStrokeStyle(SOLID);
@@ -250,9 +245,9 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 					int destIndex = j * canvas.getWidth() + i;
 					int srcIndex = j * image.getWidth() + i;
 
-					// The image data CAN go out of the destination bounds, we just can't draw it whenever it does.
-					if (i < 0 || i >= canvas.getWidth()) { continue; }
-					if (j < 0 || j >= canvas.getHeight()) { continue; }
+					// The image data CAN go out of the destination bounds (and so can the clip rectangle), we just can't draw it whenever it does.
+					if (i < getClipX() || i >= getClipX() + getClipWidth() || i >= canvas.getWidth()) { continue; }
+					if (j < getClipY() || j >= getClipY() + getClipHeight() || j >= canvas.getHeight()) { continue; }
 					if (destIndex < 0 || destIndex >= canvasData.length) { continue; }
 					if (srcIndex < 0 || srcIndex >= pixels.length) { continue; }
 
@@ -334,8 +329,8 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		int canvasWidth = canvas.getWidth();
 		int canvasHeight = canvas.getHeight();
 	
-		if (y + height > clipY + clipHeight) { height = (clipY + clipHeight) - y; }
-		if (x + width > clipX + clipWidth) { width = (clipX + clipWidth) - x; }
+		if (y + height > getClipY() + getClipHeight()) { height = (getClipY() + getClipHeight()) - y; }
+		if (x + width > getClipX() + getClipWidth()) { width = (getClipX() + getClipWidth()) - x; }
 	
 		// Ensure adjusted width and height are still positive
 		if (width <= 0 || height <= 0) { return; }
@@ -352,7 +347,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	
 				// Skip if the pixel isn't in the canvas bounds
 				if (x + j < 0 || x + j >= canvasWidth) { continue; }
-				if (y + i < clipY || y + i >= clipY + clipHeight || x + j < clipX || x + j >= clipX + clipWidth) { continue; }
+				if (y + i < getClipY() || y + i >= getClipY() + getClipHeight() || x + j < getClipX() || x + j >= getClipX() + getClipWidth()) { continue; }
 				if (destIndex < 0 || destIndex >= canvasData.length) { continue; }
 				if (pixelIndex < 0 || pixelIndex >= rgbData.length) { continue; }
 
@@ -507,23 +502,13 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	public void setClip(int x, int y, int width, int height)
 	{
 		gc.setClip(x, y, width, height);
-		Rectangle rect=new Rectangle();
 		gc.getClipBounds(rect);
-		clipX = (int) rect.getX();
-		clipY = (int) rect.getY();
-		clipWidth = (int)rect.getWidth();
-		clipHeight = (int)rect.getHeight();
 	}
 
 	public void clipRect(int x, int y, int width, int height)
 	{
 		gc.clipRect(x, y, width, height);
-		Rectangle rect=new Rectangle();
 		gc.getClipBounds(rect);
-		clipX = (int) rect.getX();
-		clipY = (int) rect.getY();
-		clipWidth = (int)rect.getWidth();
-		clipHeight = (int)rect.getHeight();
 	}
 
 	public int getTranslateX() { return translateX; }
@@ -535,10 +520,6 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		translateX += x;
 		translateY += y;
 		gc.translate(x, y);
-		Rectangle rect=new Rectangle();
-		gc.getClipBounds(rect);
-		clipX = (int) rect.getX();
-        clipY = (int) rect.getY();
 	}
 
 	private int AnchorX(int x, int width, int anchor)
