@@ -298,9 +298,9 @@ public class MobilePlatform
 		
 		if(!showFPS.equals("Off")) { showFPS();}
 		painter.run(); // Update the frontend's painter first to then process inputs
-		processInputs();
-
 		limitFps();
+
+		processInputs();
 	}
 
 	public final void processInputs() 

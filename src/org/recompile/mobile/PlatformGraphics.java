@@ -84,6 +84,11 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 		setStrokeStyle(SOLID);
 		gc.setBackground(new Color(0, 0, 0, 0));
 		gc.setFont(font.platformFont.awtFont);
+
+		// Assuming we ever decide to implement configurable Java Graphics rendering options (2D smoothing, AA, etc), they should be applied here
+
+		// Example: Enable font AA (GASP uses font resource information to apply AA when appropriate)
+        //gc.getGraphics2D().setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
 		gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 	
 		platformGraphics = this;
@@ -183,11 +188,8 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	{
 		try
 		{
-			int imgWidth = image.getWidth();
-			int imgHeight = image.getHeight();
-
-			x = AnchorX(x, imgWidth, anchor);
-			y = AnchorY(y, imgHeight, anchor);
+			x = AnchorX(x, image.getWidth(), anchor);
+			y = AnchorY(y, image.getHeight(), anchor);
 
 			gc.drawImage(image.platformImage.getCanvas(), x, y, null);
 		}
@@ -227,6 +229,13 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 
 		try
 		{
+			final int startX = Math.max(getClipX() - x, 0);
+			final int endX = Math.min(getClipX() + getClipWidth() - x, width);
+			final int startY = Math.max(getClipY() - y, 0);
+			final int endY = Math.min(getClipY() + getClipHeight() - y, height);
+			final int canvasWidth = canvas.getWidth();
+			final int canvasHeight = canvas.getHeight();
+			final int imageWidth = image.getWidth();
 			final int[] pixels = ((DataBufferInt) image.platformImage.getCanvas().getRaster().getDataBuffer()).getData();
 			int[] overlayData = null;
 
@@ -238,18 +247,15 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 			}
 		
 			// Render the resulting image
-			for (int j = y; j < height+y; j++) 
+			for (int j = startY + y; j < endY + y; j++) 
 			{
-				for (int i = x; i < width+x; i++) 
-				{
-					int destIndex = j * canvas.getWidth() + i;
-					int srcIndex = j * image.getWidth() + i;
+				if (j < 0 || j >= canvasHeight) { continue; }
 
-					// The image data CAN go out of the destination bounds (and so can the clip rectangle), we just can't draw it whenever it does.
-					if (i < getClipX() || i >= getClipX() + getClipWidth() || i >= canvas.getWidth()) { continue; }
-					if (j < getClipY() || j >= getClipY() + getClipHeight() || j >= canvas.getHeight()) { continue; }
-					if (destIndex < 0 || destIndex >= canvasData.length) { continue; }
-					if (srcIndex < 0 || srcIndex >= pixels.length) { continue; }
+				for (int i = startX + x; i < endX + x; i++) 
+				{
+					if (i < 0 || i >= canvasWidth) { continue; }
+					int destIndex = j * canvasWidth + i;
+					int srcIndex = j * imageWidth + i;
 
 					// Only apply the backlight mask if Display, nokia's DeviceControl, or others request it for backlight effects.
 					canvasData[destIndex] = pixels[srcIndex] & (Mobile.renderLCDMask ? Mobile.lcdMaskColors[Mobile.maskIndex] : 0xFFFFFFFF);
@@ -292,10 +298,19 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 
 		try
 		{
-			PlatformImage sub = new PlatformImage(image, subx, suby, subw, subh, transform);
-			x = AnchorX(x, sub.width, anchor);
-			y = AnchorY(y, sub.height, anchor);
-			gc.drawImage(sub.getCanvas(), x, y, null);
+			if(transform == 0)
+			{
+				x = AnchorX(x, subw, anchor);
+				y = AnchorY(y, subh, anchor);
+				gc.drawImage(image.platformImage.getCanvas().getSubimage(subx, suby, subw, subh), x, y, null);
+			}
+			else
+			{
+				PlatformImage sub = new PlatformImage(image, subx, suby, subw, subh, transform);
+				x = AnchorX(x, sub.width, anchor);
+				y = AnchorY(y, sub.height, anchor);
+				gc.drawImage(sub.getCanvas(), x, y, null);
+			}
 		}
 		catch (Exception e)
 		{
@@ -328,28 +343,34 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	
 		int canvasWidth = canvas.getWidth();
 		int canvasHeight = canvas.getHeight();
+		int clipX = getClipX();
+		int clipY = getClipY();
+		int clipWidth = getClipWidth();
+		int clipHeight = getClipHeight();
+
+		int startX = Math.max(clipX - x, 0);
+		int endX = Math.min(clipX + clipWidth - x, width);
+		int startY = Math.max(clipY - y, 0);
+		int endY = Math.min(clipY + clipHeight - y, height);
 	
-		if (y + height > getClipY() + getClipHeight()) { height = (getClipY() + getClipHeight()) - y; }
-		if (x + width > getClipX() + getClipWidth()) { width = (getClipX() + getClipWidth()) - x; }
-	
+		if (y + height > clipY + clipHeight) { height = (clipY + clipHeight) - y; }
+		if (x + width > clipX + clipWidth)   { width = (clipX + clipWidth) - x; }	
+		
 		// Ensure adjusted width and height are still positive
 		if (width <= 0 || height <= 0) { return; }
 	
 		// Directly manipulate the canvasData
-		for (int i = 0; i < height; i++) 
+		for (int j = startY; j < endY; j++)
 		{
-			int rowOffset = offset + (i * scanlength); // Calculate the starting index for the current row
+			if ((y + j) < 0 || (y + j) >= canvasHeight) { continue; }
+			int rowOffset = offset + (j * scanlength); // Calculate the starting index for the current row
 	
-			for (int j = 0; j < width; j++) 
+			for (int i = startX; i < endX; i++)
 			{
-				int pixelIndex = rowOffset + j; // Source index in rgbData
-				int destIndex = (y + i) * canvasWidth + (x + j);
-	
-				// Skip if the pixel isn't in the canvas bounds
-				if (x + j < 0 || x + j >= canvasWidth) { continue; }
-				if (y + i < getClipY() || y + i >= getClipY() + getClipHeight() || x + j < getClipX() || x + j >= getClipX() + getClipWidth()) { continue; }
-				if (destIndex < 0 || destIndex >= canvasData.length) { continue; }
-				if (pixelIndex < 0 || pixelIndex >= rgbData.length) { continue; }
+				if ((x + i) < 0 || (x + i) >= canvasWidth) { continue; }
+
+				int pixelIndex = rowOffset + i; // Source index in rgbData
+				int destIndex = (y + j) * canvasWidth + (x + i);
 
 				int pixel = rgbData[pixelIndex];
 				if (!processAlpha) 

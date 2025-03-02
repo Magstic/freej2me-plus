@@ -87,6 +87,4 @@ public abstract class Layer
 
 	public Image getLayerImage() { return image; }
 
-	public void render() { this.paint(image.platformImage.getGraphics()); }
-
 }

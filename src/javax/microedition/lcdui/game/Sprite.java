@@ -23,7 +23,6 @@ import org.recompile.mobile.Mobile;
 
 public class Sprite extends Layer
 {
-
 	public static final int TRANS_NONE = 0;
 	public static final int TRANS_ROT90 = 5;
 	public static final int TRANS_ROT180 = 3;
@@ -118,18 +117,6 @@ public class Sprite extends Layer
 
 		x = s.getRefPixelX() - getTransformedPos(dRefX, t_currentTransformation, true);
 		y = s.getRefPixelY() - getTransformedPos(dRefY, t_currentTransformation, false);
-	}
-
-	public void defineReferencePixel(int x, int y) 
-	{
-		dRefX = x;
-		dRefY = y;
-	}
-
-	public void setRefPixelPosition(int x, int y) 
-	{
-		this.x = x - getTransformedPos(dRefX, this.t_currentTransformation, true);
-		this.y = y - getTransformedPos(dRefY, this.t_currentTransformation, false);
 	}
 
 	public int getRefPixelX() { return (this.x + getTransformedPos(dRefX, this.t_currentTransformation, true)); }

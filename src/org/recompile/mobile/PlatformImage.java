@@ -51,12 +51,6 @@ public class PlatformImage extends javax.microedition.lcdui.Image
 	protected void createGraphics()
 	{
 		gc = new PlatformGraphics(this);
-
-
-		// Assuming we ever decide to implement configurable Java Graphics rendering options (2D smoothing, AA, etc), they should be applied here
-
-		// Example: Enable font AA (GASP uses font resource information to apply AA when appropriate)
-        //gc.getGraphics2D().setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
 		
 		gc.setColor(0x000000);
 	}

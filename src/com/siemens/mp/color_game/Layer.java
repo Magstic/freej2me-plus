@@ -89,8 +89,6 @@ public abstract class Layer
 
 	public Image getLayerImage() { return image; }
 
-	public void render() { this.paint(image.platformImage.getGraphics()); }
-
 	protected void copyAllLayerVariables(Layer l) { Mobile.log(Mobile.LOG_WARNING, Layer.class.getPackage().getName() + "." + Layer.class.getSimpleName() + ": " + "Siemens: color_game.Layer: copyAllLayerVariables()"); } // TODO
 
 }

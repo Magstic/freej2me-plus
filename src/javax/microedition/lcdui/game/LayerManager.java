@@ -76,7 +76,6 @@ public class LayerManager
 
 		for (int i = layers-1; i >= 0; i--)
 		{
-			Layer comp = component[i];
 			if (component[i].visible) { component[i].paint(g); }
 		}
 

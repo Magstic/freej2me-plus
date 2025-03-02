@@ -157,58 +157,35 @@ public class TiledLayer extends Layer
 	public final void paint(Graphics g) 
 	{
 		if (g == null) { throw new NullPointerException(); }
-
-		if (visible) 
+	
+		if (!visible) { return; }
+	
+		// Drawing is restricted to target's clip rect bounds
+		int clipX = g.getClipX();
+		int clipY = g.getClipY();
+		int clipWidth = g.getClipWidth();
+		int clipHeight = g.getClipHeight();
+	
+		int startColumn = Math.max(0, (clipX - this.x) / tileWidth);
+		int endColumn = Math.min(this.cols, (clipX + clipWidth - this.x + tileWidth - 1) / tileWidth);
+		int startRow = Math.max(0, (clipY - this.y) / tileHeight);
+		int endRow = Math.min(this.rows, (clipY + clipHeight - this.y + tileHeight - 1) / tileHeight);
+	
+		int tileIndex;
+		int tx, ty;
+	
+		for (int row = startRow; row < endRow; row++) 
 		{
-			int startColumn = 0;
-			int endColumn = this.cols;
-			int startRow = 0;
-			int endRow = this.rows;
-
-			// calculate the number of columns left of the clip
-			int number = (g.getClipX() - this.x) / tileWidth;
-			if (number > 0) { startColumn = number; }
-
-			// calculate the number of columns right of the clip
-			int endX = this.x + (this.cols * tileWidth);
-			int endClipX = g.getClipX() + g.getClipWidth();
-			number = (endX - endClipX) / tileWidth;
-			if (number > 0) { endColumn -= number; }
-
-			// calculate the number of rows above the clip
-			number = (g.getClipY() - this.y) / tileHeight;
-			if (number > 0) { startRow = number; }
-
-			// calculate the number of rows below the clip
-			int endY = this.y + (this.rows * tileHeight);
-			int endClipY = g.getClipY() + g.getClipHeight();
-			number = (endY - endClipY) / tileHeight;
-			if (number > 0) { endRow -= number; }
-
-			// paint all visible cells
-			int tileIndex = 0;
-
-			// y-coordinate
-			int ty = this.y + (startRow * tileHeight);
-
-			for (int row = startRow; row < endRow; row++, ty += tileHeight) 
+			ty = y + (row * tileHeight);
+			for (int column = startColumn; column < endColumn; column++) 
 			{
-				// reset the x-coordinate at the beginning of every row
-				// x-coordinate to draw tile into
-				int tx = this.x + (startColumn * tileWidth);
-				for (int column = startColumn; column < endColumn; column++, tx += tileWidth) 
-				{
-					tileIndex = tiles[row][column];
-					// check the indices
-					// if animated get the corresponding
-					// static index from animatedTiles table
-
-					// tileIndex = 0 is a transparent tile
-					if (tileIndex == 0) { continue; } 
-					else if (tileIndex < 0) { tileIndex = getAnimatedTile(tileIndex); }
-
-					g.drawRegion(image, tileSetX[tileIndex], tileSetY[tileIndex], tileWidth, tileHeight, Sprite.TRANS_NONE, tx, ty, Graphics.TOP | Graphics.LEFT);
-				}
+				tileIndex = tiles[row][column];
+	
+				if (tileIndex == 0) { continue; } // Skip the transparent tile
+				if (tileIndex < 0) { tileIndex = getAnimatedTile(tileIndex); }
+	
+				tx = x + (column * tileWidth);
+				g.drawRegion(image, tileSetX[tileIndex], tileSetY[tileIndex], tileWidth, tileHeight, Sprite.TRANS_NONE, tx, ty, Graphics.TOP | Graphics.LEFT);
 			}
 		}
 	}
