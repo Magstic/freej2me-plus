@@ -99,7 +99,8 @@ public class Mobile
 	public static byte funLightRegionSize = 8;
 
 	// Compatibility settings
-	public static boolean compatNonFatalNullImages = false;
+	public static boolean compatNonFatalNullImages = false; // Fixes some version of House M.D
+	public static boolean compatClipRectOnGfxReset = false; // Fixes Fantasy Zone 128x128
 
 	// Keycode modifiers
 	public static boolean lg = false;
@@ -648,6 +649,10 @@ public class Mobile
 		String nonFatalNullImage = config.settings.get("compatnonfatalnullimage");
 		if(nonFatalNullImage.equals("on"))        { compatNonFatalNullImages = true; }
 		else if (nonFatalNullImage.equals("off")) { compatNonFatalNullImages = false; };
+
+		String clipRectOnGfxReset = config.settings.get("compatcliprectongfxreset");
+		if(clipRectOnGfxReset.equals("on"))        { compatClipRectOnGfxReset = true; }
+		else if (clipRectOnGfxReset.equals("off")) { compatClipRectOnGfxReset = false; };
 
 
 		// Rotation is left at the end since it governs this method's return value
