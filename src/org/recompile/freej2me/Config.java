@@ -99,6 +99,7 @@ public class Config
 				settings.put("soundfont", "Default");
 				settings.put("spdhacknoalpha", "off");
 				settings.put("compatnonfatalnullimage", "off");
+				settings.put("compatcliprectongfxreset", "off");
 				saveConfig();
 			}
 		}
@@ -138,7 +139,7 @@ public class Config
 			if(!settings.containsKey("soundfont")) { settings.put("soundfont", "Default"); }
 			if(!settings.containsKey("spdhacknoalpha")) { settings.put("spdhacknoalpha", "off"); }
 			if(!settings.containsKey("compatnonfatalnullimage")) { settings.put("compatnonfatalnullimage", "off"); }
-
+			if(!settings.containsKey("compatcliprectongfxreset")) { settings.put("compatcliprectongfxreset", "off"); }
 		}
 		catch (Exception e)
 		{
@@ -231,6 +232,14 @@ public class Config
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatnonfatalnullimage "+value);
 		settings.put("compatnonfatalnullimage", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateCompatClipRectOnGfxReset(String value)
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "Config: compatcliprectongfxreset "+value);
+		settings.put("compatcliprectongfxreset", value);
 		saveConfig();
 		onChange.run();
 	}
