@@ -13,6 +13,8 @@ I don't know how to code, so it's difficult for me to make a substantial contrib
 
 To ensure the accuracy of the code, I decided to keep only the translation files. Git is still a problem for me.
 
+Please download the Code from [upstream](https://github.com/TASEmulators/freej2me-plus) first, and then use the Chinese files of this branch to overwrite.
+
 Original authors :
 - David Richardson [Recompile@retropie]
 - Saket Dandawate  [Hex@retropie]

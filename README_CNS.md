@@ -11,6 +11,10 @@ J2ME 模拟器，自带 Libretro、AWT 以及 SDL2 前端.
 
 我不懂源代码，所以无法为该项目做出实质性的贡献，非常抱歉。
 
+Git 对我而言依旧很难，尤其是解决分支合并的冲突。
+
+请先从 [upstream](https://github.com/TASEmulators/freej2me-plus) 下载 Code，然后使用该处的中文文件进行覆盖并编译。
+
 项目原开发者 :
 - David Richardson [Recompile@retropie]
 - Saket Dandawate  [Hex@retropie]
