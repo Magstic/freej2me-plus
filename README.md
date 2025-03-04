@@ -11,6 +11,8 @@ This Fork translates the Libretro & AWT frontend into Simplified Chinese.
 
 I don't know how to code, so it's difficult for me to make a substantial contribution to the project. Very sorry.
 
+To ensure the accuracy of the code, I decided to keep only the translation files. Git is still a problem for me.
+
 Original authors :
 - David Richardson [Recompile@retropie]
 - Saket Dandawate  [Hex@retropie]
