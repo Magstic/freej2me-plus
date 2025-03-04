@@ -225,6 +225,7 @@ public final class AWTGUI
 	
 	// Compatibility settings
 	final CheckboxMenuItem NonFatalNullImages = new CheckboxMenuItem("不对 Null 图像抛出异常");
+	final CheckboxMenuItem doClipRectOnGfxReset = new CheckboxMenuItem("图形重置时使用 clipRect 替代 setClip");
 
 	final CheckboxMenuItem dumpAudioData = new CheckboxMenuItem("Dump Audio Streams");
 	final CheckboxMenuItem dumpGraphicsData = new CheckboxMenuItem("Dump Graphics Objects");
@@ -487,6 +488,19 @@ public final class AWTGUI
 			}
 		});
 
+		// Compatibility settings
+		doClipRectOnGfxReset.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(doClipRectOnGfxReset.getState()){ config.updateCompatClipRectOnGfxReset("on"); hasPendingChange = true; }
+				else{ config.updateCompatClipRectOnGfxReset("off"); hasPendingChange = true; }
+
+				awtDialogs[3].setLocationRelativeTo(main);
+				awtDialogs[3].setVisible(true);
+			}
+		});
+
 		// Layout options
 		for(byte i = 0; i < layoutOptions.length; i++) 
 		{
@@ -665,6 +679,7 @@ public final class AWTGUI
 		speedHackMenu.add(noAlphaOnBlankImages);
 
 		compatSettingsMenu.add(NonFatalNullImages);
+		compatSettingsMenu.add(doClipRectOnGfxReset);
 		
 		// add menus to menubar
 		menuBar.add(fileMenu);
@@ -693,6 +708,8 @@ public final class AWTGUI
 			noAlphaOnBlankImages.setState(config.settings.get("spdhacknoalpha").equals("on"));
 
 			NonFatalNullImages.setState(config.settings.get("compatnonfatalnullimage").equals("on"));
+
+			doClipRectOnGfxReset.setState(config.settings.get("compatcliprectongfxreset").equals("on"));
 
 			resChoice.select(""+ Integer.parseInt(config.settings.get("width")) + "x" + ""+ Integer.parseInt(config.settings.get("height")));
 
