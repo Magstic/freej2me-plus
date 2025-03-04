@@ -78,7 +78,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 
 		canvasData = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
 
-		clipRect(0, 0, canvas.getWidth(), canvas.getHeight());
+		setClip(0, 0, canvas.getWidth(), canvas.getHeight());
 
 		setColor(0,0,0);
 		setStrokeStyle(SOLID);
@@ -97,7 +97,9 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	public void reset() //Internal use method, resets the Graphics object to its inital values
 	{
 		translate(-1 * translateX, -1 * translateY);
-		clipRect(0, 0, canvas.getWidth(), canvas.getHeight());
+		
+		if(Mobile.compatClipRectOnGfxReset) { clipRect(0, 0, canvas.getWidth(), canvas.getHeight()); }
+		else { setClip(0, 0, canvas.getWidth(), canvas.getHeight()); }
 		setColor(0,0,0);
 		setFont(Font.getDefaultFont());
 		setStrokeStyle(SOLID);
@@ -523,6 +525,7 @@ public class PlatformGraphics extends javax.microedition.lcdui.Graphics implemen
 	public void setClip(int x, int y, int width, int height)
 	{
 		gc.setClip(x, y, width, height);
+		gc.clipRect(x, y, width, height);
 		gc.getClipBounds(rect);
 	}
 
