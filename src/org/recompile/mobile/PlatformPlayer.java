@@ -430,18 +430,7 @@ public class PlatformPlayer implements Player
 
 		public midiPlayer(InputStream stream) 
 		{
-			try 
-			{
-				synthesizer = MidiSystem.getSynthesizer();
-				synthesizer.open();
-				if(Mobile.useCustomMidi) 
-				{
-					synthesizer.loadAllInstruments(Manager.customSoundfont);
-				}
-				receiver = synthesizer.getReceiver();
-				midi = MidiSystem.getSequencer(false);
-				midiSequence = MidiSystem.getSequence(stream); 
-			} 
+			try { midiSequence = MidiSystem.getSequence(stream); } 
 			catch (Exception e) 
 			{
 				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load MIDI file: " + e.getMessage());
@@ -452,6 +441,13 @@ public class PlatformPlayer implements Player
 		{
 			try 
 			{
+				synthesizer = MidiSystem.getSynthesizer();
+				synthesizer.open();
+				if(Mobile.useCustomMidi) 
+				{
+					synthesizer.loadAllInstruments(Manager.customSoundfont);
+				}
+				receiver = synthesizer.getReceiver();
 				midi = MidiSystem.getSequencer(false);
 				midi.getTransmitter().setReceiver(receiver);
 				midi.open();
@@ -526,6 +522,8 @@ public class PlatformPlayer implements Player
 				midi.removeMetaEventListener(metaListener);
 				metaListener = null;
 			}
+			synthesizer.close();
+			receiver = null;
 			midi.close();
 		}
 
@@ -536,6 +534,8 @@ public class PlatformPlayer implements Player
 				midi.removeMetaEventListener(metaListener);
 				metaListener = null;
 			}
+			synthesizer.close();
+			receiver = null;
 			midi.close();
 			midiSequence = null;
 		}
