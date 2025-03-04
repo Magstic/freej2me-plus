@@ -119,9 +119,13 @@ public class Libretro
 		/* LCD Backlight Mask color index. */
 		Mobile.maskIndex = Integer.parseInt(args[10]);
 
-		/* The Non-Fatal Null Images compat setting is also a per-game config */
+		/* Compat settings are all handled as per-game configs */
 		if(Integer.parseInt(args[11]) == 0) { Mobile.compatNonFatalNullImages = false; }
 		else { Mobile.compatNonFatalNullImages = true; }
+
+		if(Integer.parseInt(args[12]) == 0) { Mobile.compatClipRectOnGfxReset = false; }
+		else { Mobile.compatClipRectOnGfxReset = true; }
+
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
 
@@ -291,6 +295,9 @@ public class Libretro
 										if(!Mobile.compatNonFatalNullImages) { Mobile.config.settings.put("compatnonfatalnullimage", "off"); }
 										else                                 { Mobile.config.settings.put("compatnonfatalnullimage", "on"); }
 
+										if(!Mobile.compatClipRectOnGfxReset) { Mobile.config.settings.put("compatcliprectongfxreset", "off"); }
+										else                                 { Mobile.config.settings.put("compatcliprectongfxreset", "on"); }
+
 										Mobile.config.saveConfig();
 										settingsChanged();
 
@@ -354,8 +361,8 @@ public class Libretro
 									if(Integer.parseInt(cfgtokens[9])==0) { Mobile.logging = false;  }
 									else { Mobile.logging = true; Mobile.minLogLevel = (byte) (Integer.parseInt(cfgtokens[9])-1); }
 
-									if(Integer.parseInt(cfgtokens[10])==0) { Mobile.noAlphaOnBlankImages = false;  }
-									else { Mobile.noAlphaOnBlankImages = true; }
+									if(Integer.parseInt(cfgtokens[10])==0) { Mobile.config.settings.put("spdhacknoalpha", "off");  }
+									else { Mobile.config.settings.put("spdhacknoalpha", "on"); }
 
 									if(Integer.parseInt(cfgtokens[11])==0) { Mobile.config.settings.put("backlightcolor", "Disabled"); }
 									if(Integer.parseInt(cfgtokens[11])==1) { Mobile.config.settings.put("backlightcolor", "Green");    }
@@ -364,8 +371,11 @@ public class Libretro
 									if(Integer.parseInt(cfgtokens[11])==4) { Mobile.config.settings.put("backlightcolor", "Violet"); }
 									if(Integer.parseInt(cfgtokens[11])==5) { Mobile.config.settings.put("backlightcolor", "Red"); }
 
-									if(Integer.parseInt(cfgtokens[12])==0) { Mobile.compatNonFatalNullImages = false;  }
-									else { Mobile.compatNonFatalNullImages = true; }
+									if(Integer.parseInt(cfgtokens[12])==0) { Mobile.config.settings.put("compatnonfatalnullimage", "off");  }
+									else { Mobile.config.settings.put("compatnonfatalnullimage", "on"); }
+
+									if(Integer.parseInt(cfgtokens[13])==0) { Mobile.config.settings.put("compatcliprectongfxreset", "off");  }
+									else { Mobile.config.settings.put("compatcliprectongfxreset", "on"); }
 
 									Mobile.config.saveConfig();
 									settingsChanged();
