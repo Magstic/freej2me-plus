@@ -1,4 +1,4 @@
-## Common keybindings
+## 常用键值映射
 
 |    **Key**     | **Functions As** |
 | :------------: | :--------------: |
@@ -11,9 +11,10 @@
 | Numpad's 7,8,9 |      1,2,3       |
 | Numpad's 4,5,6 |      4,5,6       |
 | Numpad's 1,2,3 |      7,8,9       |
-## Standard keybindings
 
-All **common keybindings** plus following
+## 标准键值映射
+
+全部的 **常用键值映射**，以及以下映射
 
 |   **Key**   | **Functions As** |
 | :---------: | :--------------: |
@@ -23,9 +24,9 @@ All **common keybindings** plus following
 | Arrow Right |        6         |
 |    Enter    |        5         |
 
-## Nokia keybindings
+## 诺基亚键值
 
-All **common keybindings** plus following
+全部的 **常用键值映射**，以及以下映射
 
 |   **Key**   |    **Functions As**    |
 | :---------: | :--------------------: |
