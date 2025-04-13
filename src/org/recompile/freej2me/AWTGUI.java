@@ -51,7 +51,7 @@ import org.recompile.mobile.Mobile;
 
 public final class AWTGUI 
 {
-	final String VERSION = "1.44";
+	final String VERSION = "1.45";
 	/* This is used to indicate to FreeJ2ME that it has to call "settingsChanged()" to apply changes made here */
 	private boolean hasPendingChange;
 
@@ -80,7 +80,7 @@ public final class AWTGUI
 
 	/* Sub menus (for now, all of them are located in "Settings") */
 	final Menu fpsCap = new Menu("FPS 限制");
-	final Menu showFPS = new Menu("FPS 显示");
+	final Menu showFPS = new Menu("FPS 限制");
 	final Menu phoneType = new Menu("键值布局");
 	final Menu backlightColor = new Menu("背光颜色");
 
@@ -158,18 +158,18 @@ public final class AWTGUI
 	final MenuItem resChangeMenuItem = new MenuItem("分辨率设定");
 
 	final MenuItem openMenuItem = new MenuItem("打开 JAR/JAD 文件");
-	final MenuItem closeMenuItem = new MenuItem("关闭 JAR (Stub)");
+	final MenuItem closeMenuItem = new MenuItem("关闭 Jar (Stub)");
 	final MenuItem scrShot = new MenuItem("屏幕截图");
 	final MenuItem exitMenuItem = new MenuItem("离开 FreeJ2ME");
 	final MenuItem mapInputs = new MenuItem("键值映射");
 
 	final CheckboxMenuItem enableAudio = new CheckboxMenuItem("音讯启用", false);
-	final CheckboxMenuItem enableRotation = new CheckboxMenuItem("屏幕旋转", false);
-	final CheckboxMenuItem useCustomMidi = new CheckboxMenuItem("自订 MIDI 音色库", false);
+	final CheckboxMenuItem enableRotation = new CheckboxMenuItem("旋转屏幕", false);
+	final CheckboxMenuItem useCustomMidi = new CheckboxMenuItem("自订 MIDI 音源", false);
 
 	final CheckboxMenuItem[] layoutOptions = 
 	{
-		new CheckboxMenuItem("默认", true),
+		new CheckboxMenuItem("Default", true),
 		new CheckboxMenuItem("LG", false),
 		new CheckboxMenuItem("Motorola/SoftBank", false),
 		new CheckboxMenuItem("Motorola V8", false),
@@ -204,10 +204,10 @@ public final class AWTGUI
 	final CheckboxMenuItem[] fpsCounterPos = 
 	{
 		new CheckboxMenuItem("隐藏", true),
-		new CheckboxMenuItem("左上角", false),
-		new CheckboxMenuItem("右上角", false),
-		new CheckboxMenuItem("左下角", false),
-		new CheckboxMenuItem("右下角", false)
+		new CheckboxMenuItem("左上", false),
+		new CheckboxMenuItem("右上", false),
+		new CheckboxMenuItem("左下", false),
+		new CheckboxMenuItem("右下", false)
 	};
 	final String[] showFPSValues = {"Off", "TopLeft", "TopRight", "BottomLeft", "BottomRight"};
 
@@ -224,12 +224,12 @@ public final class AWTGUI
 	final CheckboxMenuItem noAlphaOnBlankImages = new CheckboxMenuItem("无 Alpha 空白图像");
 	
 	// Compatibility settings
-	final CheckboxMenuItem NonFatalNullImages = new CheckboxMenuItem("不对 Null 图像抛出异常");
+	final CheckboxMenuItem NonFatalNullImages = new CheckboxMenuItem("不对 Null 图形抛出异常");
 	final CheckboxMenuItem doClipRectOnGfxReset = new CheckboxMenuItem("图形重置时使用 clipRect 替代 setClip");
 
-	final CheckboxMenuItem dumpAudioData = new CheckboxMenuItem("Dump Audio Streams");
-	final CheckboxMenuItem dumpGraphicsData = new CheckboxMenuItem("Dump Graphics Objects");
-	final CheckboxMenuItem showMemoryUsage = new CheckboxMenuItem("Show VM Memory Usage");
+	final CheckboxMenuItem dumpAudioData = new CheckboxMenuItem("Dump 音频流");
+	final CheckboxMenuItem dumpGraphicsData = new CheckboxMenuItem("Dump 图形物件");
+	final CheckboxMenuItem showMemoryUsage = new CheckboxMenuItem("显示虚拟内存使用情况");
 	 
 
 	public AWTGUI(Config config)
@@ -349,7 +349,7 @@ public final class AWTGUI
 		awtDialogs[3].setUndecorated(true);
 		awtDialogs[3].setSize(230, 175);
 		awtDialogs[3].setLocationRelativeTo(main);
-		awtDialogs[3].add(new Label("This change requires a restart to apply!"));
+		awtDialogs[3].add(new Label("该修改需重启 FreeJ2ME"));
 		awtDialogs[3].add(awtButtons[3]);
 		awtDialogs[3].add(awtButtons[4]);
 		
