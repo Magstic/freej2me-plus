@@ -287,7 +287,7 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_dumpaudiostreams",
         "Advanced Settings > Dump Audio Streams",
-        "音频导出",
+        "Dump 音频流",
         "*调试用* 该选项允许核心将音频流数据导出至『$SYSTEM/FreeJ2MEDumps/Audio/appname/*』。",
         "*调试用* 该选项允许核心将音频流数据导出至『$SYSTEM/FreeJ2MEDumps/Audio/appname/*』。",
         "advanced_settings",
