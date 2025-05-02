@@ -112,6 +112,11 @@ struct retro_core_option_v2_category option_categories[] =
         "兼容",
         "Free-J2ME 兼容相關設定。"
     },
+    {
+        "m3g_debug",
+        "M3G 偵錯",
+        "Free-J2ME M3G 渲染相關設定。"
+    },
 };
 
 /* Core config options if running on a frontend with support for config version 2 */
@@ -268,6 +273,27 @@ struct retro_core_option_v2_definition core_options[] =
         "off"
     },
     {
+        "freej2me_fontoffset",
+        "System > Font Size Offset",
+        "字體尺寸",
+        "調整字體的尺寸偏移量，以使其變大或變小。對於某些顯示過大或過小的自訂字體也有幫助。",
+        "調整字體的尺寸偏移量，以使其變大或變小。對於某些顯示過大或過小的自訂字體也有幫助。",
+        "system_settings",
+        {
+            { "-4", "-4 pt" },
+            { "-3", "-3 pt" },
+            { "-2", "-2 pt" },
+            { "-1", "-1 pt" },
+            { "0", " 0 pt (Default)" },
+            { "1", " 1 pt" },
+            { "2", " 2 pt" },
+            { "3", " 3 pt" },
+            { "4", " 4 pt" },
+            { NULL, NULL },
+        },
+        "0"
+    },
+    {
         "freej2me_analogasentirekeypad",
         "System > Use Analog As Entire Keypad",
         "使用搖桿作為數字鍵盤",
@@ -301,9 +327,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_dumpaudiostreams",
         "Advanced Settings > Dump Audio Streams",
-        "Dump 音訊串流",
-        "*偵錯用* 此選項可讓核心將音訊串流資料匯出至『$SYSTEM/FreeJ2MEDumps/Audio/appname/*』。",
-        "*偵錯用* 此選項可讓核心將音訊串流資料匯出至『$SYSTEM/FreeJ2MEDumps/Audio/appname/*』。",
+        "Dump Audio Streams",
+        "*偵錯用* 該選項允許核心將音訊串流資料匯出至『$SYSTEM/FreeJ2MEDumps/Audio/appname/*』。",
+        "*偵錯用* 該選項允許核心將音訊串流資料匯出至『$SYSTEM/FreeJ2MEDumps/Audio/appname/*』。",
         "advanced_settings",
         {
             { "off",  "禁用"            },
@@ -311,6 +337,34 @@ struct retro_core_option_v2_definition core_options[] =
             { NULL, NULL },
         },
         "off"
+    },
+    {
+        "freej2me_dumpgraphicsdata",
+        "Advanced Settings > Dump Graphics Data (Stub)",
+        "Dump Graphics Data (Stub)",
+        "*偵錯用* 該選項允許核心將接收到的圖形資料匯出至『$SYSTEM/FreeJ2MEDumps/Audio/appname/*』。",
+        "*偵錯用* 該選項允許核心將接收到的圖形資料匯出至『$SYSTEM/FreeJ2MEDumps/Audio/appname/*』。",
+        "advanced_settings",
+        {
+            { "off",  "禁用"            },
+            { "on",  "啟用"              },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_deletetempkjxfiles",
+        "Advanced Settings > Delete KJX files' temporary JAR/JAD",
+        "清理 KJX 檔的臨時 JAR/JAD",
+        "該選項可清理在執行 KJX 檔時反編譯出的 JAR/JAD，如果禁用，這些檔案則會保存在『$SYSTEM/FreeJ2MEDumps/KDDI/』，這對於備份或是在其他不支援 KJX 的模擬器上執行它們會很有幫助。",
+        "該選項可清理在執行 KJX 檔時反編譯出的 JAR/JAD，如果禁用，這些檔案則會保存在『$SYSTEM/FreeJ2MEDumps/KDDI/』，這對於備份或是在其他不支援 KJX 的模擬器上執行它們會很有幫助。",
+        "advanced_settings",
+        {
+            { "off",  "禁用"            },
+            { "on",  "啟用"              },
+            { NULL, NULL },
+        },
+        "on"
     },
     {
         "freej2me_pointertype",
@@ -461,6 +515,34 @@ struct retro_core_option_v2_definition core_options[] =
         },
         "off"
     },
+    {
+        "freej2me_m3grenderuntextured",
+        "M3G Debug Settings > Draw only vertex colors",
+        "僅渲染頂點顔色",
+        "*偵錯用* 使 M3G 僅渲染頂點顏色、無紋理的多邊形。對於偵錯 Blending 和 Vertex coloring seams 很有幫助。",
+        "*偵錯用* 使 M3G 僅渲染頂點顏色、無紋理的多邊形。對於偵錯 Blending 和 Vertex coloring seams 很有幫助。",
+        "m3g_debug",
+        {
+            { "on",  "啟用"            },
+            { "off", "禁用" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_m3grenderwireframe",
+        "M3G Debug Settings > Draw Wireframe",
+        "渲染線框",
+        "*偵錯用* 使 M3G 僅渲染線框。對於偵錯 Triangle clipping 和 Culling 很有幫助。",
+        "*偵錯用* 使 M3G 僅渲染線框。對於偵錯 Triangle clipping 和 Culling 很有幫助。",
+        "m3g_debug",
+        {
+            { "on",  "啟用"            },
+            { "off", "禁用" },
+            { NULL, NULL },
+        },
+        "off"
+    },
     { NULL, NULL, NULL, NULL, NULL, NULL, {{0}}, NULL },
 };
 
@@ -595,13 +677,31 @@ struct retro_core_option_definition core_options_v1 [] =
     {
         "freej2me_textfont",
         "Text Font",
-        "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes.",
+        "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes, so you might need to adjust the size offset.",
         {
             { "off", "Default" },
             { "on",  "Custom" },
             { NULL, NULL },
         },
         "off"
+    },
+    {
+        "freej2me_fontoffset",
+        "Font Size Offset",
+        "Adjust the offset used for font sizing in order to make text bigger or smaller. Also helps with custom fonts that might be too big or small by default.",
+        {
+            { "-4", "-4 pt" },
+            { "-3", "-3 pt" },
+            { "-2", "-2 pt" },
+            { "-1", "-1 pt" },
+            { "0", " 0 pt (Default)" },
+            { "1", " 1 pt" },
+            { "2", " 2 pt" },
+            { "3", " 3 pt" },
+            { "4", " 4 pt" },
+            { NULL, NULL },
+        },
+        "0"
     },
     {
         "freej2me_analogasentirekeypad",
@@ -638,6 +738,28 @@ struct retro_core_option_definition core_options_v1 [] =
             { NULL, NULL },
         },
         "off"
+    },
+    {
+        "freej2me_dumpgraphicsdata",
+        "Dump Graphics Data (Stub)",
+        "This option allows FreeJ2ME to dump incoming Graphics Data into $SYSTEM/FreeJ2MEDumps/Audio/appname/*, mostly useful for debugging",
+        {
+            { "off",  "Disable"            },
+            { "on",  "Enable"              },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_deletetempkjxfiles",
+        "Delete KJX files' temporary JAR/JAD",
+        "Disabling this option allows FreeJ2ME to keep the decompiled JAR and JAD files from a KDDI KJX container in $SYSTEM/FreeJ2MEDumps/KDDI/, useful if you want to archive those files outside their KJX container or try running them somewhere that doesn't handle KJX files",
+        {
+            { "off",  "Disable"            },
+            { "on",  "Enable"              },
+            { NULL, NULL },
+        },
+        "on"
     },
     {
         "freej2me_pointertype",
@@ -761,6 +883,28 @@ struct retro_core_option_definition core_options_v1 [] =
         },
         "off"
     },
+    {
+        "freej2me_m3grenderuntextured",
+        "Draw only vertex colors",
+        "Enabling this makes M3G render only vertex colored, untextured polygons. Useful for debugging blending and vertex coloring seams.",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_m3grenderwireframe",
+        "Draw Wireframe",
+        "Enabling this makes M3G render only wireframes. Useful for debugging triangle clipping and culling.",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
     { NULL, NULL, NULL, {{0}}, NULL },
 };
 
@@ -802,6 +946,10 @@ static const struct retro_variable vars[] =
         "freej2me_textfont",
         "Text Font; off|on"
     },
+    { /* Custom Text Font */
+        "freej2me_fontoffset",
+        "Font Size Offset; 0|-4|-3|-2|-1|1|2|3|4"
+    },
     { /* Use Analog As Entire Keypad */
         "freej2me_analogasentirekeypad",
         "Use Analog As Entire Keypad; off|on"
@@ -813,6 +961,14 @@ static const struct retro_variable vars[] =
     { /* Dump Audio Streams */
         "freej2me_dumpaudiostreams",
         "Dump Audio Streams; off|on"
+    },
+    { /* Dump Graphics Streams */
+        "freej2me_dumpgraphicsdata",
+        "Dump Graphics Data (Stub); off|on",
+    },
+    { /* Dump KJX files' temporary JAR/JAD */
+        "freej2me_deletetempkjxfiles",
+        "Delete KJX files' temporary JAR/JAD; on|off",
     },
     { /* Pointer Type */
         "freej2me_pointertype",
@@ -842,13 +998,21 @@ static const struct retro_variable vars[] =
         "freej2me_spdhacknoalpha",
         "No Alpha on Blank Images(SpeedHack); off|on",
     },
-    { /* No Alpha on Blank Images compat setting */
+    { /* Don't throw Exception on null images setting */
         "freej2me_compatnonfatalnullimages",
         "Don't throw Exception on null images; off|on",
     },
-    { /* No Alpha on Blank Images compat setting */
+    { /* Do clipRect instead of setClip on gfx reset setting */
         "freej2me_compatcliprectongfxreset",
         "Do clipRect instead of setClip on gfx reset; off|on",
+    },
+    { /* M3G draw only vertex colors */
+        "freej2me_m3grenderuntextured",
+        "Draw only vertex colors; off|on",
+    },
+    { /* M3G draw wireframe */
+        "freej2me_m3grenderwireframe",
+        "Draw Wireframe; off|on",
     },
     { NULL, NULL },
 };
