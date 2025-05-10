@@ -5,13 +5,7 @@
 
 **English** | [简体中文](https://github.com/Magstic/freej2me-plus_CN/blob/devel/README_CNS.md) | [繁體中文](https://github.com/Magstic/freej2me-plus_CN/blob/devel/README_CNT.md)
 
-A free J2ME emulator with libretro, awt and sdl2 frontends.
-
-This Fork translates the Libretro & AWT frontend into Simplified Chinese.
-
-I don't know how to code, so it's difficult for me to make a substantial contribution to the project. Very sorry.
-
-To ensure the accuracy of the code, I decided to keep only the translation files. Git is still a problem for me.
+This fork now mainly maintains the Traditional Chinese translation.
 
 Please download the Code from [upstream](https://github.com/TASEmulators/freej2me-plus) first, and then use the Chinese files of this branch to overwrite.
 
