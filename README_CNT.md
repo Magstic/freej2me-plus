@@ -7,11 +7,7 @@
 
 J2ME 模擬器，自帶 Libretro、AWT 以及 SDL2 前端.
 
-該 Fork 將 Libretro & AWT 前端進行了簡體中文翻譯。
-
-我不懂程式碼，所以無法為該專案做出實質性的貢獻，非常抱歉。
-
-Git 對我而言依舊很難，尤其是解決分支合併的衝突。
+該 Fork 目前主要維護繁體中文翻譯。
 
 請先從 [upstream](https://github.com/TASEmulators/freej2me-plus) 下載 Code，然後使用該處的中文檔案進行覆蓋並編譯。
 
