@@ -45,9 +45,8 @@ import java.io.FilenameFilter;
 
 import java.util.Arrays;
 
-import javax.microedition.media.Manager;
-
 import org.recompile.mobile.Mobile;
+import org.recompile.mobile.MobilePlatform;
 
 public final class AWTGUI 
 {
@@ -72,17 +71,19 @@ public final class AWTGUI
 	final MenuBar menuBar = new MenuBar();
 
 	/* MenuBar's menus */
-	Menu fileMenu = new Menu("文件");
-	Menu optionMenu = new Menu("设置");
-	Menu speedHackMenu = new Menu("速度"); 
-	Menu compatSettingsMenu = new Menu("兼容"); 
-	Menu debugMenu = new Menu("调试");
+	final Menu fileMenu = new Menu("檔案");
+	final Menu optionMenu = new Menu("設定");
+	final Menu speedHackMenu = new Menu("速度"); 
+	final Menu compatSettingsMenu = new Menu("兼容"); 
+	final Menu debugMenu = new Menu("偵錯");
 
 	/* Sub menus (for now, all of them are located in "Settings") */
 	final Menu fpsCap = new Menu("FPS 限制");
-	final Menu showFPS = new Menu("FPS 限制");
-	final Menu phoneType = new Menu("键值布局");
-	final Menu backlightColor = new Menu("背光颜色");
+	final Menu unlockFPSHack = new Menu("FPS 優化");
+	final Menu showFPS = new Menu("FPS 顯示");
+	final Menu phoneType = new Menu("鍵值佈局");
+	final Menu backlightColor = new Menu("背光顔色");
+	final Menu fontOffset = new Menu("字體大小");
 
 	/* Dialogs for resolution changes, restart notifications, MemStats and info about FreeJ2ME */
 	final Dialog[] awtDialogs = 
@@ -96,17 +97,20 @@ public final class AWTGUI
 	
 	final Button[] awtButtons = 
 	{
-		new Button("关闭"),
-		new Button("应用"),
+		new Button("關閉"),
+		new Button("應用"),
 		new Button("返回"),
-		new Button("关闭 FreeJ2ME"),
-		new Button("稍后重启"),
+		new Button("關閉 FreeJ2ME"),
+		new Button("稍後重啟"),
 		new Button("保存映射")
 	};
 	
 
-	/* Log Level menu */
+	/* Log Level submenu */
 	Menu logLevel = new Menu("Log Level");
+
+	/* M3G Debug submenu */
+	Menu M3GDebug = new Menu("M3G 偵錯");
 
 	/* Input mapping keys */
 	final Button inputButtons[] = new Button[] 
@@ -139,7 +143,7 @@ public final class AWTGUI
 		KeyEvent.VK_NUMPAD7, KeyEvent.VK_NUMPAD8, KeyEvent.VK_NUMPAD9, 
 		KeyEvent.VK_NUMPAD4, KeyEvent.VK_NUMPAD5, KeyEvent.VK_NUMPAD6, 
 		KeyEvent.VK_NUMPAD1, KeyEvent.VK_NUMPAD2, KeyEvent.VK_NUMPAD3, 
-		KeyEvent.VK_E, KeyEvent.VK_NUMPAD0, KeyEvent.VK_R
+		KeyEvent.VK_E, KeyEvent.VK_NUMPAD0, KeyEvent.VK_R, KeyEvent.VK_SPACE
 	};
 
 	private final int newInputKeycodes[] = Arrays.copyOf(inputKeycodes, inputKeycodes.length);
@@ -154,18 +158,23 @@ public final class AWTGUI
 	/* Items for each of the bar's menus */
 	final UIListener menuItemListener = new UIListener();
 
-	final MenuItem aboutMenuItem = new MenuItem("关于 FreeJ2ME");
-	final MenuItem resChangeMenuItem = new MenuItem("分辨率设定");
+	final MenuItem aboutMenuItem = new MenuItem("關於 FreeJ2ME");
+	final MenuItem resChangeMenuItem = new MenuItem("解析度設定");
 
-	final MenuItem openMenuItem = new MenuItem("打开 JAR/JAD 文件");
-	final MenuItem closeMenuItem = new MenuItem("关闭 Jar (Stub)");
-	final MenuItem scrShot = new MenuItem("屏幕截图");
-	final MenuItem exitMenuItem = new MenuItem("离开 FreeJ2ME");
-	final MenuItem mapInputs = new MenuItem("键值映射");
+	final MenuItem openMenuItem = new MenuItem("打開 JAR / JAD / KJX");
+	final MenuItem closeMenuItem = new MenuItem("關閉 Jar (Stub)");
+	final MenuItem scrShot = new MenuItem("擷取熒幕 (Ctrl+C)");
+	final MenuItem pauseRes = new MenuItem("暫停 / 恢復 (Ctrl+X)");
+	final MenuItem exitMenuItem = new MenuItem("離開 FreeJ2ME");
+	final MenuItem mapInputs = new MenuItem("鍵值映射");
 
-	final CheckboxMenuItem enableAudio = new CheckboxMenuItem("音讯启用", false);
-	final CheckboxMenuItem enableRotation = new CheckboxMenuItem("旋转屏幕", false);
-	final CheckboxMenuItem useCustomMidi = new CheckboxMenuItem("自订 MIDI 音源", false);
+	final MenuItem showPlayer = new MenuItem("J2ME Media Player");
+
+	final CheckboxMenuItem fullScreen = new CheckboxMenuItem("全螢幕模式 (Ctrl+F)");
+	final CheckboxMenuItem enableAudio = new CheckboxMenuItem("啟用音訊", false);
+	final CheckboxMenuItem enableRotation = new CheckboxMenuItem("熒幕旋轉", false);
+	final CheckboxMenuItem useCustomMidi = new CheckboxMenuItem("自訂 MIDI 音源", false);
+	final CheckboxMenuItem useCustomFont = new CheckboxMenuItem("自訂文本字體", false);
 
 	final CheckboxMenuItem[] layoutOptions = 
 	{
@@ -183,33 +192,58 @@ public final class AWTGUI
 	
 	final CheckboxMenuItem[] backlightOptions = 
 	{
-		new CheckboxMenuItem("白/禁用", false),
-		new CheckboxMenuItem("绿", true),
-		new CheckboxMenuItem("青", false),
-		new CheckboxMenuItem("橘", false),
-		new CheckboxMenuItem("紫", false),
-		new CheckboxMenuItem("红", false)
+		new CheckboxMenuItem("White/Disabled", false),
+		new CheckboxMenuItem("Green", true),
+		new CheckboxMenuItem("Cyan", false),
+		new CheckboxMenuItem("Orange", false),
+		new CheckboxMenuItem("Violet", false),
+		new CheckboxMenuItem("Red", false)
 	};
 	final String[] backlightValues = {"Disabled", "Green", "Cyan", "Orange", "Violet", "Red"};
 
 	final CheckboxMenuItem[] fpsOptions = 
 	{
-		new CheckboxMenuItem("无限制", true),
+		new CheckboxMenuItem("無限制", true),
 		new CheckboxMenuItem("60 FPS", false),
+		new CheckboxMenuItem("40 FPS", false),
 		new CheckboxMenuItem("30 FPS", false),
+		new CheckboxMenuItem("20 FPS", false),
 		new CheckboxMenuItem("15 FPS", false)
 	};
-	final String[] fpsValues = {"0", "60", "30", "15"};
+	final String[] fpsValues = {"0", "60", "40", "30", "20", "15"};
+
+	final CheckboxMenuItem[] fpsHackOptions = 
+	{
+		new CheckboxMenuItem("禁用", true),
+		new CheckboxMenuItem("Safe", false),
+		new CheckboxMenuItem("Extended", false),
+		new CheckboxMenuItem("Aggressive", false)
+	};
+	final String[] fpsHackValues = {"Disabled", "Safe", "Extended", "Aggressive"};
 
 	final CheckboxMenuItem[] fpsCounterPos = 
 	{
-		new CheckboxMenuItem("隐藏", true),
+		new CheckboxMenuItem("關閉", true),
 		new CheckboxMenuItem("左上", false),
 		new CheckboxMenuItem("右上", false),
 		new CheckboxMenuItem("左下", false),
 		new CheckboxMenuItem("右下", false)
 	};
 	final String[] showFPSValues = {"Off", "TopLeft", "TopRight", "BottomLeft", "BottomRight"};
+
+	final CheckboxMenuItem[] fontOffsets = 
+	{
+		new CheckboxMenuItem("-4pt", false),
+		new CheckboxMenuItem("-3pt", false),
+		new CheckboxMenuItem("-2pt", false),
+		new CheckboxMenuItem("-1pt", false),
+		new CheckboxMenuItem(" 0pt (Default)", true),
+		new CheckboxMenuItem(" 1pt", false),
+		new CheckboxMenuItem(" 2pt", false),
+		new CheckboxMenuItem(" 3pt", false),
+		new CheckboxMenuItem(" 4pt", false)
+	};
+	final String[] fontOffsetValues = {"-4", "-3", "-2", "-1", "0", "1", "2", "3", "4"};
 
 	final CheckboxMenuItem[] logLevels = 
 	{
@@ -221,16 +255,21 @@ public final class AWTGUI
 	};
 
 	// Speedhacks
-	final CheckboxMenuItem noAlphaOnBlankImages = new CheckboxMenuItem("无 Alpha 空白图像");
+	final CheckboxMenuItem noAlphaOnBlankImages = new CheckboxMenuItem("無 Alpha 空白影像");
 	
 	// Compatibility settings
-	final CheckboxMenuItem NonFatalNullImages = new CheckboxMenuItem("不对 Null 图形抛出异常");
-	final CheckboxMenuItem doClipRectOnGfxReset = new CheckboxMenuItem("图形重置时使用 clipRect 替代 setClip");
+	final CheckboxMenuItem NonFatalNullImages = new CheckboxMenuItem("不對 Null 圖形抛出異常");
+	final CheckboxMenuItem doClipRectOnGfxReset = new CheckboxMenuItem("圖形重設時使用 clipRect 取代 setClip");
 
-	final CheckboxMenuItem dumpAudioData = new CheckboxMenuItem("Dump 音频流");
-	final CheckboxMenuItem dumpGraphicsData = new CheckboxMenuItem("Dump 图形物件");
-	final CheckboxMenuItem showMemoryUsage = new CheckboxMenuItem("显示虚拟内存使用情况");
-	 
+	final CheckboxMenuItem deleteTemporaryKJXFiles = new CheckboxMenuItem("清理 KJX 檔的臨時 JAR/JAD");
+	final CheckboxMenuItem dumpAudioData = new CheckboxMenuItem("Dump Audio Streams");
+	final CheckboxMenuItem dumpGraphicsData = new CheckboxMenuItem("Dump Graphics Objects");
+	final CheckboxMenuItem showMemoryUsage = new CheckboxMenuItem("顯示 VM 記憶體使用情況");
+	
+	// M3G Debugging
+	final CheckboxMenuItem M3GUntextured = new CheckboxMenuItem("僅渲染頂點顔色");
+	final CheckboxMenuItem M3GWireframe = new CheckboxMenuItem("渲染線框");
+
 
 	public AWTGUI(Config config)
 	{
@@ -273,8 +312,8 @@ public final class AWTGUI
 		awtDialogs[0].setSize(230, 175);
 		awtDialogs[0].setResizable(false);
 		awtDialogs[0].setLocationRelativeTo(main);
-		awtDialogs[0].add(new Label("在下拉列表中选择分辨率"));
-		awtDialogs[0].add(new Label("点击应用即可"));
+		awtDialogs[0].add(new Label("在下拉列表中選擇解析度"));
+		awtDialogs[0].add(new Label("點擊『應用』即可！"));
 		awtDialogs[0].add(resChoice);
 		awtDialogs[0].add(awtButtons[1]);
 		awtDialogs[0].add(awtButtons[2]);
@@ -295,9 +334,9 @@ public final class AWTGUI
 		awtDialogs[4].setSize(240, 320);
 		awtDialogs[4].setResizable(false);
 
-		awtDialogs[4].add(new Label("通过点击"));
-		awtDialogs[4].add(new Label("按键"));
-		awtDialogs[4].add(new Label("进行映射"));
+		awtDialogs[4].add(new Label("透過點擊"));
+		awtDialogs[4].add(new Label("按鍵"));
+		awtDialogs[4].add(new Label("進行映射"));
 
 		awtDialogs[4].add(new Label(""));
 		awtDialogs[4].add(awtButtons[5]);
@@ -349,13 +388,14 @@ public final class AWTGUI
 		awtDialogs[3].setUndecorated(true);
 		awtDialogs[3].setSize(230, 175);
 		awtDialogs[3].setLocationRelativeTo(main);
-		awtDialogs[3].add(new Label("该修改需重启 FreeJ2ME"));
+		awtDialogs[3].add(new Label("應用該設定需重啟"));
 		awtDialogs[3].add(awtButtons[3]);
 		awtDialogs[3].add(awtButtons[4]);
 		
 		openMenuItem.setActionCommand("Open");
 		closeMenuItem.setActionCommand("Close");
 		scrShot.setActionCommand("Screenshot");
+		pauseRes.setActionCommand("PauseResume");
 		exitMenuItem.setActionCommand("Exit");
 		aboutMenuItem.setActionCommand("AboutMenu");
 		resChangeMenuItem.setActionCommand("ChangeResolution");
@@ -366,10 +406,13 @@ public final class AWTGUI
 		awtButtons[4].setActionCommand("RestartLater");
 		mapInputs.setActionCommand("MapInputs");
 		awtButtons[5].setActionCommand("ApplyInputs");
+
+		showPlayer.setActionCommand("ShowPlayer");
 		
 		openMenuItem.addActionListener(menuItemListener);
 		closeMenuItem.addActionListener(menuItemListener);
 		scrShot.addActionListener(menuItemListener);
+		pauseRes.addActionListener(menuItemListener);
 		exitMenuItem.addActionListener(menuItemListener);
 		aboutMenuItem.addActionListener(menuItemListener);
 		resChangeMenuItem.addActionListener(menuItemListener);
@@ -380,6 +423,8 @@ public final class AWTGUI
 		awtButtons[4].addActionListener(menuItemListener);
 		mapInputs.addActionListener(menuItemListener);
 		awtButtons[5].addActionListener(menuItemListener);
+
+		showPlayer.addActionListener(menuItemListener);
 
 		addInputButtonListeners();
 
@@ -432,6 +477,15 @@ public final class AWTGUI
 
 	private void setActionListeners() 
 	{
+		fullScreen.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(hasLoadedFile()) { FreeJ2ME.app.toggleFullscreen(); }
+				else { fullScreen.setState(FreeJ2ME.isFullscreen); }
+			}
+		});
+
 		enableAudio.addItemListener(new ItemListener() 
 		{
 			public void itemStateChanged(ItemEvent e) 
@@ -456,6 +510,18 @@ public final class AWTGUI
 			{
 				if(useCustomMidi.getState()){ config.updateSoundfont("Custom"); hasPendingChange = true; }
 				else{ config.updateSoundfont("Default"); hasPendingChange = true; }
+
+				awtDialogs[3].setLocationRelativeTo(main);
+				awtDialogs[3].setVisible(true);
+			}
+		});
+
+		useCustomFont.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(useCustomFont.getState()){ config.updateTextFont("Custom"); hasPendingChange = true; }
+				else{ config.updateTextFont("Default"); hasPendingChange = true; }
 
 				awtDialogs[3].setLocationRelativeTo(main);
 				awtDialogs[3].setVisible(true);
@@ -565,6 +631,27 @@ public final class AWTGUI
 			});
 		}
 
+		for(byte i = 0; i < fpsHackOptions.length; i++) 
+		{
+			final byte index = i;
+			fpsHackOptions[i].addItemListener(new ItemListener() 
+			{
+				public void itemStateChanged(ItemEvent e) 
+				{
+					if(!fpsHackOptions[index].getState()){ fpsHackOptions[index].setState(true); }
+					if(fpsHackOptions[index].getState())
+					{ 
+						config.updateFPSHack(fpsHackValues[index]);
+						for(int j = 0; j < fpsHackOptions.length; j++) 
+						{
+							if(j != index) { fpsHackOptions[j].setState(false); }
+						}
+						hasPendingChange = true;
+					}
+				}
+			});
+		}
+
 		for(byte i = 0; i < fpsCounterPos.length; i++) 
 		{
 			final byte index = i;
@@ -579,6 +666,26 @@ public final class AWTGUI
 						for(int j = 0; j < fpsCounterPos.length; j++) 
 						{
 							if(j != index) { fpsCounterPos[j].setState(false); }
+						}
+					}
+				}
+			});
+		}
+
+		for(byte i = 0; i < fontOffsets.length; i++) 
+		{
+			final byte index = i;
+			fontOffsets[i].addItemListener(new ItemListener() 
+			{
+				public void itemStateChanged(ItemEvent e) 
+				{
+					if(!fontOffsets[index].getState()){ fontOffsets[index].setState(true); }
+					if(fontOffsets[index].getState())
+					{ 
+						config.updateFontOffset(fontOffsetValues[index]);
+						for(int j = 0; j < fontOffsets.length; j++) 
+						{
+							if(j != index) { fontOffsets[j].setState(false); }
 						}
 					}
 				}
@@ -606,6 +713,16 @@ public final class AWTGUI
 			});
 		}
 		
+		deleteTemporaryKJXFiles.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(deleteTemporaryKJXFiles.getState()){ Mobile.deleteTemporaryKJXFiles = true; }
+				else{ Mobile.deleteTemporaryKJXFiles = false; }
+			}
+		});
+		
+
 		dumpAudioData.addItemListener(new ItemListener() 
 		{
 			public void itemStateChanged(ItemEvent e) 
@@ -633,6 +750,24 @@ public final class AWTGUI
 				else{ awtDialogs[2].setVisible(false); }
 			}
 		});
+
+		M3GUntextured.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(M3GUntextured.getState()){ Mobile.M3GRenderUntexturedPolygons = true; }
+				else{ Mobile.M3GRenderUntexturedPolygons = false; }
+			}
+		});
+
+		M3GWireframe.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(M3GWireframe.getState()){ Mobile.M3GRenderWireframe = true; }
+				else{ Mobile.M3GRenderWireframe = false; }
+			}
+		});
 	}
 
 	private void buildMenuBar() 
@@ -642,26 +777,37 @@ public final class AWTGUI
 		fileMenu.add(closeMenuItem);
 		fileMenu.addSeparator();
 		fileMenu.add(scrShot);
+		fileMenu.add(pauseRes);
 		fileMenu.addSeparator();
 		fileMenu.add(aboutMenuItem);
 		fileMenu.add(exitMenuItem);
 
+		optionMenu.add(fullScreen);
 		optionMenu.add(enableAudio);
 		optionMenu.add(enableRotation);
 		optionMenu.add(useCustomMidi);
+		optionMenu.add(useCustomFont);
 		optionMenu.add(resChangeMenuItem);
 		optionMenu.add(showFPS);
 		optionMenu.add(phoneType);
 		optionMenu.add(backlightColor);
 		optionMenu.add(fpsCap);
+		optionMenu.add(unlockFPSHack);
+		optionMenu.add(fontOffset);
 		optionMenu.add(mapInputs);
 		optionMenu.add(speedHackMenu);
 		optionMenu.add(compatSettingsMenu);
 
+		debugMenu.add(showPlayer);
+		debugMenu.addSeparator();
+		debugMenu.add(deleteTemporaryKJXFiles);
 		debugMenu.add(dumpAudioData);
 		debugMenu.add(dumpGraphicsData);
 		debugMenu.add(showMemoryUsage);
 		debugMenu.add(logLevel);
+		debugMenu.add(M3GDebug);
+		
+		deleteTemporaryKJXFiles.setState(true);
 
 		for(int i = 0; i < logLevels.length; i++) { logLevel.add(logLevels[i]); }
 		logLevels[0].setState(false);
@@ -670,11 +816,16 @@ public final class AWTGUI
 		logLevels[3].setState(false);
 		logLevels[4].setState(false);
 
+		M3GDebug.add(M3GUntextured);
+		M3GDebug.add(M3GWireframe);
+
 		for(int i = 0; i < config.supportedResolutions.length; i++) { resChoice.add(config.supportedResolutions[i]); }
 		for(int i = 0; i < layoutOptions.length; i++) { phoneType.add(layoutOptions[i]); }
 		for(int i = 0; i < backlightOptions.length; i++) { backlightColor.add(backlightOptions[i]); }
 		for(int i = 0; i < fpsOptions.length; i++) { fpsCap.add(fpsOptions[i]); }
+		for(int i = 0; i < fpsHackOptions.length; i++) { unlockFPSHack.add(fpsHackOptions[i]); }
 		for(int i = 0; i < fpsCounterPos.length; i++) { showFPS.add(fpsCounterPos[i]); }
+		for(int i = 0; i < fontOffsets.length; i++) { fontOffset.add(fontOffsets[i]); }
 
 		speedHackMenu.add(noAlphaOnBlankImages);
 
@@ -689,11 +840,17 @@ public final class AWTGUI
 
 	public void updateOptions() 
 	{
+			fullScreen.setState(FreeJ2ME.isFullscreen);
 			enableAudio.setState(config.settings.get("sound").equals("on"));
 			enableRotation.setState(config.settings.get("rotate").equals("on"));
 			useCustomMidi.setState(config.settings.get("soundfont").equals("Custom"));
+			useCustomFont.setState(config.settings.get("textfont").equals("Custom"));
 
 			for(int i = 0; i < fpsOptions.length; i++) { fpsOptions[i].setState(config.settings.get("fps").equals(fpsValues[i])); }
+
+			for(int i = 0; i < fpsHackOptions.length; i++) { fpsHackOptions[i].setState(config.settings.get("fpshack").equals(fpsHackValues[i])); }
+
+			for(int i = 0; i < fontOffsets.length; i++) { fontOffsets[i].setState(config.settings.get("fontoffset").equals(fontOffsetValues[i])); }
 
 			for(int i = 0; i < layoutOptions.length; i++) 
 			{
@@ -732,12 +889,12 @@ public final class AWTGUI
 
 			if(a.getActionCommand() == "Open") 
 			{
-				FileDialog filePicker = new FileDialog(main, "Open JAR/JAD File", FileDialog.LOAD);
+				FileDialog filePicker = new FileDialog(main, "Open JAR / JAD / KJX File", FileDialog.LOAD);
 				String filename;
 				filePicker.setFilenameFilter(new FilenameFilter()
 				{
 					public boolean accept(File dir, String name) 
-					{ return name.toLowerCase().endsWith(".jar") || name.toLowerCase().endsWith(".jad"); }
+					{ return name.toLowerCase().endsWith(".jar") || name.toLowerCase().endsWith(".jad") || name.toLowerCase().endsWith(".kjx"); }
 				});
 				filePicker.setVisible(true);
 
@@ -765,6 +922,8 @@ public final class AWTGUI
 			}
 
 			else if(a.getActionCommand() == "Screenshot") { ScreenShot.takeScreenshot(false); }
+
+			else if(a.getActionCommand() == "PauseResume") { MobilePlatform.pauseResumeApp(); }
 
 			else if(a.getActionCommand() == "Exit") { System.exit(0); }
 
@@ -801,6 +960,12 @@ public final class AWTGUI
 				awtDialogs[4].setVisible(false); 
 			}
 
+			else if(a.getActionCommand() == "ShowPlayer") 
+			{ 
+				// Create FreeJ2MEPlayer Dialog instance and show it;
+				FreeJ2MEPlayer playerDialog = new FreeJ2MEPlayer(main);
+				playerDialog.setVisible(true);
+			}
 		}
 	}
 
