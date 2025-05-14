@@ -535,6 +535,20 @@ struct retro_core_option_v2_definition core_options[] =
         "off"
     },
     {
+        "freej2me_compatignoregccalls",
+        "Compatibility Settings > Ignore garbage collection calls",
+        "忽略垃圾回收呼叫",
+        "預設情況下，J2ME 允許應用程式主動呼叫垃圾回收。啟用此選項時，可改善濫用該功能的軟體（如《Bomberman 08》在記憶體使用較高時會導致 CPU 使用率暴增與畫面卡頓）。若應用如《Gradius Neo》般使用垃圾回收來實現同步機制，則啟用此選項時可能造成異常。",
+        "預設情況下，J2ME 允許應用程式主動呼叫垃圾回收。啟用此選項時，可改善濫用該功能的軟體（如《Bomberman 08》在記憶體使用較高時會導致 CPU 使用率暴增與畫面卡頓）。若應用如《Gradius Neo》般使用垃圾回收來實現同步機制，則啟用此選項時可能造成異常。",
+        "compat_settings",
+        {
+            { "on",  "啟用"            },
+            { "off", "禁用" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
         "freej2me_m3grenderuntextured",
         "M3G Debug Settings > Draw only vertex colors",
         "僅渲染頂點顔色",
@@ -919,6 +933,17 @@ struct retro_core_option_definition core_options_v1 [] =
         "off"
     },
     {
+        "freej2me_compatignoregccalls",
+        "Ignore garbage collection calls",
+        "By default, J2ME allows applications to call for garbage collection explicitly. However, some apps like Bomberman 08 abuse this call to such a degree that cpu usage skyrockets and stutterings become commonplace if memory usage is high enough, enabling this can help those cases, but will cause issues in apps that use this to help synchronization like Gradius Neo, so only enable it if you really need it, or think this might help your cpu in a specific app.",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
         "freej2me_m3grenderuntextured",
         "Draw only vertex colors",
         "Enabling this makes M3G render only vertex colored, untextured polygons. Useful for debugging blending and vertex coloring seams.",
@@ -1044,6 +1069,10 @@ static const struct retro_variable vars[] =
     { /* Do clipRect instead of setClip on gfx reset setting */
         "freej2me_compatcliprectongfxreset",
         "Do clipRect instead of setClip on gfx reset; off|on"
+    },
+    { /* Ignore garbage collection calls */
+        "freej2me_compatignoregccalls",
+        "Ignore garbage collection calls; off|on"
     },
     { /* M3G draw only vertex colors */
         "freej2me_m3grenderuntextured",
