@@ -922,9 +922,9 @@ struct retro_core_option_definition core_options_v1 [] =
         "off"
     },
     {
-        "freej2me_compatcliprectongfxreset",
-        "Do clipRect instead of setClip on gfx reset",
-        "Fantasy Zone's 128x128 version relies on a clipRect() call being issued whenever a fullscreen draw is made instead of setClip(). So far, it seems to be the only jar in the compatibility list that needs this, and enabling it will break quite a few others.",
+        "freej2me_compattranstooriginongfxreset",
+        "Translate to origin on gfx reset",
+        "Some apps like Fantasy Zone's 128x128 version rely on the graphics object being translated to the origin before every draw, this compatibility setting helps with that, and any case where the drawn area keeps moving in any given direction for no reason.",
         {
             { "on",  "Enabled"            },
             { "off", "Disabled (Default)" },
@@ -1066,9 +1066,9 @@ static const struct retro_variable vars[] =
         "freej2me_compatnonfatalnullimages",
         "Don't throw Exception on null images; off|on"
     },
-    { /* Do clipRect instead of setClip on gfx reset setting */
-        "freej2me_compatcliprectongfxreset",
-        "Do clipRect instead of setClip on gfx reset; off|on"
+    { /* Translate to origin on gfx reset setting */
+        "freej2me_compattranstooriginongfxreset",
+        "Translate to origin on gfx reset; off|on"
     },
     { /* Ignore garbage collection calls */
         "freej2me_compatignoregccalls",
