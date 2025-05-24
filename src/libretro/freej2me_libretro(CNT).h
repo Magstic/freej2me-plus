@@ -165,9 +165,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_rotate",
         "System > Rotate Screen",
-        "Rotate Screen",
-        "Some games, especially ones that support touch controls, tend to expect the screen to be rotated. This option comes in handy on those cases.",
-        "Some games, especially ones that support touch controls, tend to expect the screen to be rotated. This option comes in handy on those cases.",
+        "熒幕旋轉",
+        "一些遊戲（特別是觸控遊戲）通常需要旋轉螢幕。",
+        "一些遊戲（特別是觸控遊戲）通常需要旋轉螢幕。",
         "system_settings",
         {
             { "off", "Disabled" },
