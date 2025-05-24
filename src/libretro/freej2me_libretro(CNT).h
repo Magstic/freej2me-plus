@@ -170,8 +170,8 @@ struct retro_core_option_v2_definition core_options[] =
         "一些遊戲（特別是觸控遊戲）通常需要旋轉螢幕。",
         "system_settings",
         {
-            { "off", "Disabled" },
-            { "on",  "Enabled"  },
+            { "on",  "啟用" },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
@@ -241,8 +241,8 @@ struct retro_core_option_v2_definition core_options[] =
         "一些遊戲的音訊尚未被編解碼器支持，該選項可模擬手機加載和播放音訊 / 音調的功能。若出現音訊未支援的情況，請嘗試停用核心的音訊。若遊戲無法運作或是開啟過久出現錯誤，請嘗試停用該選項。",
         "system_settings",
         {
-            { "on",  "啟用"  },
-            { "off", "禁用" },
+            { "on",  "On"  },
+            { "off", "Off" },
             { NULL, NULL },
         },
         "on"
@@ -318,7 +318,7 @@ struct retro_core_option_v2_definition core_options[] =
         "*偵錯用* 此選項允許核心將指定或更高等級的日誌記錄到『freej2me_system/FreeJ2ME.log』。",
         "advanced_settings",
         {
-            { "0",  "禁用"           },
+            { "0",  "Disable"           },
             { "1",  "Debug"             },
             { "2",  "Info"              },
             { "3",  "Warning"           },
@@ -484,7 +484,7 @@ struct retro_core_option_v2_definition core_options[] =
         "J2ME 規定所有影像都必須有 Alpha 通道。Free-J2ME 可以避免 Alpha 通道創造這些影像，從而為部分遊戲提供優良的效能提升。",
         "speed_hacks",
         {
-            { "on",  "啟用"            },
+            { "on",  "啟用" },
             { "off", "禁用" },
             { NULL, NULL },
         },
@@ -514,35 +514,35 @@ struct retro_core_option_v2_definition core_options[] =
         "根據 J2ME 規範，處理或載入 Null 影像時必須拋出 NullPointerException。如果遊戲沒有異常處理機制（少數情況），那麼遊戲將會卡死。如：無異常處理機制的《House M.D.》啟用此選項即可正常運作。不過，這可能會使進行異常處理機制的遊戲出現錯誤。",
         "compat_settings",
         {
-            { "on",  "啟用"            },
+            { "on",  "啟用" },
             { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
     },
     {
-        "freej2me_compatcliprectongfxreset",
-        "Compatibility Settings > Do clipRect instead of setClip on gfx reset",
-        "圖形重設時使用 clipRect 取代 setClip",
-        "《Fantasy Zone》的 128x128 版本依賴圖​​形重設時呼叫 clipRect() 而非 setClip()。這是目前相容性清單中唯一需要該特殊設定的遊戲，啟用該選項可能導致其他遊戲渲染異常。",
-        "《Fantasy Zone》的 128x128 版本依賴圖​​形重設時呼叫 clipRect() 而非 setClip()。這是目前相容性清單中唯一需要該特殊設定的遊戲，啟用該選項可能導致其他遊戲渲染異常。",
+        "freej2me_compattranstooriginongfxreset",
+        "Compatibility Settings > Translate to origin on gfx reset",
+        "圖像重設時平移至原點",
+        "《Fantasy Zone》的『128x128』版本 依賴圖形物件在每次繪圖前平移至原點。啟用該選項可改善這類情況，並解決繪製區域莫名持續移動的問題。",
+        "《Fantasy Zone》的『128x128』版本 依賴圖形物件在每次繪圖前平移至原點。啟用該選項可改善這類情況，並解決繪製區域莫名持續移動的問題。",
         "compat_settings",
         {
-            { "on",  "啟用"            },
+            { "on",  "啟用" },
             { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
     },
     {
-        "freej2me_compatignoregccalls",
-        "Compatibility Settings > Ignore garbage collection calls",
-        "忽略垃圾回收呼叫",
-        "預設情況下，J2ME 允許應用程式主動呼叫垃圾回收。啟用此選項時，可改善濫用該功能的軟體（如《Bomberman 08》在記憶體使用較高時會導致 CPU 使用率暴增與畫面卡頓）。若應用如《Gradius Neo》般使用垃圾回收來實現同步機制，則啟用此選項時可能造成異常。",
-        "預設情況下，J2ME 允許應用程式主動呼叫垃圾回收。啟用此選項時，可改善濫用該功能的軟體（如《Bomberman 08》在記憶體使用較高時會導致 CPU 使用率暴增與畫面卡頓）。若應用如《Gradius Neo》般使用垃圾回收來實現同步機制，則啟用此選項時可能造成異常。",
+        "freej2me_compatimmediaterepaintcalls",
+        "Compatibility Settings > Process canvas repaint calls immediately",
+        "Process canvas repaint calls immediately",
+        "預設情況下，J2ME 會將 Canvas 的重繪呼叫排入佇列，應用需呼叫『serviceRepaints()』或使用『Serial calls』來同步繪圖。某些應用誤用重繪佇列，可能致其死鎖，繼而凍結。該選項可用於解決應用無故凍結的情況。",
+        "By default, J2ME expects canvas repaints to be queued up, and applications can either request serviceRepaints() or use serial calls to synchronize rendering. However, some apps might cause deadlocks by improper usage of the repaint queue and in turn, freeze. This setting may help cases where an app is freezing for no apparent reason.",
         "compat_settings",
         {
-            { "on",  "啟用"            },
+            { "on",  "啟用" },
             { "off", "禁用" },
             { NULL, NULL },
         },
@@ -556,7 +556,7 @@ struct retro_core_option_v2_definition core_options[] =
         "*偵錯用* 使 M3G 僅渲染頂點顏色、無紋理的多邊形。對於偵錯 Blending 和 Vertex coloring seams 很有幫助。",
         "m3g_debug",
         {
-            { "on",  "啟用"            },
+            { "on",  "啟用" },
             { "off", "禁用" },
             { NULL, NULL },
         },
@@ -570,7 +570,7 @@ struct retro_core_option_v2_definition core_options[] =
         "*偵錯用* 使 M3G 僅渲染線框。對於偵錯 Triangle clipping 和 Culling 很有幫助。",
         "m3g_debug",
         {
-            { "on",  "啟用"            },
+            { "on",  "啟用" },
             { "off", "禁用" },
             { NULL, NULL },
         },
@@ -933,9 +933,9 @@ struct retro_core_option_definition core_options_v1 [] =
         "off"
     },
     {
-        "freej2me_compatignoregccalls",
-        "Ignore garbage collection calls",
-        "By default, J2ME allows applications to call for garbage collection explicitly. However, some apps like Bomberman 08 abuse this call to such a degree that cpu usage skyrockets and stutterings become commonplace if memory usage is high enough, enabling this can help those cases, but will cause issues in apps that use this to help synchronization like Gradius Neo, so only enable it if you really need it, or think this might help your cpu in a specific app.",
+        "freej2me_compatimmediaterepaintcalls",
+        "Process canvas repaint calls immediately",
+        "By default, J2ME expects canvas repaints to be queued up, and applications can either request serviceRepaints() or use serial calls to synchronize rendering. However, some apps might cause deadlocks by improper usage of the repaint queue and in turn, freeze. This setting may help cases where an app is freezing for no apparent reason.",
         {
             { "on",  "Enabled"            },
             { "off", "Disabled (Default)" },
@@ -1070,9 +1070,9 @@ static const struct retro_variable vars[] =
         "freej2me_compattranstooriginongfxreset",
         "Translate to origin on gfx reset; off|on"
     },
-    { /* Ignore garbage collection calls */
-        "freej2me_compatignoregccalls",
-        "Ignore garbage collection calls; off|on"
+    { /* Process canvas repaint calls immediately */
+        "freej2me_compatimmediaterepaintcalls",
+        "Process canvas repaint calls immediately; off|on"
     },
     { /* M3G draw only vertex colors */
         "freej2me_m3grenderuntextured",
