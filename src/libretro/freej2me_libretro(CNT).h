@@ -524,8 +524,8 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_compattranstooriginongfxreset",
         "Compatibility Settings > Translate to origin on gfx reset",
         "圖像重設時平移至原點",
-        "《Fantasy Zone》的『128x128』版本 依賴圖形物件在每次繪圖前平移至原點。啟用該選項可改善這類情況，並解決繪製區域莫名持續移動的問題。",
-        "《Fantasy Zone》的『128x128』版本 依賴圖形物件在每次繪圖前平移至原點。啟用該選項可改善這類情況，並解決繪製區域莫名持續移動的問題。",
+        "《Fantasy Zone》的『128x128』版本 依賴圖形物件在每次繪圖前平移至原點。啟用該選項可改善這類情況，並解決繪製區域異常持續移動的問題。",
+        "《Fantasy Zone》的『128x128』版本 依賴圖形物件在每次繪圖前平移至原點。啟用該選項可改善這類情況，並解決繪製區域異常持續移動的問題。",
         "compat_settings",
         {
             { "on",  "啟用" },
@@ -537,9 +537,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_compatimmediaterepaintcalls",
         "Compatibility Settings > Process canvas repaint calls immediately",
-        "Process canvas repaint calls immediately",
-        "預設情況下，J2ME 會將 Canvas 的重繪呼叫排入佇列，應用需呼叫『serviceRepaints()』或使用『Serial calls』來同步繪圖。某些應用誤用重繪佇列，可能致其死鎖，繼而凍結。該選項可用於解決應用無故凍結的情況。",
-        "By default, J2ME expects canvas repaints to be queued up, and applications can either request serviceRepaints() or use serial calls to synchronize rendering. However, some apps might cause deadlocks by improper usage of the repaint queue and in turn, freeze. This setting may help cases where an app is freezing for no apparent reason.",
+        "即時處理畫布重繪呼叫",
+        "預設情況下，J2ME 會將 Canvas 的重繪呼叫加入佇列，應用需呼叫『serviceRepaints()』或使用『Serial calls』來同步繪製。某些應用程式誤用重繪佇列，可能導致死鎖而造成凍結。該選項可用於解決應用程式無故凍結的問題。",
+        "預設情況下，J2ME 會將 Canvas 的重繪呼叫加入佇列，應用需呼叫『serviceRepaints()』或使用『Serial calls』來同步繪製。某些應用程式誤用重繪佇列，可能導致死鎖而造成凍結。該選項可用於解決應用程式無故凍結的問題。",
         "compat_settings",
         {
             { "on",  "啟用" },
