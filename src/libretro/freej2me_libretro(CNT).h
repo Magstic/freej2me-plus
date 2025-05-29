@@ -192,7 +192,7 @@ struct retro_core_option_v2_definition core_options[] =
             { "Nokia Full Keyboard", NULL },
             { "Sagem",               NULL },
             { "Siemens",             NULL },
-            { "Siemens Old",         NULL },
+            { "Sharp",               NULL },
             { NULL, NULL },
         },
         "Default"
@@ -241,8 +241,8 @@ struct retro_core_option_v2_definition core_options[] =
         "一些遊戲的音訊尚未被編解碼器支持，該選項可模擬手機加載和播放音訊 / 音調的功能。若出現音訊未支援的情況，請嘗試停用核心的音訊。若遊戲無法運作或是開啟過久出現錯誤，請嘗試停用該選項。",
         "system_settings",
         {
-            { "on",  "On"  },
-            { "off", "Off" },
+            { "on",  "啟用" },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "on"
@@ -524,8 +524,8 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_compattranstooriginongfxreset",
         "Compatibility Settings > Translate to origin on gfx reset",
         "圖像重設時平移至原點",
-        "《Fantasy Zone》的『128x128』版本 依賴圖形物件在每次繪圖前平移至原點。啟用該選項可改善這類情況，並解決繪製區域異常持續移動的問題。",
-        "《Fantasy Zone》的『128x128』版本 依賴圖形物件在每次繪圖前平移至原點。啟用該選項可改善這類情況，並解決繪製區域異常持續移動的問題。",
+        "《Fantasy Zone》的『128x128』版本 依賴圖形物件在每次繪圖前平移至原點。啟用該選項可改善這類情況，並解決繪製區域莫名持續移動的問題。",
+        "《Fantasy Zone》的『128x128』版本 依賴圖形物件在每次繪圖前平移至原點。啟用該選項可改善這類情況，並解決繪製區域莫名持續移動的問題。",
         "compat_settings",
         {
             { "on",  "啟用" },
@@ -653,7 +653,7 @@ struct retro_core_option_definition core_options_v1 [] =
             { "Nokia Full Keyboard", NULL },
             { "Sagem",               NULL },
             { "Siemens",             NULL },
-            { "Siemens Old",         NULL },
+            { "Sharp",               NULL },
             { NULL, NULL },
         },
         "Default"
@@ -984,7 +984,7 @@ static const struct retro_variable vars[] =
     },
     { /* Phone Control Type */
         "freej2me_phone",
-        "Phone Key Layout; Default|LG|Motorola/SoftBank|Motorola Triplets|Motorola V8|Nokia Full Keyboard|Sagem|Siemens|Siemens Old" 
+        "Phone Key Layout; Default|LG|Motorola/SoftBank|Motorola Triplets|Motorola V8|Nokia Full Keyboard|Sagem|Siemens|Sharp" 
     },
     { /* LCD Backlight Color */
         "freej2me_backlightcolor",
