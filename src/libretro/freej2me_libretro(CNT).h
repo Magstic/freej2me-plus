@@ -26,8 +26,15 @@
 /* Used as a limit to the string of core option updates to be sent to the Java app */
 #define PIPE_MAX_LEN 255
 
-
+// The max amount of phone keys currently supported (might increase since KDDI and SKT/SK-VM phones tend to have more)
 #define PHONE_KEYS 19
+
+static const char *supported_encodings[] = 
+{
+    "-Dfile.encoding=UTF-8",
+    "-Dfile.encoding=ISO_8859_1",
+    "-Dfile.encoding=Shift-JIS",
+};
 
 /* Input mapping variables and descriptions */
 static const struct retro_controller_description port_1[] =
@@ -225,10 +232,16 @@ struct retro_core_option_v2_definition core_options[] =
         {
             { "Auto", "Auto" },
             { "60",   "60 FPS"   },
+            { "55",   "55 FPS"   },
+            { "50",   "50 FPS"   },
+            { "45",   "45 FPS"   },
             { "40",   "40 FPS"   },
+            { "35",   "35 FPS"   },
             { "30",   "30 FPS"   },
+            { "25",   "25 FPS"   },
             { "20",   "20 FPS"   },
             { "15",   "15 FPS"   },
+            { "10",   "10 FPS"   },
             { NULL, NULL },
         },
         "Auto"
@@ -680,10 +693,16 @@ struct retro_core_option_definition core_options_v1 [] =
         {
             { "Auto", "Disabled" },
             { "60",   "60 FPS"   },
+            { "55",   "55 FPS"   },
+            { "50",   "50 FPS"   },
+            { "45",   "45 FPS"   },
             { "40",   "40 FPS"   },
+            { "35",   "35 FPS"   },
             { "30",   "30 FPS"   },
+            { "25",   "25 FPS"   },
             { "20",   "20 FPS"   },
             { "15",   "15 FPS"   },
+            { "10",   "10 FPS"   },
             { NULL, NULL },
         },
         "Auto"
@@ -992,7 +1011,7 @@ static const struct retro_variable vars[] =
     },
     { /* Game FPS limit */
         "freej2me_fps",
-        "Game FPS Limit; Auto|60|40|30|20|15" 
+        "Game FPS Limit; Auto|60|55|50|45|40|35|30|25|20|15|10" 
     },
     { /* Virtual Phone Sound */
         "freej2me_sound",
