@@ -3,115 +3,136 @@
 ![Java CI](https://github.com/TASEmulators/freej2me-plus/actions/workflows/ant.yml/badge.svg)
 ![Libretro Cores](https://github.com/TASEmulators/freej2me-plus/actions/workflows/libretro.yml/badge.svg)
 
-**English** | [简体中文](https://github.com/Magstic/freej2me-plus_CN/blob/devel/README_CNS.md) | [繁體中文](https://github.com/Magstic/freej2me-plus_CN/blob/devel/README_CNT.md)
+**繁體中文** | [简体中文](README_CNS.md) | [English](README_EN.md)
 
-This fork now mainly maintains the Traditional Chinese translation.
+J2ME 模擬器，自帶 Libretro、AWT 以及 SDL2 前端.
 
-Please download the Code from [upstream](https://github.com/TASEmulators/freej2me-plus) first, and then use the Chinese files of this branch to overwrite.
+該 Fork 目前主要維護 RetroArch 的簡體中文和繁體中文翻譯，以及 AWT 的簡體中文翻譯。
 
-Original authors :
+請先從 [upstream](https://github.com/TASEmulators/freej2me-plus) 下載 Code，然後使用該處的中文檔案進行覆蓋並編譯。
+
+專案原作者：
 - David Richardson [Recompile@retropie]
 - Saket Dandawate  [Hex@retropie]
 
 ---
 
-## Controls
+## 控制說明
 
-* `Q` and `W` for left and right softkeys.
-* Arrow keys for nav, unless phone is set to "Standard", when arrow keys become 2, 4, 6, and 8.
-* Numbers work as expected, the number pad is inverted (123 swap with 789, like a phone)
-* `E` and `R` are alternatives to `*` and `#`.
-* Enter functions as the Fire key or `5` on "Standard" mode
-* ESC brings up the settings menu
-* In the AWT frontend (freej2me.jar) `Ctrl+C` takes a screenshot and `+`/`-` can be used to control the window scaling factor
+* `Q` `W` 鍵分別對應左右軟鍵 (Softkey)。
+* `方向鍵` 用於導航。若手機按鍵佈局設為 `Standard`，方向鍵則對應 `2`、`4`、`6`、`8`。
+* 數字鍵作用與預期相符，小鍵盤的數字是反向對應的（`1` `2` `3` 與 `7` `8` `9` 互相交換，如同手機的九宮格鍵盤）。
+* `E` `R` 鍵可作為 `*` `#` 鍵的替代。
+* `Enter` 鍵在 `Standard` 模式下作為「OK/Fire」或 `5` 鍵。
+* `ESC` 鍵可呼叫設定選單。在 RetroArch 中，此功能對應的按鍵為 `F1`。
+* 在 AWT 前端 (freej2me.jar) 中，`Ctrl+C` 可以擷取螢幕，`+` / `-` 可以控制視窗的縮放比例。
 
-Click [here](KEYMAP.md) for information about more keybindings
+點擊 [此處](KEYMAP.md) 查看更多按鍵綁定資訊。
 
-## Links
-Latest build:
+## 連結
 
-  Java: https://nightly.link/TASEmulators/freej2me-plus/workflows/ant/devel
-
-  Libretro cores: https://nightly.link/TASEmulators/freej2me-plus/workflows/libretro/devel
-
-  Screenshots: https://imgur.com/a/2vAeC
-
-  Compatibility List: https://tasemulators.github.io/freej2me-plus/
+[![Nightly Builds](https://img.shields.io/badge/Nightly_Builds-blue.svg)](https://github.com/TASEmulators/freej2me-plus/releases/tag/nightlies)
+[![Screenshots](https://img.shields.io/badge/Screenshots-green.svg)](https://imgur.com/a/2vAeC)
+[![Compatibility List](https://img.shields.io/badge/Compatibility%20List-orange.svg)](https://tasemulators.github.io/freej2me-plus/)
 
 ----
-**FreeJ2ME Jar Compilation:**
+## 編譯説明
 
->From the root directory, running the following commands:
+### 編譯 FreeJ2ME Jar
+
+#### Linux
+>
+> 為了完成編譯，您需要準備 [Java 8](https://docs.azul.com/core/install/debian) 以及 [Apache Ant](https://ant.dev.org.tw/manual/install.html)。
+>
+> 打開終端機，執行以下操作（`freej2me/`替換為專案的絕對根路徑）：
+>
 >```
 > > cd freej2me/
 > > ant
 >```
-> Will create three different jar files inside `build/`:
 >
-> `freej2me.jar` -> Standalone AWT jar executable, currently the main standalone flavor
-> 
-> `freej2me-lr.jar` -> Libretro executable (has to be placed on the frontend's `system/` folder, since it acts as a BIOS for the libretro core and runs J2ME jars)
+#### Windows
 >
->`freej2me-sdl.jar` -> Jar executable meant to be used in conjunction with SDL2 for libtas and joystick support, will likely become the de-facto standalone at some point
+> 為了完成編譯，您需要準備 [Java 8](https://www.java.com/zh-TW/download/) 以及 [Apache Ant](https://ant.dev.org.tw/manual/install.html)。
 >
->The Libretro jar file needs additional binaries to be compiled before use. Look at the additional steps below if you're going to use it.
-
-**Building the Libretro core**
-
-> **For linux:**
->To build the libretro core, open a terminal in freej2me's folder run the following commands from there:
+> 打開命令提示字元，執行以下操作（`freej2me/`替換為專案的絕對根路徑）：
+>
 >```
-># libretro core compilation
+> > cd freej2me/
+> > ant
+>```
+> 編譯結果將儲存在根目錄下的 build 資料夾中：
+>
+> `freej2me.jar` -> 獨立的 AWT 可執行檔，目前主要的獨立版本。
+> 
+> `freej2me-lr.jar` -> Libretro 核心依賴。它扮演著核心的「BIOS」並負責執行 J2ME jar 檔案，因此必須放置在 RetroArch 的 `system` 資料夾下。
+>
+>`freej2me-sdl.jar` -> SDL2 可執行檔，支援 libTAS 和 控制器。在未來可能會成為獨立版本。
+>
+> 如果您想在 Libretro 中使用 jar，您仍需按照以下步驟編譯核心檔案。
+
+### 編譯 Libretro 核心
+
+#### Linux
+> 
+> 請在該專案的根路徑下打開終端，並執行以下命令：
+>```
 > > cd src/libretro
 > > make
 >```
->This will build `freej2me_libretro.so` on `src/libretro/`, which is the core libretro will use to interface with `freej2me-lr.jar`.
+> 該命令將在 `src/libretro/` 下建立 `freej2me_libretro.so` 檔案，這需要和上文中編譯的 `freej2me-lr.jar` 協同使用。
 >
->Move it to your libretro frontend's `cores/` folder, with freej2me-lr.jar on `system/` and the frontend should be able to load j2me files afterwards.
+> 把 `freej2me_libretro.so` 放在 `cores/`，`freej2me-lr.jar` 放在 `system`—— 現在，RetroArch 中應該可以正常執行 J2ME 程式。
 >
->NOTE: The core DOES NOT WORK on containerized/sandboxed environments unless it can call a java runtime that also resides in the same sandbox or container, keep that in mind if you're running a libretro frontend through something like flatpak or snap for example.
+> NOTE: 核心無法在容器或是沙箱中工作，除非沙箱中的 Java 可以和核心響應！這是您使用 Flatpak 或者 Snap 時需要注意的。
 >
 
-> **For windows:**
->To build the libretro core for windows, first you'll need mingw, or MSYS2 64. **`This guide uses MSYS2`** as it's easier to set up and works closer to linux syntax.
+#### Windows
+> 
+> 若想在 Windows 上編譯核心，您需要使用 mingw 或 MSYS2 64 模擬 Linux 環境。
 >
-> Download MSYS2-x86_64 and install it on your computer. By default it will create a linux-like 'home' folder on C:\msys64\home\ and will put a folder with your username in there. This is where you have to move the freej2me folder to, so: `C:\msys64\home\USERNAME\freej2mefolder` for example.
+> 本指南使用 MSYS2 64，因為其設定簡單，且更接近 Linux 的語法。
 >
-> With the folder placed in there you can build the core, open the MSYS2 UCRT64 terminal from your pc's start menu, and run the following commands:
+> 安裝 [MSYS2-x86_64](https://www.msys2.org/)。常規情況下，您的所有編譯工作將在 `C:\msys64\home\UserName` 下完成。
+>
+> 不過在此之前，我們需要安裝編譯的依賴：
+>
 >```
-> # Installing 'mingw-w64' and 'make' on msys2
 > > pacman -S mingw-w64-ucrt-x86_64-gcc
 > > pacman -S make
+>```
+> 下載好專案后，將其解壓到上述路徑下，如 `C:\msys64\home\UserName\freej2me-plus（專案根路徑）`:
 >
-> # libretro core compilation
-> > cd freej2mefolder/src/libretro
+>```
+> > cd freej2me-plus/src/libretro
 > > make
 >```
->This will build `freej2me_libretro.dll` on `freej2mefolder/src/libretro/`, which is the core libretro will use to interface with `freej2me-lr.jar`.
+> 該命令將在 `src/libretro/` 下建立 `freej2me_libretro.dll` 檔案，這需要和上文中編譯的 `freej2me-lr.jar` 協同使用。
 >
->Move it to your libretro frontend's `cores/` folder, with freej2me-lr.jar on `system/` and the frontend should be able to load j2me files afterwards.
+> 把 `freej2me_libretro.dll` 放在 `cores/`，`freej2me-lr.jar` 放在 `system`—— 現在，RetroArch 中應該可以正常執行 J2ME 程式。
 >
->NOTE: The windows core has been tested on Windows 10 & 11 x64.
+>NOTE: Windows 核心已在 Windows 7、10 和 11 x64 上測試。
 
 ----
-**Usage (applies to AWT and SDL):**
 
-Launching the AWT frontend (freej2me.jar) will bring up a filepicker to select the MIDlet to run.
+## 使用方式（適用於 AWT 與 SDL 前端）
 
-Alternatively it can be launched from the command line: `java -jar freej2me.jar 'file:///path/to/midlet.jar' [width] [height] [scale]`
-Where _width_, _height_ (dimensions of the simulated screen) and _scale_ (initial scale factor of the window) are optional arguments.
+啟動 AWT 前端（freej2me.jar）時會顯示一個檔案選擇器，讓您選取要執行的 MIDlet。
 
-The SDL2 frontend (freej2me-sdl.jar) accepts the same command-line arguments format, aside from the _scale_ option which is unavailable. **NOTE**: This flavor requires libSDL 2.24.0-1 or newer in order to even launch. Make sure you have it installed in your system, or placed alongside the jar for it to load.
+或者，也可以透過命令列啟動：`java -jar freej2me.jar 'file:///path/to/midlet.jar' [fullscreen? 1=yes, 0=no] [width] [height] [scale] [keyLayout] [framerate]`
+除了檔案路徑外，所有參數都是可選的（甚至路徑也是可選的，此時 FreeJ2ME-Plus 會正常開啟）。
 
-When running under Microsoft Windows please do note paths require an additional `/` prefixed. For example, `C:\path\to\midlet.jar` should be passed as `file:///C:\path\to\midlet.jar`
+SDL2 前端（freej2me-sdl.jar）接受相同的命令列參數格式，但 **不支援** `scale`（縮放比例）選項。
 
-Special note for Windows: It is recommended to use Adoptium's [OpenJDK JRE](https://adoptium.net/temurin/releases/?os=windows&arch=x64&package=jre), instead of Oracle JRE. Late versions of Oracle introduced a bootstrapper javaw.exe, which will leave the actual javaw.exe process behind once the game is closed in RetroArch. Unfortunately, there is no good way for the core to determine which javaw is the _actual_ one, so you will either need to edit your system env to add the actual javaw.exe's path and delete the `javapath` one, or simply use Adoptium's JRE which does not have this issue.
+**注意**：此版本需要 libSDL2 2.24.0-1 或更高版本才能啟動。請確認您的系統已安裝該函式庫，或將其置於 jar 檔案的同層目錄下以便載入。
 
-FreeJ2ME keeps savedata and config at the working directory it is run from. Currently any resolution specified at the config file takes precedence over the values passed via command-line.
+在 Windows 系統執行時請注意：檔案路徑需額外添加一個 `/` 前綴。例如，`C:\path\to\midlet.jar` 應輸入為 `file:///C:\path\to\midlet.jar`
+
+FreeJ2ME 會將存檔資料與設定檔儲存於其執行時的工作目錄。目前，若設定檔中指定了解析度，將優先使用設定檔的數值，而非命令列傳入的參數。
 
 ---
 
-## Modules and external dependencies used:
+## 使用的模組和依賴:
 
 ### JLayer(MPEG Player): - LGPLv2.1 License, compatible with GPLv3
 
@@ -121,10 +142,10 @@ FreeJ2ME keeps savedata and config at the working directory it is run from. Curr
 
 ### Libretro's API: MIT License, compatible with GPLv3
 
-# How to contribute as a developer:
+# 協助我們改進:
   1) Open an Issue
   2) Try solving that issue
   3) Post on the Issue if you have a possible solution
   4) Submit a PR implementing the solution
 
-**If you are not a developer, just open an issue normally.**
+**如果您不是開發者，僅需正常提出 Issue 即可。**

@@ -26,8 +26,15 @@
 /* Used as a limit to the string of core option updates to be sent to the Java app */
 #define PIPE_MAX_LEN 255
 
-
+// The max amount of phone keys currently supported (might increase since KDDI and SKT/SK-VM phones tend to have more)
 #define PHONE_KEYS 19
+
+static const char *supported_encodings[] = 
+{
+    "-Dfile.encoding=UTF-8",
+    "-Dfile.encoding=ISO_8859_1",
+    "-Dfile.encoding=Shift-JIS",
+};
 
 /* Input mapping variables and descriptions */
 static const struct retro_controller_description port_1[] =
@@ -112,6 +119,11 @@ struct retro_core_option_v2_category option_categories[] =
         "兼容",
         "Free-J2ME 兼容相关设置。"
     },
+    {
+        "m3g_debug",
+        "M3G 调试",
+        "Free-J2ME M3G 渲染相关设置。"
+    },
 };
 
 /* Core config options if running on a frontend with support for config version 2 */
@@ -120,7 +132,7 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_resolution",
         "System > Phone Resolution (Core Restart may be required)",
-        "系统分辨率（需重启核心）",
+        "分辨率（需重启核心）",
         "J2ME 游戏的分辨率并非固定。若游戏窗口过小或被截断，请尝试调整该选项。若游戏在运行时更改分辨率出现错误，请重启游戏。",
         "J2ME 游戏的分辨率并非固定。若游戏窗口过小或被截断，请尝试调整该选项。若游戏在运行时更改分辨率出现错误，请重启游戏。",
         "system_settings",
@@ -146,6 +158,7 @@ struct retro_core_option_v2_definition core_options[] =
             { "400x240",   NULL },
             { "240x432",   NULL },
             { "240x480",   NULL },
+            { "360x360",   NULL },
             { "352x416",   NULL },
             { "360x640",   NULL },
             { "640x360",   NULL },
@@ -160,12 +173,12 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_rotate",
         "System > Rotate Screen",
         "屏幕旋转",
-        "一些游戏（特别是触屏游戏）通常需要旋转屏幕。",
-        "一些游戏（特别是触屏游戏）通常需要旋转屏幕。",
+        "一些游戏（特别是触控游戏）通常需要旋转屏幕。",
+        "一些游戏（特别是触控游戏）通常需要旋转屏幕。",
         "system_settings",
         {
+            { "on",  "启用" },
             { "off", "禁用" },
-            { "on",  "启用"  },
             { NULL, NULL },
         },
         "off"
@@ -173,7 +186,7 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_phone",
         "System > Phone Key Layout",
-        "键值布局",
+        "按键布局",
         "J2ME 平台存在不同的手机制造商，这导致游戏之间的按键布局也不尽相同。若游戏的按键响应非常奇怪，请尝试调整该选项。",
         "J2ME 平台存在不同的手机制造商，这导致游戏之间的按键布局也不尽相同。若游戏的按键响应非常奇怪，请尝试调整该选项。",
         "system_settings",
@@ -186,7 +199,7 @@ struct retro_core_option_v2_definition core_options[] =
             { "Nokia Full Keyboard", NULL },
             { "Sagem",               NULL },
             { "Siemens",             NULL },
-            { "Siemens Old",         NULL },
+            { "Sharp",               NULL },
             { NULL, NULL },
         },
         "Default"
@@ -195,8 +208,8 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_backlightcolor",
         "System > LCD Backlight Color",
         "LCD 背光",
-        "单色游戏适用。这些游戏会点亮 / 熄灭屏幕以产生额外效果（如『诺基亚 3410（绿）』、『诺基亚 6310i（青）』、『西门子 C55（橙）』）。若游戏为全彩或是您不喜欢背光效果，请禁用该选项。",
-        "单色游戏适用。这些游戏会点亮 / 熄灭屏幕以产生额外效果（如『诺基亚 3410（绿）』、『诺基亚 6310i（青）』、『西门子 C55（橙）』）。若游戏为全彩或是您不喜欢背光效果，请禁用该选项。",
+        "适用于单色游戏。这些游戏会点亮/熄灭屏幕以产生额外效果（如‘Nokia 3410 (绿)’、‘Nokia 6310i (青)’、‘西门子 C55 (橘)’）。若游戏为全彩或是您不喜欢背光效果，请停用该选项。",
+        "适用于单色游戏。这些游戏会点亮/熄灭屏幕以产生额外效果（如‘Nokia 3410 (绿)’、‘Nokia 6310i (青)’、‘西门子 C55 (橘)’）。若游戏为全彩或是您不喜欢背光效果，请停用该选项。",
         "system_settings",
         {
             { "Disabled", "禁用" },
@@ -213,14 +226,22 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_fps",
         "System > Game FPS Limit",
         "FPS 限制",
-        "J2ME 在处理同步时的自由度很大，一些 FPS 不设限的游戏在运行时帧率可能会爆炸。请根据实际情况酌情配置该选项。",
-        "J2ME 在处理同步时的自由度很大，一些 FPS 不设限的游戏在运行时帧率可能会爆炸。请根据实际情况酌情配置该选项。",
+        "J2ME 在处理同步时有很大的自由度，一些不设限 FPS 的游戏在运行时帧率可能会爆炸。请根据实际情况酌情配置该选项。",
+        "J2ME 在处理同步时有很大的自由度，一些不设限 FPS 的游戏在运行时帧率可能会爆炸。请根据实际情况酌情配置该选项。",
         "system_settings",
         {
             { "Auto", "自动" },
             { "60",   "60 FPS"   },
+            { "55",   "55 FPS"   },
+            { "50",   "50 FPS"   },
+            { "45",   "45 FPS"   },
+            { "40",   "40 FPS"   },
+            { "35",   "35 FPS"   },
             { "30",   "30 FPS"   },
+            { "25",   "25 FPS"   },
+            { "20",   "20 FPS"   },
             { "15",   "15 FPS"   },
+            { "10",   "10 FPS"   },
             { NULL, NULL },
         },
         "Auto"
@@ -229,11 +250,11 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_sound",
         "System > Virtual Phone Sound (Core Restart required)",
         "模拟手机声音",
-        "一些游戏的音频尚未被编解码器支持，该选项可模拟手机加载和播放音频 / 音调的功能。若出现音频未被支持的情况，请尝试禁用核心的音频。若游戏无法运行或是打开过久出现错误，请尝试禁用该选项。",
-        "一些游戏的音频尚未被编解码器支持，该选项可模拟手机加载和播放音频 / 音调的功能。若出现音频未被支持的情况，请尝试禁用核心的音频。若游戏无法运行或是打开过久出现错误，请尝试禁用该选项。",
+        "一些游戏的音频尚未被编解码器支持，该选项可模拟手机加载和播放音频/音调的功能。若出现音频未支持的情况，请尝试停用核心的音频。若游戏无法运作或是开启过久出现错误，请尝试停用该选项。",
+        "一些游戏的音频尚未被编解码器支持，该选项可模拟手机加载和播放音频/音调的功能。若出现音频未支持的情况，请尝试停用核心的音频。若游戏无法运作或是开启过久出现错误，请尝试停用该选项。",
         "system_settings",
         {
-            { "on",  "启用"  },
+            { "on",  "启用" },
             { "off", "禁用" },
             { NULL, NULL },
         },
@@ -242,23 +263,58 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_midifont",
         "System > MIDI Soundfont",
-        "MIDI 音色库",
-        "『默认』使用系统或者虚拟机自带的音色库，而『自订』则允许您在『<freej2me-lr.jar folder>/freej2me_system/customMIDI』路径下放置 SF2 音色库来获得更好的听感体验。警告：大型音色库可能无法正常工作！",
-        "『默认』使用系统或者虚拟机自带的音色库，而『自订』则允许您在『<freej2me-lr.jar folder>/freej2me_system/customMIDI』路径下放置 SF2 音色库来获得更好的听感体验。警告：大型音色库可能无法正常工作！",
+        "MIDI 音源",
+        "‘默认’使用系统或 VM 自带的音色库，而‘自定义’则允许您在‘<freej2me-lr.jar folder>/freej2me_system/customMIDI’路径下放置 SF2 音色库来获得更好的听感体验。警告：大型音色库可能无法正常运作！",
+        "‘默认’使用系统或 VM 自带的音色库，而‘自定义’则允许您在‘<freej2me-lr.jar folder>/freej2me_system/customMIDI’路径下放置 SF2 音色库来获得更好的听感体验。警告：大型音色库可能无法正常运作！",
         "system_settings",
         {
             { "off", "默认" },
-            { "on",  "自订" },
+            { "on",  "自定义" },
             { NULL, NULL },
         },
         "off"
     },
     {
+        "freej2me_textfont",
+        "System > Text Font",
+        "文本字体",
+        "‘默认’使用系统或 VM 自带的字体，而‘自定义’则允许您在‘<freej2me-lr.jar folder>/freej2me_system/customFont’路径下放置字体来模拟特定手机的字体。注意：在特定屏幕分辨率上，某些字体可能会偏大或偏小。",
+        "‘默认’使用系统或 VM 自带的字体，而‘自定义’则允许您在‘<freej2me-lr.jar folder>/freej2me_system/customFont’路径下放置字体来模拟特定手机的字体。注意：在特定屏幕分辨率上，某些字体可能会偏大或偏小。",
+        "system_settings",
+        {
+            { "off", "默认" },
+            { "on",  "自定义" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_fontoffset",
+        "System > Font Size Offset",
+        "字体大小",
+        "调整字体的尺寸偏移量，以使其变大或变小。对于某些显示过大或过小的自定义字体也有帮助。",
+        "调整字体的尺寸偏移量，以使其变大或变小。对于某些显示过大或过小的自定义字体也有帮助。",
+        "system_settings",
+        {
+            { "-4", "-4 pt" },
+            { "-3", "-3 pt" },
+            { "-2", "-2 pt" },
+            { "-1", "-1 pt" },
+            { "0", " 0 pt (默认)" },
+            { "1", " 1 pt" },
+            { "2", " 2 pt" },
+            { "3", " 3 pt" },
+            { "4", " 4 pt" },
+            { NULL, NULL },
+        },
+        "0"
+    },
+    {
         "freej2me_analogasentirekeypad",
         "System > Use Analog As Entire Keypad",
         "使用摇杆作为数字键盘",
-        "在一些游戏中，可以通过将摇杆映射为完整的数字键盘，以此获取更为舒适的游戏体验。代表性游戏：《Time Crisis Elite》，《Rayman Raving Rabbids》。",
-        "在一些游戏中，可以通过将摇杆映射为完整的数字键盘，以此获取更为舒适的游戏体验。代表性游戏：《Time Crisis Elite》，《Rayman Raving Rabbids》。",
+        "在某些游戏中，可以通过将摇杆映射为完整的数字键盘，以获取更舒适的游戏体验。代表性游戏：《Time Crisis Elite》、《Rayman Raving Rabbids》。",
+        "在某些游戏中，可以通过将摇杆映射为完整的数字键盘，以获取更舒适的游戏体验。代表性游戏：《Time Crisis Elite》、《Rayman Raving Rabbids》。",
         "system_settings",
         {
             { "off", "禁用" },
@@ -271,15 +327,15 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_logginglevel",
         "Advanced Settings > Logging Level",
         "日志级别",
-        "*调试用* 该选项允许核心将指定或更高级别的日志记录到『freej2me_system/FreeJ2ME.log』。",
-        "*调试用* 该选项允许核心将指定或更高级别的日志记录到『freej2me_system/FreeJ2ME.log』。",
+        "*调试用* 此选项允许核心将指定或更高级别的日志记录到‘freej2me_system/FreeJ2ME.log’。",
+        "*调试用* 此选项允许核心将指定或更高级别的日志记录到‘freej2me_system/FreeJ2ME.log’。",
         "advanced_settings",
         {
-            { "0",  "Disable_禁用"           },
-            { "1",  "Debug_调试"             },
-            { "2",  "Info_信息"              },
-            { "3",  "Warning_警告"           },
-            { "4",  "Error_错误"             },
+            { "0",  "Disable"           },
+            { "1",  "Debug"             },
+            { "2",  "Info"              },
+            { "3",  "Warning"           },
+            { "4",  "Error"             },
             { NULL, NULL },
         },
         "0"
@@ -287,9 +343,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_dumpaudiostreams",
         "Advanced Settings > Dump Audio Streams",
-        "Dump 音频流",
-        "*调试用* 该选项允许核心将音频流数据导出至『$SYSTEM/FreeJ2MEDumps/Audio/appname/*』。",
-        "*调试用* 该选项允许核心将音频流数据导出至『$SYSTEM/FreeJ2MEDumps/Audio/appname/*』。",
+        "转储音频流",
+        "*调试用* 该选项允许核心将音频流数据导出至‘$SYSTEM/FreeJ2MEDumps/Audio/appname/*’。",
+        "*调试用* 该选项允许核心将音频流数据导出至‘$SYSTEM/FreeJ2MEDumps/Audio/appname/*’。",
         "advanced_settings",
         {
             { "off",  "禁用"            },
@@ -299,16 +355,44 @@ struct retro_core_option_v2_definition core_options[] =
         "off"
     },
     {
+        "freej2me_dumpgraphicsdata",
+        "Advanced Settings > Dump Graphics Data (Stub)",
+        "转储图形数据 (Stub)",
+        "*调试用* 该选项允许核心将接收到的图形数据导出至‘$SYSTEM/FreeJ2MEDumps/Audio/appname/*’。",
+        "*调试用* 该选项允许核心将接收到的图形数据导出至‘$SYSTEM/FreeJ2MEDumps/Audio/appname/*’。",
+        "advanced_settings",
+        {
+            { "off",  "禁用"            },
+            { "on",  "启用"              },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_deletetempkjxfiles",
+        "Advanced Settings > Delete KJX files' temporary JAR/JAD",
+        "清理 KJX 文件的临时 JAR/JAD",
+        "该选项可清理在执行 KJX 文件时解包出的 JAR/JAD，如果禁用，这些文件则会保存在‘$SYSTEM/FreeJ2MEDumps/KDDI/’，这对于备份或是在其他不支持 KJX 的模拟器上执行它们会很有帮助。",
+        "该选项可清理在执行 KJX 文件时解包出的 JAR/JAD，如果禁用，这些文件则会保存在‘$SYSTEM/FreeJ2MEDumps/KDDI/’，这对于备份或是在其他不支持 KJX 的模拟器上执行它们会很有帮助。",
+        "advanced_settings",
+        {
+            { "off",  "禁用"            },
+            { "on",  "启用"              },
+            { NULL, NULL },
+        },
+        "on"
+    },
+    {
         "freej2me_pointertype",
         "Advanced Settings > Pointer Type",
-        "光标类型",
-        "设置核心所用的光标类型。请注意，仅有鼠标支持缩放操作。",
-        "设置核心所用的光标类型。请注意，仅有鼠标支持缩放操作。",
+        "指针类型",
+        "设置核心所用的指针类型。请注意，仅有鼠标支持缩放操作。",
+        "设置核心所用的指针类型。请注意，仅有鼠标支持缩放操作。",
         "advanced_settings",
         {
             { "Mouse",  "鼠标"                    },
-            { "Touch",  "触摸屏"              },
-            { "None",   "无光标 / 手柄模拟" },
+            { "Touch",  "触控"              },
+            { "None",   "无指针/手柄模拟" },
             { NULL, NULL },
         },
         "Touch"
@@ -316,9 +400,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointerxspeed",
         "Advanced Settings > Pointer X Speed",
-        "光标 X 轴速度",
-        "设置使用摇杆操控光标时，其在 X 轴上的速度。",
-        "设置使用摇杆操控光标时，其在 X 轴上的速度。",
+        "指针 X 轴速度",
+        "设置使用摇杆操控指针时，其在 X 轴上的速度。",
+        "设置使用摇杆操控指针时，其在 X 轴上的速度。",
         "advanced_settings",
         {
             { "2",  "慢速"    },
@@ -332,9 +416,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointeryspeed",
         "Advanced Settings > Pointer Y Speed",
-        "光标 Y 轴速度",
-        "设置使用摇杆操控光标时，其在 Y 轴上的速度。",
-        "设置使用摇杆操控光标时，其在 Y 轴上的速度。",
+        "指针 Y 轴速度",
+        "设置使用摇杆操控指针时，其在 Y 轴上的速度。",
+        "设置使用摇杆操控指针时，其在 Y 轴上的速度。",
         "advanced_settings",
         {
             { "2",  "慢速"    },
@@ -348,9 +432,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointerinnercolor",
         "Advanced Settings > Pointer Inner Color",
-        "光标内部颜色",
-        "设置光标的内部颜色。",
-        "设置光标的内部颜色。",
+        "指针内部颜色",
+        "设置指针的内部颜色。",
+        "设置指针的内部颜色。",
         "advanced_settings",
         {
             { "Black",  "黑"            },
@@ -368,9 +452,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointeroutercolor",
         "Advanced Settings > Pointer Outline Color",
-        "光标轮廓颜色",
-        "设置光标的轮廓颜色。",
-        "设置光标的轮廓颜色。",
+        "指针轮廓颜色",
+        "设置指针的轮廓颜色。",
+        "设置指针的轮廓颜色。",
         "advanced_settings",
         {
             { "Black",  "黑"            },
@@ -388,9 +472,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointerclickcolor",
         "Advanced Settings > Pointer Click Indicator Color",
-        "光标点击颜色",
-        "设置光标的内部颜色。",
-        "设置光标的内部颜色。",
+        "指针点击颜色",
+        "设置指针点击时的指示颜色。",
+        "设置指针点击时的指示颜色。",
         "advanced_settings",
         {
             { "Black",  "黑"            },
@@ -408,40 +492,126 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_spdhacknoalpha",
         "Speed Hacks > No Alpha on Blank Images (Restart Required)",
-        "无 Alpha 空白图像（需重启核心）",
-        "J2ME 规定所有图像都必须有 Alpha 通道。Free-J2ME 可以避免 Alpha 通道创建这些图像，从而为部分游戏提供优良的性能提升。",
-        "J2ME 规定所有图像都必须有 Alpha 通道。Free-J2ME 可以避免 Alpha 通道创建这些图像，从而为部分游戏提供优良的性能提升。",
+        "空白图像无 Alpha 通道（需重启核心）",
+        "J2ME 规范要求所有图像（包括完全空白的图像及虚拟手机的 LCD 屏幕）都必须创建 Alpha 通道。此选项针对那些通常以完全不透明方式绘制的图像，在创建时省略其 Alpha 通道，从而减少不必要的处理开销。根据游戏不同，这能带来中到大幅度的性能提升，且影响可忽略不计。",
+        "J2ME 规范要求所有图像（包括完全空白的图像及虚拟手机的 LCD 屏幕）都必须创建 Alpha 通道。此选项针对那些通常以完全不透明方式绘制的图像，在创建时省略其 Alpha 通道，从而减少不必要的处理开销。根据游戏不同，这能带来中到大幅度的性能提升，且影响可忽略不计。",
         "speed_hacks",
         {
-            { "on",  "启用"            },
+            { "on",  "启用" },
             { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
     },
     {
-        "freej2me_compatnonfatalnullimages",
-        "Compatibility Settings > Don't throw Exception on null images",
-        "不对 Null 图像抛出异常",
-        "根据 J2ME 规范，处理或加载 Null 图像时必须抛出 NullPointerException。如果游戏没有异常处理机制（少数情况），那么游戏将会卡死。如：无异常处理机制的《House M.D.》启用该选项即可正常运行。不过，这可能会使进行异常处理机制的游戏出现错误。）",
-        "根据 J2ME 规范，处理或加载 Null 图像时必须抛出 NullPointerException。如果游戏没有异常处理机制（少数情况），那么游戏将会卡死。如：无异常处理机制的《House M.D.》启用该选项即可正常运行。不过，这可能会使进行异常处理机制的游戏出现错误。",
+        "freej2me_spdhackfpsunlock",
+        "Speed Hacks > Framerate Unlock Hack",
+        "FPS Hack",
+        "拦截 Java 方法中的延迟与同步调用，以提升应用的内部帧率。更高的激进等级会增加拦截的范围与方法类型。‘安全’仅拦截与绘图函数在同一方法中的 sleep() 调用，‘扩展’会拦截所有 sleep() 调用，‘激进’甚至会拦截系统层级的时间相关调用。‘FPS 限制’为非‘自动’时效果最佳。",
+        "拦截 Java 方法中的延迟与同步调用，以提升应用的内部帧率。更高的激进等级会增加拦截的范围与方法类型。‘安全’仅拦截与绘图函数在同一方法中的 sleep() 调用，‘扩展’会拦截所有 sleep() 调用，‘激进’甚至会拦截系统层级的时间相关调用。‘FPS 限制’为非‘自动’时效果最佳。",
+        "speed_hacks",
+        {
+            { "0",  "禁用"    },
+            { "1",  "安全"                  },
+            { "2",  "扩展"              },
+            { "3",  "激进"            },
+            { NULL, NULL },
+        },
+        "0"
+    },
+    {
+        "freej2me_compatdonottranslatedrawrgb",
+        "Compatibility Settings > Don't translate drawRGB calls",
+        "不对 drawRGB 调用进行平移",
+        "根据 J2ME 规范，drawRGB 调用应受当前 Graphics Context 的平移影响。然而，索爱 QVGA 版本的《Peggle》必须在这些调用不受 Graphics Context 平移影响的环境下才能正常运作，而诺基亚版本则遵循了规范。这种行为在真机上也能重现。若游戏中出现对象位置不正确的情况，请尝试启用此设置。",
+        "根据 J2ME 规范，drawRGB 调用应受当前 Graphics Context 的平移影响。然而，索爱 QVGA 版本的《Peggle》必须在这些调用不受 Graphics Context 平移影响的环境下才能正常运作，而诺基亚版本则遵循了规范。这种行为在真机上也能重现。若游戏中出现对象位置不正确的情况，请尝试启用此设置。",
         "compat_settings",
         {
-            { "on",  "启用"            },
+            { "on",  "启用" },
             { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
     },
     {
-        "freej2me_compatcliprectongfxreset",
-        "Compatibility Settings > Do clipRect instead of setClip on gfx reset",
-        "图形重置时使用 clipRect 替代 setClip",
-        "《Fantasy Zone》的 128x128 版本依赖图形重置时调用 clipRect() 而非 setClip()。这是目前兼容性列表中唯一需要该特殊设置的游戏，启用该选项可能导致其他游戏渲染异常。",
-        "《Fantasy Zone》的 128x128 版本依赖图形重置时调用 clipRect() 而非 setClip()。这是目前兼容性列表中唯一需要该特殊设置的游戏，启用该选项可能导致其他游戏渲染异常。",
+        "freej2me_compattranstooriginongfxreset",
+        "Compatibility Settings > Translate to origin on gfx reset",
+        "图形重置时平移至原点",
+        "《Fantasy Zone》的‘128x128’版本依赖图形对象在每次绘图前平移至原点。启用该选项可改善这类情况，并解决绘制区域莫名持续移动的问题。",
+        "《Fantasy Zone》的‘128x128’版本依赖图形对象在每次绘图前平移至原点。启用该选项可改善这类情况，并解决绘制区域莫名持续移动的问题。",
         "compat_settings",
         {
-            { "on",  "启用"            },
+            { "on",  "启用" },
+            { "off", "禁用" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_compatimmediaterepaintcalls",
+        "Compatibility Settings > Process canvas repaint calls immediately",
+        "立即处理画布重绘调用",
+        "默认情况下，J2ME 会将 Canvas 的重绘调用加入队列，应用需调用‘serviceRepaints()’或使用‘Serial calls’来同步绘制。某些应用程序误用重绘队列，可能导致死锁而造成冻结。该选项可用于解决应用程序无故冻结的问题。",
+        "默认情况下，J2ME 会将 Canvas 的重绘调用加入队列，应用需调用‘serviceRepaints()’或使用‘Serial calls’来同步绘制。某些应用程序误用重绘队列，可能导致死锁而造成冻结。该选项可用于解决应用程序无故冻结的问题。",
+        "compat_settings",
+        {
+            { "on",  "启用" },
+            { "off", "禁用" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_compatoverrideplatcheck",
+        "Compatibility Settings > Override Mobile Platform checks",
+        "覆写移动平台检查",
+        "部分应用程序会检查特定的平台字符串（如 'Nokia', 'Siemens S60'），若 FreeJ2ME 的平台字符串不符预期，便会拒绝执行。该选项会将模拟器的平台字符串覆写为游戏期望的内容，以通过检查。该选项利大于弊，故默认启用。",
+        "部分应用程序会检查特定的平台字符串（如 'Nokia', 'Siemens S60'），若 FreeJ2ME 的平台字符串不符预期，便会拒绝执行。该选项会将模拟器的平台字符串覆写为游戏期望的内容，以通过检查。该选项利大于弊，故默认启用。",
+        "compat_settings",
+        {
+            { "on",  "启用" },
+            { "off", "禁用" },
+            { NULL, NULL },
+        },
+        "on"
+    },
+    {
+        "freej2me_compatsiemensfriendlydraw",
+        "Compatibility Settings > Siemens-friendly drawing methods",
+        "西门子友好型绘制方法",
+        "符合 MIDP 规范的 J2ME 绘制操作无需检查负值平移即可正常绘制图像。然而，一些西门子应用程序（如《Swedish Touring Car Championship》）在默认行为下无法正常运作。该选项会尝试以一种更接近西门子虚拟机可能采用的绘制方式来修正平移。请注意，启用此选项将会破坏那些使用负值平移且专为标准 J2ME 规范设计的游戏。",
+        "符合 MIDP 规范的 J2ME 绘制操作无需检查负值平移即可正常绘制图像。然而，一些西门子应用程序（如《Swedish Touring Car Championship》）在默认行为下无法正常运作。该选项会尝试以一种更接近西门子虚拟机可能采用的绘制方式来修正平移。请注意，启用此选项将会破坏那些使用负值平移且专为标准 J2ME 规范设计的游戏。",
+        "compat_settings",
+        {
+            { "on",  "启用" },
+            { "off", "禁用" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_m3grenderuntextured",
+        "M3G Debug Settings > Draw only vertex colors",
+        "仅渲染顶点颜色",
+        "*调试用* 使 M3G 仅渲染带有顶点颜色、无纹理的多边形。对于调试“颜色混合 (Blending)”以及“顶点着色接缝 (Vertex coloring seams)”问题很有帮助。",
+        "*调试用* 使 M3G 仅渲染带有顶点颜色、无纹理的多边形。对于调试“颜色混合 (Blending)”以及“顶点着色接缝 (Vertex coloring seams)”问题很有帮助。",
+        "m3g_debug",
+        {
+            { "on",  "启用" },
+            { "off", "禁用" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_m3grenderwireframe",
+        "M3G Debug Settings > Draw Wireframe",
+        "渲染线框",
+        "*调试用* 使 M3G 仅渲染线框。对于调试“三角形裁剪 (Triangle clipping)”和“剔除 (Culling)”问题很有帮助。",
+        "*调试用* 使 M3G 仅渲染线框。对于调试“三角形裁剪 (Triangle clipping)”和“剔除 (Culling)”问题很有帮助。",
+        "m3g_debug",
+        {
+            { "on",  "启用" },
             { "off", "禁用" },
             { NULL, NULL },
         },
@@ -489,6 +659,7 @@ struct retro_core_option_definition core_options_v1 [] =
             { "400x240",   NULL },
             { "240x432",   NULL },
             { "240x480",   NULL },
+            { "360x360",   NULL },
             { "352x416",   NULL },
             { "360x640",   NULL },
             { "640x360",   NULL },
@@ -523,7 +694,7 @@ struct retro_core_option_definition core_options_v1 [] =
             { "Nokia Full Keyboard", NULL },
             { "Sagem",               NULL },
             { "Siemens",             NULL },
-            { "Siemens Old",         NULL },
+            { "Sharp",               NULL },
             { NULL, NULL },
         },
         "Default"
@@ -550,8 +721,16 @@ struct retro_core_option_definition core_options_v1 [] =
         {
             { "Auto", "Disabled" },
             { "60",   "60 FPS"   },
+            { "55",   "55 FPS"   },
+            { "50",   "50 FPS"   },
+            { "45",   "45 FPS"   },
+            { "40",   "40 FPS"   },
+            { "35",   "35 FPS"   },
             { "30",   "30 FPS"   },
+            { "25",   "25 FPS"   },
+            { "20",   "20 FPS"   },
             { "15",   "15 FPS"   },
+            { "10",   "10 FPS"   },
             { NULL, NULL },
         },
         "Auto"
@@ -577,6 +756,35 @@ struct retro_core_option_definition core_options_v1 [] =
             { NULL, NULL },
         },
         "off"
+    },
+    {
+        "freej2me_textfont",
+        "Text Font",
+        "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes, so you might need to adjust the size offset.",
+        {
+            { "off", "Default" },
+            { "on",  "Custom" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_fontoffset",
+        "Font Size Offset",
+        "Adjust the offset used for font sizing in order to make text bigger or smaller. Also helps with custom fonts that might be too big or small by default.",
+        {
+            { "-4", "-4 pt" },
+            { "-3", "-3 pt" },
+            { "-2", "-2 pt" },
+            { "-1", "-1 pt" },
+            { "0", " 0 pt (Default)" },
+            { "1", " 1 pt" },
+            { "2", " 2 pt" },
+            { "3", " 3 pt" },
+            { "4", " 4 pt" },
+            { NULL, NULL },
+        },
+        "0"
     },
     {
         "freej2me_analogasentirekeypad",
@@ -613,6 +821,28 @@ struct retro_core_option_definition core_options_v1 [] =
             { NULL, NULL },
         },
         "off"
+    },
+    {
+        "freej2me_dumpgraphicsdata",
+        "Dump Graphics Data (Stub)",
+        "This option allows FreeJ2ME to dump incoming Graphics Data into $SYSTEM/FreeJ2MEDumps/Audio/appname/*, mostly useful for debugging",
+        {
+            { "off",  "Disable"            },
+            { "on",  "Enable"              },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_deletetempkjxfiles",
+        "Delete KJX files' temporary JAR/JAD",
+        "Disabling this option allows FreeJ2ME to keep the decompiled JAR and JAD files from a KDDI KJX container in $SYSTEM/FreeJ2MEDumps/KDDI/, useful if you want to archive those files outside their KJX container or try running them somewhere that doesn't handle KJX files",
+        {
+            { "off",  "Disable"            },
+            { "on",  "Enable"              },
+            { NULL, NULL },
+        },
+        "on"
     },
     {
         "freej2me_pointertype",
@@ -715,9 +945,22 @@ struct retro_core_option_definition core_options_v1 [] =
         "off"
     },
     {
-        "freej2me_compatnonfatalnullimages",
-        "Don't throw Exception on null images",
-        "In the J2ME spec, processing or loading null images must result in a NullPointerException being thrown. This has the effect of basically freezing the app's execution unless the jar has some sort of exception handling in place (which is often the case). However, 'House M.D.', for one, doesn't, and results in the app freezing by not handling the exception it just received. Enabling this allows it to be playable, at the cost of breaking games that handle null images properly.",
+        "freej2me_spdhackfpsunlock",
+        "Framerate Unlock Hack",
+        "Hijacks calls to Java methods normally used for delays and synchronization in order to increase the app's internal framerate. Higher aggressiveness levels increase the scope and type of calls intercepted. 'Safe' tackles only sleep() calls that reside in the same function of a rendering call, 'Extended' extends it to all sleep() calls, and 'Aggressive' goes beyond and hijacks system calls used for timing as well. Works best when the FPS limiter is set to anything other than 'Auto'.",
+        {
+            { "0",  "Disabled (Default)"    },
+            { "1",  "Safe"                  },
+            { "2",  "Extended"              },
+            { "3",  "Aggressive"            },
+            { NULL, NULL },
+        },
+        "0"
+    },
+    {
+        "freej2me_compatdonottranslatedrawrgb",
+        "Don't translate drawRGB calls",
+        "In the J2ME spec, drawRGB calls should be affected by the current graphics context translation. However, Peggle for Sony Ericsson 240x320 is a game that expects those calls to NOT be affected by the graphics context translation whereas Nokia versions work as they should, this is also replicated in real hardware. Use this setting whenever objects aren't where they should be.",
         {
             { "on",  "Enabled"            },
             { "off", "Disabled (Default)" },
@@ -726,9 +969,64 @@ struct retro_core_option_definition core_options_v1 [] =
         "off"
     },
     {
-        "freej2me_compatcliprectongfxreset",
-        "Do clipRect instead of setClip on gfx reset",
-        "Fantasy Zone's 128x128 version relies on a clipRect() call being issued whenever a fullscreen draw is made instead of setClip(). So far, it seems to be the only jar in the compatibility list that needs this, and enabling it will break quite a few others.",
+        "freej2me_compattranstooriginongfxreset",
+        "Translate to origin on gfx reset",
+        "Some apps like Fantasy Zone's 128x128 version rely on the graphics object being translated to the origin before every draw, this compatibility setting helps with that, and any case where the drawn area keeps moving in any given direction for no reason.",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_compatimmediaterepaintcalls",
+        "Process canvas repaint calls immediately",
+        "By default, J2ME expects canvas repaints to be queued up, and applications can either request serviceRepaints() or use serial calls to synchronize rendering. However, some apps might cause deadlocks by improper usage of the repaint queue and in turn, freeze. This setting may help cases where an app is freezing for no apparent reason.",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_compatoverrideplatcheck",
+        "Override Mobile Platform checks",
+        "Some applications check against specific platform strings (such as 'Nokia', 'Siemens S60'), whenever this happens, FreeJ2ME's platform string doesn't match what they expect so they refuse to run. This setting overrides any platform strings by FreeJ2ME's own. This option helps far more than breaks, so it's on by default",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "on"
+    },
+    {
+        "freej2me_compatsiemensfriendlydraw",
+        "Siemens-friendly drawing methods",
+        "MIDP-Compliant J2ME drawing operations do no need to check for negative translation values in order to draw images properly. However, some Siemens apps like STCC (Swedish Touring Car Championship) won't work properly with the default behavior. This option tries to correct translations in a way that is closer to what Siemens' VM probably does drawing. Note that enabling this will break jars that use negative translations but are tailored for the J2ME specification.",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_m3grenderuntextured",
+        "Draw only vertex colors",
+        "Enabling this makes M3G render only vertex colored, untextured polygons. Useful for debugging blending and vertex coloring seams.",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_m3grenderwireframe",
+        "Draw Wireframe",
+        "Enabling this makes M3G render only wireframes. Useful for debugging triangle clipping and culling.",
         {
             { "on",  "Enabled"            },
             { "off", "Disabled (Default)" },
@@ -747,7 +1045,7 @@ static const struct retro_variable vars[] =
 {
     { /* Screen Resolution */
         "freej2me_resolution",
-        "Phone Resolution (Core Restart may be required); 240x320|96x65|101x64|101x80|128x128|130x130|120x160|128x160|132x176|176x208|176x220|220x176|208x208|180x320|320x180|208x320|320x240|240x400|400x240|240x432|240x480|352x416|360x640|640x360|640x480|480x800|800x480" 
+        "Phone Resolution (Core Restart may be required); 240x320|96x65|101x64|101x80|128x128|130x130|120x160|128x160|132x176|176x208|176x220|220x176|208x208|180x320|320x180|208x320|320x240|240x400|400x240|240x432|240x480|360x360|352x416|360x640|640x360|640x480|480x800|800x480" 
     },
     { /* Screen Rotation */
         "freej2me_rotate",
@@ -755,7 +1053,7 @@ static const struct retro_variable vars[] =
     },
     { /* Phone Control Type */
         "freej2me_phone",
-        "Phone Key Layout; Default|LG|Motorola/SoftBank|Motorola Triplets|Motorola V8|Nokia Full Keyboard|Sagem|Siemens|Siemens Old" 
+        "Phone Key Layout; Default|LG|Motorola/SoftBank|Motorola Triplets|Motorola V8|Nokia Full Keyboard|Sagem|Siemens|Sharp" 
     },
     { /* LCD Backlight Color */
         "freej2me_backlightcolor",
@@ -763,7 +1061,7 @@ static const struct retro_variable vars[] =
     },
     { /* Game FPS limit */
         "freej2me_fps",
-        "Game FPS Limit; Auto|60|30|15" 
+        "Game FPS Limit; Auto|60|55|50|45|40|35|30|25|20|15|10" 
     },
     { /* Virtual Phone Sound */
         "freej2me_sound",
@@ -772,6 +1070,14 @@ static const struct retro_variable vars[] =
     { /* MIDI Soundfont */
         "freej2me_midifont",
         "MIDI Soundfont; off|on"
+    },
+    { /* Custom Text Font */
+        "freej2me_textfont",
+        "Text Font; off|on"
+    },
+    { /* Custom Text Font */
+        "freej2me_fontoffset",
+        "Font Size Offset; 0|-4|-3|-2|-1|1|2|3|4"
     },
     { /* Use Analog As Entire Keypad */
         "freej2me_analogasentirekeypad",
@@ -784,6 +1090,14 @@ static const struct retro_variable vars[] =
     { /* Dump Audio Streams */
         "freej2me_dumpaudiostreams",
         "Dump Audio Streams; off|on"
+    },
+    { /* Dump Graphics Streams */
+        "freej2me_dumpgraphicsdata",
+        "Dump Graphics Data (Stub); off|on",
+    },
+    { /* Dump KJX files' temporary JAR/JAD */
+        "freej2me_deletetempkjxfiles",
+        "Delete KJX files' temporary JAR/JAD; on|off",
     },
     { /* Pointer Type */
         "freej2me_pointertype",
@@ -811,15 +1125,39 @@ static const struct retro_variable vars[] =
     },
     { /* No Alpha on Blank Images speed hack */
         "freej2me_spdhacknoalpha",
-        "No Alpha on Blank Images(SpeedHack); off|on",
+        "No Alpha on Blank Images(SpeedHack); off|on"
+    }, 
+    { /* Framerate Unlock Hack */
+        "freej2me_spdhackfpsunlock",
+        "Framerate Unlock Hack; 0|1|2|3"
     },
-    { /* No Alpha on Blank Images compat setting */
-        "freej2me_compatnonfatalnullimages",
-        "Don't throw Exception on null images; off|on",
+    { /* Don't translate drawRGB calls setting */
+        "freej2me_compatdonottranslatedrawrgb",
+        "Don't translate drawRGB calls; off|on"
     },
-    { /* No Alpha on Blank Images compat setting */
-        "freej2me_compatcliprectongfxreset",
-        "Do clipRect instead of setClip on gfx reset; off|on",
+    { /* Translate to origin on gfx reset setting */
+        "freej2me_compattranstooriginongfxreset",
+        "Translate to origin on gfx reset; off|on"
+    },
+    { /* Process canvas repaint calls immediately */
+        "freej2me_compatimmediaterepaintcalls",
+        "Process canvas repaint calls immediately; off|on"
+    },
+    { /* Override Mobile Platform checks */
+        "freej2me_compatoverrideplatcheck",
+        "Override Mobile Platform checks; on|off",
+    },
+    { /* Siemens-friendly drawing methods */
+        "freej2me_compatsiemensfriendlydraw",
+        "Siemens-friendly drawing methods; off|on",
+    },
+    { /* M3G draw only vertex colors */
+        "freej2me_m3grenderuntextured",
+        "Draw only vertex colors; off|on"
+    },
+    { /* M3G draw wireframe */
+        "freej2me_m3grenderwireframe",
+        "Draw Wireframe; off|on"
     },
     { NULL, NULL },
 };

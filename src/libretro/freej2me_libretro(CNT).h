@@ -106,17 +106,17 @@ struct retro_core_option_v2_category option_categories[] =
     },
     {
         "advanced_settings",
-        "高级",
+        "高級",
         "Free-J2ME 核心相關設定。"
     },
     {
         "speed_hacks",
-        "优化",
+        "優化",
         "Free-J2ME 優化相關設定。"
     },
     {
         "compat_settings",
-        "兼容",
+        "相容",
         "Free-J2ME 兼容相關設定。"
     },
     {
@@ -172,7 +172,7 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_rotate",
         "System > Rotate Screen",
-        "熒幕旋轉",
+        "螢幕旋轉",
         "一些遊戲（特別是觸控遊戲）通常需要旋轉螢幕。",
         "一些遊戲（特別是觸控遊戲）通常需要旋轉螢幕。",
         "system_settings",
@@ -208,8 +208,8 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_backlightcolor",
         "System > LCD Backlight Color",
         "LCD 背光",
-        "單色遊戲適用。這些遊戲會點亮 / 熄滅螢幕以產生額外效果（如‘Nokia 3410（綠）’、‘Nokia 6310i（青）’、『西門子 C55（橘子）』）。若遊戲為全彩或是您不喜歡背光效果，請停用該選項。",
-        "單色遊戲適用。這些遊戲會點亮 / 熄滅螢幕以產生額外效果（如‘Nokia 3410（綠）’、‘Nokia 6310i（青）’、『西門子 C55（橘子）』）。若遊戲為全彩或是您不喜歡背光效果，請停用該選項。",
+        "單色遊戲適用。這些遊戲會點亮 / 熄滅螢幕以產生額外效果（如‘Nokia 3410（綠）’、‘Nokia 6310i（青）’、『西門子 C55（橘）』）。若遊戲為全彩或是您不喜歡背光效果，請停用該選項。",
+        "單色遊戲適用。這些遊戲會點亮 / 熄滅螢幕以產生額外效果（如‘Nokia 3410（綠）’、‘Nokia 6310i（青）’、『西門子 C55（橘）』）。若遊戲為全彩或是您不喜歡背光效果，請停用該選項。",
         "system_settings",
         {
             { "Disabled", "禁用" },
@@ -249,7 +249,7 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_sound",
         "System > Virtual Phone Sound (Core Restart required)",
-        "模拟手机声音",
+        "模擬手機聲音",
         "一些遊戲的音訊尚未被編解碼器支持，該選項可模擬手機加載和播放音訊 / 音調的功能。若出現音訊未支援的情況，請嘗試停用核心的音訊。若遊戲無法運作或是開啟過久出現錯誤，請嘗試停用該選項。",
         "一些遊戲的音訊尚未被編解碼器支持，該選項可模擬手機加載和播放音訊 / 音調的功能。若出現音訊未支援的情況，請嘗試停用核心的音訊。若遊戲無法運作或是開啟過久出現錯誤，請嘗試停用該選項。",
         "system_settings",
@@ -358,8 +358,8 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_dumpgraphicsdata",
         "Advanced Settings > Dump Graphics Data (Stub)",
         "Dump Graphics Data (Stub)",
-        "*偵錯用* 該選項允許核心將接收到的圖形資料匯出至『$SYSTEM/FreeJ2MEDumps/Audio/appname/*』。",
-        "*偵錯用* 該選項允許核心將接收到的圖形資料匯出至『$SYSTEM/FreeJ2MEDumps/Audio/appname/*』。",
+        "*偵錯用* 該選項允許核心將接收到的圖形資料匯出至『$SYSTEM/FreeJ2MEDumps/Graphics/appname/*』。",
+        "*偵錯用* 該選項允許核心將接收到的圖形資料匯出至『$SYSTEM/FreeJ2MEDumps/Graphics/appname/*』。",
         "advanced_settings",
         {
             { "off",  "禁用"            },
@@ -372,8 +372,8 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_deletetempkjxfiles",
         "Advanced Settings > Delete KJX files' temporary JAR/JAD",
         "清理 KJX 檔的臨時 JAR/JAD",
-        "該選項可清理在執行 KJX 檔時反編譯出的 JAR/JAD，如果禁用，這些檔案則會保存在『$SYSTEM/FreeJ2MEDumps/KDDI/』，這對於備份或是在其他不支援 KJX 的模擬器上執行它們會很有幫助。",
-        "該選項可清理在執行 KJX 檔時反編譯出的 JAR/JAD，如果禁用，這些檔案則會保存在『$SYSTEM/FreeJ2MEDumps/KDDI/』，這對於備份或是在其他不支援 KJX 的模擬器上執行它們會很有幫助。",
+        "該選項可清理在執行 KJX 檔時解包出的 JAR/JAD，如果禁用，這些檔案則會保存在『$SYSTEM/FreeJ2MEDumps/KDDI/』，這對於備份或是在其他不支援 KJX 的模擬器上執行它們會很有幫助。",
+        "該選項可清理在執行 KJX 檔時解包出的 JAR/JAD，如果禁用，這些檔案則會保存在『$SYSTEM/FreeJ2MEDumps/KDDI/』，這對於備份或是在其他不支援 KJX 的模擬器上執行它們會很有幫助。",
         "advanced_settings",
         {
             { "off",  "禁用"            },
@@ -417,8 +417,8 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_pointeryspeed",
         "Advanced Settings > Pointer Y Speed",
         "遊標 Y 軸速度",
-        "設定使用搖桿操控遊標時，在 Y 軸上的速度。",
-        "設定使用搖桿操控遊標時，在 Y 軸上的速度。",
+        "設定使用搖桿操控遊標時，其在 Y 軸上的速度。",
+        "設定使用搖桿操控遊標時，其在 Y 軸上的速度。",
         "advanced_settings",
         {
             { "2",  "慢速"    },
@@ -440,8 +440,8 @@ struct retro_core_option_v2_definition core_options[] =
             { "Black",  "黑"            },
             { "Red",    "紅"              },
             { "Green",  "綠"            },
-            { "Blue",   "蓝"             },
-            { "Yellow", "黄"           },
+            { "Blue",   "藍"             },
+            { "Yellow", "黃"           },
             { "Pink",   "粉"             },
             { "Cyan",   "青"             },
             { "White",  "白"  },
@@ -460,8 +460,8 @@ struct retro_core_option_v2_definition core_options[] =
             { "Black",  "黑"            },
             { "Red",    "紅"              },
             { "Green",  "綠"            },
-            { "Blue",   "蓝"             },
-            { "Yellow", "黄"           },
+            { "Blue",   "藍"             },
+            { "Yellow", "黃"           },
             { "Pink",   "粉"             },
             { "Cyan",   "青"             },
             { "White",  "白"  },
@@ -480,8 +480,8 @@ struct retro_core_option_v2_definition core_options[] =
             { "Black",  "黑"            },
             { "Red",    "紅"              },
             { "Green",  "綠"            },
-            { "Blue",   "蓝"             },
-            { "Yellow", "黄"           },
+            { "Blue",   "藍"             },
+            { "Yellow", "黃"           },
             { "Pink",   "粉"             },
             { "Cyan",   "青"             },
             { "White",  "白"  },
@@ -493,8 +493,8 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_spdhacknoalpha",
         "Speed Hacks > No Alpha on Blank Images (Restart Required)",
         "無 Alpha 空白影像（需重載核心）",
-        "J2ME 規定所有影像都必須有 Alpha 通道。Free-J2ME 可以避免 Alpha 通道創造這些影像，從而為部分遊戲提供優良的效能提升。",
-        "J2ME 規定所有影像都必須有 Alpha 通道。Free-J2ME 可以避免 Alpha 通道創造這些影像，從而為部分遊戲提供優良的效能提升。",
+        "J2ME 規範要求所有影像（包括完全空白的影像及虛擬手機的 LCD 螢幕）都必須建立 Alpha 通道。此選項針對那些通常以完全不透明方式繪製的影像，在建立時省略其 Alpha 通道，從而減少不必要的處理開銷。根據遊戲不同，這能帶來中到大幅度的效能提升，且影響可忽略不計。",
+        "J2ME 規範要求所有影像（包括完全空白的影像及虛擬手機的 LCD 螢幕）都必須建立 Alpha 通道。此選項針對那些通常以完全不透明方式繪製的影像，在建立時省略其 Alpha 通道，從而減少不必要的處理開銷。根據遊戲不同，這能帶來中到大幅度的效能提升，且影響可忽略不計。",
         "speed_hacks",
         {
             { "on",  "啟用" },
@@ -520,11 +520,11 @@ struct retro_core_option_v2_definition core_options[] =
         "0"
     },
     {
-        "freej2me_compatnonfatalnullimages",
-        "Compatibility Settings > Don't throw Exception on null images",
-        "不對 Null 圖像拋出異常",
-        "根據 J2ME 規範，處理或載入 Null 影像時必須拋出 NullPointerException。如果遊戲沒有異常處理機制（少數情況），那麼遊戲將會卡死。如：無異常處理機制的《House M.D.》啟用此選項即可正常運作。不過，這可能會使進行異常處理機制的遊戲出現錯誤。",
-        "根據 J2ME 規範，處理或載入 Null 影像時必須拋出 NullPointerException。如果遊戲沒有異常處理機制（少數情況），那麼遊戲將會卡死。如：無異常處理機制的《House M.D.》啟用此選項即可正常運作。不過，這可能會使進行異常處理機制的遊戲出現錯誤。",
+        "freej2me_compatdonottranslatedrawrgb",
+        "Compatibility Settings > Don't translate drawRGB calls",
+        "不對 drawRGB 呼叫進行平移",
+        "根據 J2ME 規範，drawRGB 呼叫應受當前 Graphics Context 的平移影響。然而，索愛 QVGA 版本的《Peggle》必須在這些呼叫不受 Graphics Context 平移影響的環境下才能正常運作，而諾基亞版本則遵循了規範。這種行為在真機上也能重現。若遊戲中出現物件位置不正確的情況，請嘗試啟用此設定。",
+        "根據 J2ME 規範，drawRGB 呼叫應受當前 Graphics Context 的平移影響。然而，索愛 QVGA 版本的《Peggle》必須在這些呼叫不受 Graphics Context 平移影響的環境下才能正常運作，而諾基亞版本則遵循了規範。這種行為在真機上也能重現。若遊戲中出現物件位置不正確的情況，請嘗試啟用此設定。",
         "compat_settings",
         {
             { "on",  "啟用" },
@@ -565,8 +565,8 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_compatoverrideplatcheck",
         "Compatibility Settings > Override Mobile Platform checks",
         "覆寫行動平台檢查",
-        "部分應用程式會檢查特定的平台字串（如 'Nokia', 'Siemens S60'），若 FreeJ2ME 的平台字串不符預期，便會拒絕執行。該設定會覆寫平台字串以通過檢查。該設定利大於弊，故預設啟用。",
-        "部分應用程式會檢查特定的平台字串（如 'Nokia', 'Siemens S60'），若 FreeJ2ME 的平台字串不符預期，便會拒絕執行。該設定會覆寫平台字串以通過檢查。該設定利大於弊，故預設啟用。",
+        "部分應用程式會檢查特定的平台字串（如 'Nokia', 'Siemens S60'），若 FreeJ2ME 的平台字串不符預期，便會拒絕執行。該選項會將模擬器的平台字串覆寫為遊戲期望的內容，以通過檢查。該選項利大於弊，故預設啟用。",
+        "部分應用程式會檢查特定的平台字串（如 'Nokia', 'Siemens S60'），若 FreeJ2ME 的平台字串不符預期，便會拒絕執行。該選項會將模擬器的平台字串覆寫為遊戲期望的內容，以通過檢查。該選項利大於弊，故預設啟用。",
         "compat_settings",
         {
             { "on",  "啟用" },
@@ -576,11 +576,25 @@ struct retro_core_option_v2_definition core_options[] =
         "on"
     },
     {
+        "freej2me_compatsiemensfriendlydraw",
+        "Compatibility Settings > Siemens-friendly drawing methods",
+        "西門子友好型繪圖方法",
+        "符合 MIDP 規範的 J2ME 繪圖操作無需檢查負值平移即可正常繪製圖像。然而，一些西門子應用程式（如《Swedish Touring Car Championship》）在預設行為下無法正常運作。該選項會嘗試以一種更接近西門子虛擬機器可能採用的繪圖方式來修正平移。請注意，啟用此選項將會破壞那些使用負值平移且專為標準 J2ME 規範設計的遊戲。",
+        "符合 MIDP 規範的 J2ME 繪圖操作無需檢查負值平移即可正常繪製圖像。然而，一些西門子應用程式（如《Swedish Touring Car Championship》）在預設行為下無法正常運作。該選項會嘗試以一種更接近西門子虛擬機器可能採用的繪圖方式來修正平移。請注意，啟用此選項將會破壞那些使用負值平移且專為標準 J2ME 規範設計的遊戲。",
+        "compat_settings",
+        {
+            { "on",  "啟用" },
+            { "off", "禁用" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
         "freej2me_m3grenderuntextured",
         "M3G Debug Settings > Draw only vertex colors",
-        "僅渲染頂點顔色",
-        "*偵錯用* 使 M3G 僅渲染頂點顏色、無紋理的多邊形。對於偵錯 Blending 和 Vertex coloring seams 很有幫助。",
-        "*偵錯用* 使 M3G 僅渲染頂點顏色、無紋理的多邊形。對於偵錯 Blending 和 Vertex coloring seams 很有幫助。",
+        "僅渲染頂點顏色",
+        "*偵錯用* 使 M3G 僅渲染帶有頂點顏色、無紋理的多邊形。對於偵錯「顏色混合 (Blending)」以及「頂點著色接縫 (Vertex coloring seams)」問題很有幫助。",
+        "*偵錯用* 使 M3G 僅渲染帶有頂點顏色、無紋理的多邊形。對於偵錯「顏色混合 (Blending)」以及「頂點著色接縫 (Vertex coloring seams)」問題很有幫助。",
         "m3g_debug",
         {
             { "on",  "啟用" },
@@ -593,8 +607,8 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_m3grenderwireframe",
         "M3G Debug Settings > Draw Wireframe",
         "渲染線框",
-        "*偵錯用* 使 M3G 僅渲染線框。對於偵錯 Triangle clipping 和 Culling 很有幫助。",
-        "*偵錯用* 使 M3G 僅渲染線框。對於偵錯 Triangle clipping 和 Culling 很有幫助。",
+        "*偵錯用* 使 M3G 僅渲染線框。對於偵錯「三角形裁剪 (Triangle clipping)」和「剔除 (Culling)」問題很有幫助。",
+        "*偵錯用* 使 M3G 僅渲染線框。對於偵錯「三角形裁剪 (Triangle clipping)」和「剔除 (Culling)」問題很有幫助。",
         "m3g_debug",
         {
             { "on",  "啟用" },
@@ -944,9 +958,9 @@ struct retro_core_option_definition core_options_v1 [] =
         "0"
     },
     {
-        "freej2me_compatnonfatalnullimages",
-        "Don't throw Exception on null images",
-        "In the J2ME spec, processing or loading null images must result in a NullPointerException being thrown. This has the effect of basically freezing the app's execution unless the jar has some sort of exception handling in place (which is often the case). However, 'House M.D.', for one, doesn't, and results in the app freezing by not handling the exception it just received. Enabling this allows it to be playable, at the cost of breaking games that handle null images properly.",
+        "freej2me_compatdonottranslatedrawrgb",
+        "Don't translate drawRGB calls",
+        "In the J2ME spec, drawRGB calls should be affected by the current graphics context translation. However, Peggle for Sony Ericsson 240x320 is a game that expects those calls to NOT be affected by the graphics context translation whereas Nokia versions work as they should, this is also replicated in real hardware. Use this setting whenever objects aren't where they should be.",
         {
             { "on",  "Enabled"            },
             { "off", "Disabled (Default)" },
@@ -986,6 +1000,17 @@ struct retro_core_option_definition core_options_v1 [] =
             { NULL, NULL },
         },
         "on"
+    },
+    {
+        "freej2me_compatsiemensfriendlydraw",
+        "Siemens-friendly drawing methods",
+        "MIDP-Compliant J2ME drawing operations do no need to check for negative translation values in order to draw images properly. However, some Siemens apps like STCC (Swedish Touring Car Championship) won't work properly with the default behavior. This option tries to correct translations in a way that is closer to what Siemens' VM probably does drawing. Note that enabling this will break jars that use negative translations but are tailored for the J2ME specification.",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
     },
     {
         "freej2me_m3grenderuntextured",
@@ -1106,9 +1131,9 @@ static const struct retro_variable vars[] =
         "freej2me_spdhackfpsunlock",
         "Framerate Unlock Hack; 0|1|2|3"
     },
-    { /* Don't throw Exception on null images setting */
-        "freej2me_compatnonfatalnullimages",
-        "Don't throw Exception on null images; off|on"
+    { /* Don't translate drawRGB calls setting */
+        "freej2me_compatdonottranslatedrawrgb",
+        "Don't translate drawRGB calls; off|on"
     },
     { /* Translate to origin on gfx reset setting */
         "freej2me_compattranstooriginongfxreset",
@@ -1121,6 +1146,10 @@ static const struct retro_variable vars[] =
     { /* Override Mobile Platform checks */
         "freej2me_compatoverrideplatcheck",
         "Override Mobile Platform checks; on|off",
+    },
+    { /* Siemens-friendly drawing methods */
+        "freej2me_compatsiemensfriendlydraw",
+        "Siemens-friendly drawing methods; off|on",
     },
     { /* M3G draw only vertex colors */
         "freej2me_m3grenderuntextured",
