@@ -191,9 +191,10 @@ public final class AWTGUI
 		new CheckboxMenuItem("Nokia Full Keyboard", false),
 		new CheckboxMenuItem("Sagem", false),
 		new CheckboxMenuItem("Siemens", false),
-		new CheckboxMenuItem("Sharp", false)
+		new CheckboxMenuItem("Sharp", false),
+		new CheckboxMenuItem("SKT", false)
 	};
-	final String[] layoutValues = {"Standard", "LG", "Motorola", "MotoV8", "MotoTriplets", "NokiaKeyboard", "Sagem", "Siemens", "Sharp"};
+	final String[] layoutValues = {"Standard", "LG", "Motorola", "MotoV8", "MotoTriplets", "NokiaKeyboard", "Sagem", "Siemens", "Sharp", "SKT"};
 	
 	final CheckboxMenuItem[] backlightOptions = 
 	{
@@ -1023,12 +1024,15 @@ public final class AWTGUI
 
 			if(a.getActionCommand() == "Open") 
 			{
-				FileDialog filePicker = new FileDialog(main, "Open JAR / JAD / KJX File", FileDialog.LOAD);
+				FileDialog filePicker = new FileDialog(main, "Open JAR / JAD / KJX / MSD File", FileDialog.LOAD);
 				String filename;
-				filePicker.setFilenameFilter(new FilenameFilter()
-				{
-					public boolean accept(File dir, String name) 
-					{ return name.toLowerCase().endsWith(".jar") || name.toLowerCase().endsWith(".jad") || name.toLowerCase().endsWith(".kjx"); }
+				filePicker.setFilenameFilter(new FilenameFilter() {
+					public boolean accept(File dir, String name) {
+						return name.toLowerCase().endsWith(".jar") ||
+								name.toLowerCase().endsWith(".jad") ||
+								name.toLowerCase().endsWith(".kjx") ||
+								name.toLowerCase().endsWith(".msd");
+					}
 				});
 				filePicker.setVisible(true);
 

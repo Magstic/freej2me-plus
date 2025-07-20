@@ -7,7 +7,7 @@
 
 J2ME 模拟器，自带 Libretro、AWT 以及 SDL2 前端。
 
-该 Fork 目前主要维护 RetroArch 的简体中文和繁体中文翻译，以及 AWT 的简体中文翻译。
+该 Fork 目前主要维护 RetroArch 的简体中文和繁体中文翻译，以及 AWT （编码尚未支援）的简体中文翻译。
 
 请先从 [upstream](https://github.com/TASEmulators/freej2me-plus) 下载代码，然后使用该处的中文文件进行覆盖并编译。
 

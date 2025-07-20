@@ -34,6 +34,7 @@ static const char *supported_encodings[] =
     "-Dfile.encoding=UTF-8",
     "-Dfile.encoding=ISO_8859_1",
     "-Dfile.encoding=Shift-JIS",
+    "-Dfile.encoding=EUC_KR"
 };
 
 /* Input mapping variables and descriptions */
@@ -200,6 +201,7 @@ struct retro_core_option_v2_definition core_options[] =
             { "Sagem",               NULL },
             { "Siemens",             NULL },
             { "Sharp",               NULL },
+            { "SKT",                 NULL },
             { NULL, NULL },
         },
         "Default"
@@ -695,6 +697,7 @@ struct retro_core_option_definition core_options_v1 [] =
             { "Sagem",               NULL },
             { "Siemens",             NULL },
             { "Sharp",               NULL },
+            { "SKT",                 NULL },
             { NULL, NULL },
         },
         "Default"
@@ -1053,7 +1056,7 @@ static const struct retro_variable vars[] =
     },
     { /* Phone Control Type */
         "freej2me_phone",
-        "Phone Key Layout; Default|LG|Motorola/SoftBank|Motorola Triplets|Motorola V8|Nokia Full Keyboard|Sagem|Siemens|Sharp" 
+        "Phone Key Layout; Default|LG|Motorola/SoftBank|Motorola Triplets|Motorola V8|Nokia Full Keyboard|Sagem|Siemens|Sharp|SKT" 
     },
     { /* LCD Backlight Color */
         "freej2me_backlightcolor",
