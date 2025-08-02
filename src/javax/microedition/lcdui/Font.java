@@ -39,7 +39,7 @@ public class Font
 
 	protected static final int[] fontSizes = 
 	{
-		8,  8,  8, // < 128 minimum px dimension
+		 8, 8, 8, // < 128 minimum px dimension
 		10, 10, 10, // < 176 minimum px dimension
 		12, 12, 12, // < 220 minimum px dimension
 		14, 14, 14, // >= 220 minimum px dimension
@@ -86,7 +86,7 @@ public class Font
 		else if (minSize < 220) { screenType = 2; }
 		else                    { screenType = 3; }
 
-		defaultFont = new Font(Font.FACE_SYSTEM, Font.STYLE_PLAIN, convertSize(SIZE_MEDIUM));   
+		defaultFont = new Font(FACE_SYSTEM, STYLE_PLAIN, SIZE_MEDIUM);   
 	}
 
 	public int charsWidth(char[] ch, int offset, int length)
@@ -102,13 +102,11 @@ public class Font
 
 	public int getBaselinePosition() { return platformFont.getAscent(); }
 
-	public static Font getDefaultFont() 
-	{ 
-		if (defaultFont == null) 
-		{
-			defaultFont = new Font(Font.FACE_SYSTEM, Font.STYLE_PLAIN, convertSize(SIZE_MEDIUM)); 
-		}
-		return defaultFont;
+	public static Font getDefaultFont() { return defaultFont; }
+
+	public static void updateDefaultFont() 
+	{
+		defaultFont = new Font(defaultFont.face, defaultFont.style, defaultFont.size);
 	}
 
 	public int getFace() { return face; }

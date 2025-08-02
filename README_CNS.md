@@ -5,11 +5,13 @@
 
 [繁体中文](README_CNT.md) | **简体中文** | [English](README_EN.md)
 
-J2ME 模拟器，自带 Libretro、AWT 以及 SDL2 前端。
+J2ME 模拟器，自带 Libretro、AWT 前端。
 
-该 Fork 目前主要维护 RetroArch 的简体中文和繁体中文翻译，以及 AWT （编码尚未支援）的简体中文翻译。
+该 Fork 目前主要维护 RetroArch 的简体中文和繁体中文翻译。
 
-请先从 [upstream](https://github.com/TASEmulators/freej2me-plus) 下载代码，然后使用该处的中文文件进行覆盖并编译。
+请先从 [Upstream](https://github.com/TASEmulators/freej2me-plus) 下载代码，然后使用该处的中文文件进行覆盖并编译。
+
+您也可以直接在 Releases 中下载已编译的版本。
 
 项目原作者：
 - David Richardson [Recompile@retropie]
@@ -115,20 +117,12 @@ J2ME 模拟器，自带 Libretro、AWT 以及 SDL2 前端。
 
 ----
 
-## 使用方式 (适用于 AWT 与 SDL 前端)
+## 使用方式 (AWT 前端)
 
 启动 AWT 前端 (freej2me.jar) 时会显示一个文件选择器，让您选取要执行的 MIDlet。
 
 或者，也可以通过命令行启动：`java -jar freej2me.jar 'file:///path/to/midlet.jar' [fullscreen? 1=yes, 0=no] [width] [height] [scale] [keyLayout] [framerate]`
 除了文件路径外，所有参数都是可选的（甚至路径也是可选的，此时 FreeJ2ME-Plus 会正常开启）。
-
-SDL2 前端 (freej2me-sdl.jar) 接受相同的命令行参数格式，但 **不支持** `scale` (缩放比例) 选项。
-
-**注意**：此版本需要 libSDL2 2.24.0-1 或更高版本才能启动。请确认您的系统已安装该库，或将其置于 jar 文件的同层目录下以便加载。
-
-在 Windows 系统运行时请注意：文件路径需额外添加一个 `/` 前缀。例如，`C:\path\to\midlet.jar` 应输入为 `file:///C:\path\to\midlet.jar`
-
-FreeJ2ME 会将存档数据和配置文件保存于其运行时的工作目录。目前，若配置文件中指定了分辨率，将优先使用配置文件的数值，而非命令行传入的参数。
 
 ---
 

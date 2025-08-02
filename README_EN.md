@@ -3,7 +3,7 @@
 ![Java CI](https://github.com/TASEmulators/freej2me-plus/actions/workflows/ant.yml/badge.svg)
 ![Libretro Cores](https://github.com/TASEmulators/freej2me-plus/actions/workflows/libretro.yml/badge.svg)
 
-A free J2ME emulator with libretro, awt and sdl2 frontends.
+A free J2ME emulator with libretro, awt and ~~sdl2~~ frontends.
 
 Original authors :
 - David Richardson [Recompile@retropie]
