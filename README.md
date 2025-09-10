@@ -1,145 +1,215 @@
-# FreeJ2ME
 
-![Java CI](https://github.com/TASEmulators/freej2me-plus/actions/workflows/ant.yml/badge.svg)
-![Libretro Cores](https://github.com/TASEmulators/freej2me-plus/actions/workflows/libretro.yml/badge.svg)
+![BannerFinal](https://github.com/user-attachments/assets/ca82914c-e30e-406d-8d2e-487bda6263af)
 
-**繁體中文** | [简体中文](README_CNS.md) | [English](README_EN.md)
+<h1 align="center"> 專案狀態 </h1>
 
-J2ME 模擬器，携帶 Libretro、AWT 前端.
+<div align="center">
 
-該 Fork 目前主要維護 RetroArch 的簡體中文和繁體中文翻譯。
+[![Java CI](https://img.shields.io/github/actions/workflow/status/TASEmulators/freej2me-plus/ant.yml?style=for-the-badge&label=FreeJ2ME-Plus%20Core)](https://github.com/jpcsp/jpcsp/blob/master/.github/workflows/main.yml)
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Fjpcsp.org%2F&style=for-the-badge&label=FreeJ2ME-Plus%20Webpage)](https://tasemulators.github.io/freej2me-plus/)
+![Java version](https://img.shields.io/badge/Java-6-44cc11?style=for-the-badge&label=Minimum%20Java%20VM)
+![License](https://img.shields.io/badge/license-GPLv3-red?style=for-the-badge&label=Project%20License)
+![Open Issues](https://img.shields.io/github/issues/TASEmulators/freej2me-plus?style=for-the-badge)
+![Last Commit](https://img.shields.io/github/last-commit/TASEmulators/freej2me-plus?style=for-the-badge)
 
-請先從 [Upstream](https://github.com/TASEmulators/freej2me-plus) 下載 Code，然後使用該處的中文檔案進行覆蓋並編譯。
+</div>
 
-您也可以直接在 Releases 中下載已編譯的版本。
+<h1 align="center"> 下載連結 </h1>
 
-專案原作者：
-- David Richardson [Recompile@retropie]
-- Saket Dandawate  [Hex@retropie]
+<div align="center">
+
+[![Nightly Releases](https://img.shields.io/github/v/release/TASEmulators/freej2me-plus?label=Bleeding%20Edge%20Builds:&style=for-the-badge)](https://github.com/TASEmulators/freej2me-plus/releases/tag/nightlies)
+[![Latest Stable Release](https://img.shields.io/badge/version-v1.51-blue?label=Latest%20Stable%20Release:&style=for-the-badge)](https://github.com/TASEmulators/freej2me-plus/releases/tag/1.51)
+
+</div>
 
 ---
 
-## 控制說明
+# :question: 簡介
 
-* `Q` `W` 鍵分別對應左右軟鍵 (Softkey)。
-* `方向鍵` 用於導航。若手機按鍵佈局設為 `Standard`，方向鍵則對應 `2`、`4`、`6`、`8`。
-* 數字鍵作用與預期相符，小鍵盤的數字是反向對應的（`1` `2` `3` 與 `7` `8` `9` 互相交換，如同手機的九宮格鍵盤）。
-* `E` `R` 鍵可作為 `*` `#` 鍵的替代。
-* `Enter` 鍵在 `Standard` 模式下作為「OK/Fire」或 `5` 鍵。
-* `ESC` 鍵可呼叫設定選單。在 RetroArch 中，此功能對應的按鍵為 `F1`。
-* 在 AWT 前端 (freej2me.jar) 中，`Ctrl+C` 可以擷取螢幕，`+` / `-` 可以控制視窗的縮放比例。
+### FreeJ2ME-Plus 是一個携帶 Libretro 核心和 AWT 前端的 J2ME 模擬器，旨在運行於任何可以運行 Java VM 的裝置上。
 
-點擊 [此處](KEYMAP.md) 查看更多按鍵綁定資訊。
+### 請注意：現版本並不支援在 RetroArch 前端中載入中文檔名的 JAR，所以僅更新核心翻譯，您需自行在上游獲取原始碼，而後使用該處的翻譯補丁替換並編譯之。
 
-## 連結
+### 原作者 :
+#### - David Richardson [Recompile@retropie]
+#### - Saket Dandawate  [Hex@retropie]
 
-[![Nightly Builds](https://img.shields.io/badge/Nightly_Builds-blue.svg)](https://github.com/TASEmulators/freej2me-plus/releases/tag/nightlies)
-[![Screenshots](https://img.shields.io/badge/Screenshots-green.svg)](https://imgur.com/a/2vAeC)
-[![Compatibility List](https://img.shields.io/badge/Compatibility%20List-orange.svg)](https://tasemulators.github.io/freej2me-plus/)
+### 現維護者:
+#### - Paulo Sousa [AShiningRay]
+
+---
+
+# :bar_chart: 相容清單
+
+### 您可以在 [此處](https://tasemulators.github.io/freej2me-plus/) 查閲已測試的相容性清單。
 
 ----
-## 編譯説明
 
-### 編譯 FreeJ2ME Jar
+# :gear: :coffee: 建置 FreeJ2ME-Plus
 
-#### Linux
+**為了完成編譯，您需要準備 [Java JDK](https://www.java.com/zh-CN/download/) 以及 [Apache Ant](https://www.ant.org/manual/index.html) 環境。**
+
 >
-> 為了完成編譯，您需要準備 [Java 8](https://docs.azul.com/core/install/debian) 以及 [Apache Ant](https://ant.dev.org.tw/manual/install.html)。
->
-> 打開終端機，執行以下操作（`freej2me/`替換為專案的絕對根路徑）：
+> 在專案路徑下打开控制台，執行以下命令（沒錯，非常簡單）：
 >
 >```
-> > cd freej2me/
 > > ant
 >```
 >
-#### Windows
+> 編譯結果在專案下的 `/build` 資料夾：
 >
-> 為了完成編譯，您需要準備 [Java 8](https://www.java.com/zh-TW/download/) 以及 [Apache Ant](https://ant.dev.org.tw/manual/install.html)。
->
-> 打開命令提示字元，執行以下操作（`freej2me/`替換為專案的絕對根路徑）：
->
->```
-> > cd freej2me/
-> > ant
->```
-> 編譯結果將儲存在根目錄下的 build 資料夾中：
->
-> `freej2me.jar` -> 獨立的 AWT 可執行檔，目前主要的獨立版本。
+> `freej2me.jar` -> AWT 執行檔，可直接雙擊啟動。
 > 
-> `freej2me-lr.jar` -> Libretro 核心依賴。它扮演著核心的「BIOS」並負責執行 J2ME jar 檔案，因此必須放置在 RetroArch 的 `system` 資料夾下。
+> `freej2me-lr.jar` -> Libretro 核心依赖，作為『BIOS』執行 J2ME 檔案，因此其必須放置在 RetroArch 的 `/system` 資料夾下。
 >
->`freej2me-sdl.jar` -> SDL2 可執行檔，支援 libTAS 和 控制器。在未來可能會成為獨立版本。
+
+**NOTE: 若您想使用 Libretro 前端，請按照以下步骤编译核心文件。**
+
+# :gear: :video_game: 建置 Libretro Core
+
+### Linux
+
+### **為了完成編譯，您需要使環境可以執行 `make` 指令。**
+
+> 在專案路徑下打开控制台，執行以下命令
 >
-> 如果您想在 Libretro 中使用 jar，您仍需按照以下步驟編譯核心檔案。
-
-### 編譯 Libretro 核心
-
-#### Linux
-> 
-> 請在該專案的根路徑下打開終端，並執行以下命令：
 >```
 > > cd src/libretro
 > > make
 >```
-> 該命令將在 `src/libretro/` 下建立 `freej2me_libretro.so` 檔案，這需要和上文中編譯的 `freej2me-lr.jar` 協同使用。
 >
-> 把 `freej2me_libretro.so` 放在 `cores/`，`freej2me-lr.jar` 放在 `system`—— 現在，RetroArch 中應該可以正常執行 J2ME 程式。
+>編譯所得的核心檔為 `freej2me_libretro.so`，請將其放置在 Libretro 前端配置檔所規定的核心路徑下（不同版本的 RetroArch 核心預設路徑均不同，但一般是『retroarch/cores』）。
 >
-> NOTE: 核心無法在容器或是沙箱中工作，除非沙箱中的 Java 可以和核心響應！這是您使用 Flatpak 或者 Snap 時需要注意的。
+>`freej2me-lr.jar` 亦然，其預設路徑一般是『retroarch/system』。
 >
 
-#### Windows
-> 
-> 若想在 Windows 上編譯核心，您需要使用 mingw 或 MSYS2 64 模擬 Linux 環境。
+### **NOTE: 核心無法在容器/沙盒中正確工作，除非其可以呼叫同一容器或是沙盒中的 Java 執行階段。若您使用 Flatpak 或是 Snap 之類的前端版本，請記住該點。**
 >
-> 本指南使用 MSYS2 64，因為其設定簡單，且更接近 Linux 的語法。
+
+---
+
+### Windows
+
+### 為了完成編譯，您需要使用 mingw 或 MSYS2 64 模擬 Linux 環境。
+
+### 本指南使用 [MSYS2 64](https://www.msys2.org/)，因為它設定簡單，且更接近 Linux 的語法。
+
 >
-> 安裝 [MSYS2-x86_64](https://www.msys2.org/)。常規情況下，您的所有編譯工作將在 `C:\msys64\home\UserName` 下完成。
+> 一般情況下，您的所有編譯工作將在 `C:\msys64\home\UserName` 下完成。
 >
-> 不過在此之前，我們需要安裝編譯的依賴：
+> 不過在此之前，我們需要安裝編譯所需的依賴：
 >
 >```
 > > pacman -S mingw-w64-ucrt-x86_64-gcc
 > > pacman -S make
 >```
-> 下載好專案后，將其解壓到上述路徑下，如 `C:\msys64\home\UserName\freej2me-plus（專案根路徑）`:
+>
+> 下載好專案後，將其解壓到上述路徑，如 `C:\msys64\home\UserName\freej2me-plus`。
 >
 >```
 > > cd freej2me-plus/src/libretro
 > > make
 >```
-> 該命令將在 `src/libretro/` 下建立 `freej2me_libretro.dll` 檔案，這需要和上文中編譯的 `freej2me-lr.jar` 協同使用。
 >
-> 把 `freej2me_libretro.dll` 放在 `cores/`，`freej2me-lr.jar` 放在 `system`—— 現在，RetroArch 中應該可以正常執行 J2ME 程式。
+>編譯所得的核心檔為 `freej2me_libretro.dll`，請將其放置在 Libretro 前端配置檔所規定的核心路徑下（Windows 版的 RetroArch 核心預設在『retroarch/cores』）。
 >
->NOTE: Windows 核心已在 Windows 7、10 和 11 x64 上測試。
+> `freej2me-lr.jar` 亦然，其預設路徑一般是『retroarch/system』。
+
+### Windows 核心已在 Windows 7、10 和 11 x64 上測試。
 
 ----
+# :memo: AWT 前端使用指南
 
-## 使用方式（AWT 前端）
+### 雙擊 freej2me.jar，即可啟動 AWT 前端的 GUI。
 
-啟動 AWT 前端（freej2me.jar）時會顯示一個檔案選擇器，讓您選取要執行的 MIDlet。
+### 您可透過 `File` 或是 拖拽，將 JAR/JAD/KJX/MSD 在前端中打開。 
 
-或者，也可以透過命令列啟動：`java -jar freej2me.jar 'file:///path/to/midlet.jar' [fullscreen? 1=yes, 0=no] [width] [height] [scale] [keyLayout] [framerate]`
-除了檔案路徑外，所有參數都是可選的（甚至路徑也是可選的，此時 FreeJ2ME-Plus 會正常開啟）。
+### 選單中也提供了多種配置項：
+
+<img width="252" height="390" alt="image" src="https://github.com/user-attachments/assets/64737dd3-eea6-4437-b236-aeb163841f21" />
+<img width="252" height="390" alt="image" src="https://github.com/user-attachments/assets/5b105d46-d83b-4d1f-9913-687d281523d4" />
+<img width="254" height="390" alt="image" src="https://github.com/user-attachments/assets/95054a08-35fb-4e99-87f2-ba36a9a8629c" />
+
+<img width="968" height="399" alt="image" src="https://github.com/user-attachments/assets/f28042c3-1d7f-47be-8942-0e5a5b2cf2b9" />
+
+<h1> </h1>
+
+### 您也可以使用控制台參數啟動：
+
+### `java -jar freej2me.jar 'file:///path/to/midlet.jar' fullscreen width height scale keyLayout framerate dojaversion`
+
+### 參數簡介
+
+- `fullscreen` :`1 = 是, 0 = 否`
+- `width` :`熒幕寬度`
+- `height` :`熒幕高度`
+- `scale` :`視窗縮放比例，如『2』即為放大 2 倍`
+- `keyLayout` :`鍵值佈局`
+  - `0 -> Default`
+  - `1 -> LG`
+  - `2 -> Motorola/Softbank`
+  - `3 -> Motorola Triplets`
+  - `4 -> Motorola V8`
+  - `5 -> Nokia Keyboard`
+  - `6 -> Sagem`
+  - `7 -> Siemens`
+  - `8 -> Sharp`
+  - `9 -> SKT`
+  - `10 -> KDDI`
+- `framerate` :`運行幀率` 
+  - 一般為 '10' ~ '60'，但其可以是任何值
+- `dojaversion` :`DoJa/Star API 版本`
+  - `10 -> Default`
+  - `20 -> DoJa 2.0 & International 1.5`
+  - `30 -> DoJa 3.0 & International 2.5`
+  - `35 -> DoJa 3.5`
+  - `40 -> DoJa 4.0`
+  - `41 -> DoJa 4.1`
+  - `50 -> DoJa 5.0`
+  - `51 -> DoJa 5.1`
+  - `100 -> Star 1.0`
+  - `110 -> Star 1.1`
+  - `120 -> Star 1.2`
+  - `130 -> Star 1.3`
+  - `150 -> Star 1.5`
+  - `200 -> Star 2.0`
+
+<h1> </h1>
+
+### 路徑之外的任何參數均為可選項。
+
+### _Notes:_
+
+**在 Microsoft Windows 下使用時，請注意路徑需要額外的 `/`。如，`C:\path\to\midlet.jar` 應為 `file:///C:\path\to\midlet.jar`。**
+
+**FreeJ2ME 將 Rms 和 Config 儲存模擬器的同路徑下， Config 中的設定值優於命令列所傳遞的值。**
 
 ---
 
-## 使用的模組和依賴:
+# :mag: 模組和依賴
 
-### JLayer(MPEG Player): - LGPLv2.1 License, compatible with GPLv3
+- #### JLayer(MPEG Player): - LGPLv2.1 License, compatible with GPLv3
 
-### libsdl4j: zlib License, compatible with GPLv3
+- #### libsdl4j: zlib License, compatible with GPLv3
 
-### ObjectWeb's ASM: BSD 3-Clause License, not directly compatible with GPLv3, but can be used as long as the original license is published alongside GPLv3 (check the 'License' tab)
+- #### ObjectWeb's ASM: BSD 3-Clause License, not directly compatible with GPLv3, but can be used as long as the original license is published alongside GPLv3 (check the 'License' tab)
 
-### Libretro's API: MIT License, compatible with GPLv3
+- #### Libretro's API: MIT License, compatible with GPLv3
 
-# 協助我們改進:
+---
+
+# :busts_in_silhouette: 協助
+
+### If you're a developer:
+
   1) Open an Issue
   2) Try solving that issue
   3) Post on the Issue if you have a possible solution
   4) Submit a PR implementing the solution
 
-**如果您不是開發者，僅需正常提出 Issue 即可。**
+### If you're an user:
+
+  1) Open an Issue
+  2) Explain it in as much detail as you can (FreeJ2ME-Plus version, jar used, md5 hash, as well as the issue with logs and images if possible)
+  3) Post a save file close to where the issue manifests, or note the steps required to reproduce it

@@ -1,7 +1,7 @@
 
 ![BannerFinal](https://github.com/user-attachments/assets/ca82914c-e30e-406d-8d2e-487bda6263af)
 
-<h1 align="center"> 專案狀態 </h1>
+<h1 align="center"> 项目状态 </h1>
 
 <div align="center">
 
@@ -14,7 +14,7 @@
 
 </div>
 
-<h1 align="center"> 下載連結 </h1>
+<h1 align="center"> 下载链接 </h1>
 
 <div align="center">
 
@@ -25,11 +25,11 @@
 
 ---
 
-# :question: 簡介
+# :question: 简介
 
-### FreeJ2ME-Plus 是一個携帶 Libretro 核心和 AWT 前端的 J2ME 模擬器，旨在運行於任何可以運行 Java VM 的裝置上。
+### FreeJ2ME-Plus 是一个携带 Libretro 核心和 AWT 前端的 J2ME 模拟器，旨在运行于任何可以运行 Java VM 的装置上。
 
-### 請注意：現版本並不支援在 RetroArch 前端中載入中文檔名的 JAR，所以僅更新核心翻譯，您需自行在上游獲取原始碼，而後使用該處的翻譯補丁替換並編譯之。
+### 请注意：现版本并不支援在 RetroArch 前端中载入中文档名的 JAR，所以仅更新核心翻译，您需自行在上游获取原始码，而后使用该处的翻译补丁替换并编译之。
 
 ### 原作者 :
 #### - David Richardson [Recompile@retropie]
@@ -40,92 +40,92 @@
 
 ---
 
-# :bar_chart: 相容清單
+# :bar_chart: 兼容清单
 
-### 您可以在 [此處](https://tasemulators.github.io/freej2me-plus/) 查閲已測試的相容性清單。
+### 您可以在 [此处](https://tasemulators.github.io/freej2me-plus/) 查阅已测试的相容性清单。
 
 ----
 
-# :gear: :coffee: 建置 FreeJ2ME-Plus
+# :gear: :coffee: 构建 FreeJ2ME-Plus
 
-**為了完成編譯，您需要準備 [Java JDK](https://www.java.com/zh-CN/download/) 以及 [Apache Ant](https://www.ant.org/manual/index.html) 環境。**
+**为了完成编译，您需要准备 [Java JDK](https://www.java.com/zh-CN/download/) 以及 [Apache Ant](https://www.ant.org/manual/index.html) 环境。 **
 
 >
-> 在專案路徑下打开控制台，執行以下命令（沒錯，非常簡單）：
+> 在专案路径下打开控制台，执行以下命令（没错，非常简单）：
 >
 >```
 > > ant
 >```
 >
-> 編譯結果在專案下的 `/build` 資料夾：
+> 编译结果在专案下的 `/build` 资料夹：
 >
-> `freej2me.jar` -> AWT 執行檔，可直接雙擊啟動。
-> 
-> `freej2me-lr.jar` -> Libretro 核心依赖，作為『BIOS』執行 J2ME 檔案，因此其必須放置在 RetroArch 的 `/system` 資料夾下。
+> `freej2me.jar` -> AWT 执行档，可直接双击启动。
+>
+> `freej2me-lr.jar` -> Libretro 核心依赖，作为『BIOS』执行 J2ME 档案，因此其必须放置在 RetroArch 的 `/system` 资料夹下。
 >
 
-**NOTE: 若您想使用 Libretro 前端，請按照以下步骤编译核心文件。**
+**NOTE: 若您想使用 Libretro 前端，请按照以下步骤编译核心文件。 **
 
-# :gear: :video_game: 建置 Libretro Core
+# :gear: :video_game: 构建 Libretro Core
 
 ### Linux
 
-### **為了完成編譯，您需要使環境可以執行 `make` 指令。**
+### **为了完成编译，您需要使环境可以执行 `make` 指令。 **
 
-> 在專案路徑下打开控制台，執行以下命令
+> 在专案路径下打开控制台，执行以下命令
 >
 >```
 > > cd src/libretro
 > > make
 >```
 >
->編譯所得的核心檔為 `freej2me_libretro.so`，請將其放置在 Libretro 前端配置檔所規定的核心路徑下（不同版本的 RetroArch 核心預設路徑均不同，但一般是『retroarch/cores』）。
+>编译所得的核心档为 `freej2me_libretro.so`，请将其放置在 Libretro 前端配置档所规定的核心路径下（不同版本的 RetroArch 核心预设路径均不同，但一般是『retroarch/cores』）。
 >
->`freej2me-lr.jar` 亦然，其預設路徑一般是『retroarch/system』。
+>`freej2me-lr.jar` 亦然，其预设路径一般是『retroarch/system』。
 >
 
-### **NOTE: 核心無法在容器/沙盒中正確工作，除非其可以呼叫同一容器或是沙盒中的 Java 執行階段。若您使用 Flatpak 或是 Snap 之類的前端版本，請記住該點。**
+### **NOTE: 核心无法在容器/沙盒中正确工作，除非其可以呼叫同一容器或是沙盒中的 Java 执行阶段。若您使用 Flatpak 或是 Snap 之类的前端版本，请记住该点。 **
 >
 
 ---
 
 ### Windows
 
-### 為了完成編譯，您需要使用 mingw 或 MSYS2 64 模擬 Linux 環境。
+### 为了完成编译，您需要使用 mingw 或 MSYS2 64 模拟 Linux 环境。
 
-### 本指南使用 [MSYS2 64](https://www.msys2.org/)，因為它設定簡單，且更接近 Linux 的語法。
+### 本指南使用 [MSYS2 64](​​https://www.msys2.org/)，因为它设定简单，且更接近 Linux 的语法。
 
 >
-> 一般情況下，您的所有編譯工作將在 `C:\msys64\home\UserName` 下完成。
+> 一般情况下，您的所有编译工作将在 `C:\msys64\home\UserName` 下完成。
 >
-> 不過在此之前，我們需要安裝編譯所需的依賴：
+> 不过在此之前，我们需要安装编译所需的依赖：
 >
 >```
 > > pacman -S mingw-w64-ucrt-x86_64-gcc
 > > pacman -S make
 >```
 >
-> 下載好專案後，將其解壓到上述路徑，如 `C:\msys64\home\UserName\freej2me-plus`。
+> 下载好专案后，将其解压到上述路径，如 `C:\msys64\home\UserName\freej2me-plus`。
 >
 >```
 > > cd freej2me-plus/src/libretro
 > > make
 >```
 >
->編譯所得的核心檔為 `freej2me_libretro.dll`，請將其放置在 Libretro 前端配置檔所規定的核心路徑下（Windows 版的 RetroArch 核心預設在『retroarch/cores』）。
+>编译所得的核心档为 `freej2me_libretro.dll`，请将其放置在 Libretro 前端配置档所规定的核心路径下（Windows 版的 RetroArch 核心预设在『retroarch/cores』）。
 >
-> `freej2me-lr.jar` 亦然，其預設路徑一般是『retroarch/system』。
+> `freej2me-lr.jar` 亦然，其预设路径一般是『retroarch/system』。
 
-### Windows 核心已在 Windows 7、10 和 11 x64 上測試。
+### Windows 核心已在 Windows 7、10 和 11 x64 上测试。
 
 ----
 # :memo: AWT 前端使用指南
 
-### 雙擊 freej2me.jar，即可啟動 AWT 前端的 GUI。
+### 双击 freej2me.jar，即可启动 AWT 前端的 GUI。
 
-### 您可透過 `File` 或是 拖拽，將 JAR/JAD/KJX/MSD 在前端中打開。 
+### 您可透过 `File` 或是 拖拽，将 JAR/JAD/KJX/MSD 在前端中打开。
 
-### 選單中也提供了多種配置項：
+### 选单中也提供了多种配置项：
 
 <img width="252" height="390" alt="image" src="https://github.com/user-attachments/assets/64737dd3-eea6-4437-b236-aeb163841f21" />
 <img width="252" height="390" alt="image" src="https://github.com/user-attachments/assets/5b105d46-d83b-4d1f-9913-687d281523d4" />
@@ -135,7 +135,7 @@
 
 <h1> </h1>
 
-### 您也可以使用控制台參數啟動：
+### 您也可以使用控制台参数启动：
 
 ### `java -jar freej2me.jar 'file:///path/to/midlet.jar' fullscreen width height scale keyLayout framerate dojaversion`
 
@@ -177,17 +177,17 @@
 
 <h1> </h1>
 
-### 路徑之外的任何參數均為可選項。
+### 路径之外的任何参数均为可选项。
 
 ### _Notes:_
 
-**在 Microsoft Windows 下使用時，請注意路徑需要額外的 `/`。如，`C:\path\to\midlet.jar` 應為 `file:///C:\path\to\midlet.jar`。**
+**在 Microsoft Windows 下使用时，请注意路径需要额外的 `/`。如，`C:\path\to\midlet.jar` 应为 `file:///C:\path\to\midlet.jar`。 **
 
-**FreeJ2ME 將 Rms 和 Config 儲存模擬器的同路徑下， Config 中的設定值優於命令列所傳遞的值。**
+**FreeJ2ME 将 Rms 和 Config 储存模拟器的同路径下， Config 中的设定值优于命令列所传递的值。 **
 
 ---
 
-# :mag: 模組和依賴
+# :mag: 模组和依赖
 
 - #### JLayer(MPEG Player): - LGPLv2.1 License, compatible with GPLv3
 
