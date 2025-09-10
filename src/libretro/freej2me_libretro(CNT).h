@@ -32,7 +32,7 @@
 static const char *supported_encodings[] = 
 {
     "-Dfile.encoding=ISO_8859_1",
-    "-Dfile.encoding=Shift-JIS",
+    "-Dfile.encoding=Shift_JIS",
     "-Dfile.encoding=EUC_KR"
 };
 
@@ -55,17 +55,33 @@ static const struct retro_controller_info ports[] =
 
 #define FRAMES_DROPPED_MSG 0
 #define INVALID_STATUS_MSG 1
-#define COULD_NOT_START_MSG 2
-#define CORE_HAS_LOADED_MSG 3
+#define IMPROPER_CHILDPROC_MSG 2
+#define SYSTEM_NOT_FOUND_MSG 3
+#define COULD_NOT_START_MSG 4
+#define UNEXPECTED_CLOS_MSG 5
+#define PIPE_WRITE_FAIL_MSG 6
+#define PIPE_READ_FAIL_MSG 7
+#define CHILDPROC_CLOSED_MSG 8
+#define CORE_HAS_LOADED_MSG 9
 
 static const struct retro_message_ext messages[] =
 {
-   /* Message string to be displayed/logged */
-   {"Too many frames dropped!!! Please restart the core.", 8000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
-   {"Invalid status received!!! Please restart the core.", 8000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
-   {"FreeJ2ME could not start!!! \nMake sure > freej2me-lr.jar < is in the 'system' dir and that you have Java 8 or newer installed.", 15000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
-   {"FreeJ2ME child process loaded successfully!", 4000, 1, RETRO_LOG_INFO, RETRO_MESSAGE_TARGET_OSD, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
-   {"", 0, 0, 0, 0, 0, 0}
+    /* Message string to be displayed/logged */
+    {"Too many frames dropped! Please restart the core.", 5000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"Invalid status received! Please restart the core.", 5000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"FreeJ2ME failed to setup pipes for communication!!! \nPlease restart the core.", 15000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+#ifdef __linux__
+    {"FreeJ2ME system files not found! \nMake sure > freej2me-lr.jar < is in the 'system' dir.", 15000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+#elif _WIN32
+    {"FreeJ2ME system files not found! \nMake sure > freej2me-lr.jar < is in the 'system' dir.", 15000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+#endif
+    {"FreeJ2ME could not start! \nMake sure that you have Java 6 or newer installed.", 15000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"FreeJ2ME closed unexpectedly!!! \nPlease restart the core.", 15000, 3, RETRO_LOG_ERROR, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"Pipe Write failed! Might be trivial, if you notice issues, please restart.", 5000, 3, RETRO_LOG_WARN, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"Pipe Read failed! Might be trivial, if you notice issues, please restart.", 5000, 3, RETRO_LOG_WARN, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"FreeJ2ME not running! Either the game crashed, or it was closed.", 5000, 3, RETRO_LOG_WARN, RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"FreeJ2ME child process loaded successfully!", 3000, 1, RETRO_LOG_INFO, RETRO_MESSAGE_TARGET_OSD, RETRO_MESSAGE_TYPE_NOTIFICATION, 0},
+    {"", 0, 0, 0, 0, 0, 0}
 };
 
 /* This is responsible for exposing the joypad input mappings to the frontend */
@@ -152,6 +168,7 @@ struct retro_core_option_v2_definition core_options[] =
             { "208x208",   NULL },
             { "180x320",   NULL },
             { "320x180",   NULL },
+            { "240x240",   NULL },
             { "208x320",   NULL },
             { "240x320",   NULL },
             { "320x240",   NULL },
@@ -171,18 +188,46 @@ struct retro_core_option_v2_definition core_options[] =
         "240x320"
     },
     {
-        "freej2me_rotate",
-        "System > Rotate Screen",
-        "螢幕旋轉",
-        "一些遊戲（特別是觸控遊戲）通常需要旋轉螢幕。",
-        "一些遊戲（特別是觸控遊戲）通常需要旋轉螢幕。",
+        "freej2me_dojaversion",
+        "System > DoJa API Version",
+        "DoJa API 版本",
+        "DoCoMo 的 Java VM 實作被分為多組 API，且其間存在不相容情況。該設定允許核心使用特定版本的 Doja/Star API，以解決圖形、音訊或是運行方面的問題。",
+        "DoCoMo 的 Java VM 實作被分為多組 API，且其間存在不相容情況。該設定允許核心使用特定版本的 Doja/Star API，以解決圖形、音訊或是運行方面的問題。",
         "system_settings",
         {
-            { "on",  "啟用" },
-            { "off", "禁用" },
+            { "10"   "DoJa-1.0" },
+            { "20",  "DoJa-2.0 & 1.5 OE" },
+            { "30",  "DoJa-3.0 & 2.5 OE" },
+            { "35",  "DoJa-3.5" },
+            { "40",  "DoJa-4.0" },
+            { "41",  "DoJa-4.1" },
+            { "50",  "DoJa-5.0" },
+            { "51",  "DoJa-5.1" },
+            { "100", "Star-1.0" },
+            { "110", "Star-1.1" },
+            { "120", "Star-1.2" },
+            { "130", "Star-1.3" },
+            { "150", "Star-1.5" },
+            { "200", "Star-2.0" },
             { NULL, NULL },
         },
-        "off"
+        "200"
+    },
+    {
+        "freej2me_rotate",
+        "System > Rotate Screen",
+        "Rotate Screen",
+        "一些遊戲通常需要旋轉螢幕。該選項允許你以 90° 為單位來旋轉熒幕，通常使用 270° 為基準。",
+        "一些遊戲通常需要旋轉螢幕。該選項允許你以 90° 為單位來旋轉熒幕，通常使用 270° 為基準。",
+        "system_settings",
+        {
+            { "0",   "Disabled" },
+            { "90",  "90 degrees"  },
+            { "180", "180 degrees"  },
+            { "270", "270 degrees"  },
+            { NULL, NULL },
+        },
+        "0"
     },
     {
         "freej2me_phone",
@@ -233,7 +278,7 @@ struct retro_core_option_v2_definition core_options[] =
         "J2ME 在處理同步時的自由度很大，一些 FPS 不設限的遊戲在運行時幀率可能會爆炸。請根據實際情況酌情配置該選項。",
         "system_settings",
         {
-            { "Auto", "Auto" },
+            { "Auto", "Disabled" },
             { "60",   "60 FPS"   },
             { "55",   "55 FPS"   },
             { "50",   "50 FPS"   },
@@ -398,7 +443,7 @@ struct retro_core_option_v2_definition core_options[] =
             { "None",   "無遊標 / 手把模擬" },
             { NULL, NULL },
         },
-        "Touch"
+        "Mouse"
     },
     {
         "freej2me_pointerxspeed",
@@ -496,12 +541,26 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_spdhacknoalpha",
         "Speed Hacks > No Alpha on Blank Images (Restart Required)",
         "無 Alpha 空白影像（需重載核心）",
-        "J2ME 規範要求所有影像（包括完全空白的影像及虛擬手機的 LCD 螢幕）都必須建立 Alpha 通道。此選項針對那些通常以完全不透明方式繪製的影像，在建立時省略其 Alpha 通道，從而減少不必要的處理開銷。根據遊戲不同，這能帶來中到大幅度的效能提升，且影響可忽略不計。",
-        "J2ME 規範要求所有影像（包括完全空白的影像及虛擬手機的 LCD 螢幕）都必須建立 Alpha 通道。此選項針對那些通常以完全不透明方式繪製的影像，在建立時省略其 Alpha 通道，從而減少不必要的處理開銷。根據遊戲不同，這能帶來中到大幅度的效能提升，且影響可忽略不計。",
+        "J2ME 規範要求所有影像（包括完全空白的影像及虛擬手機的 LCD 螢幕）都必須建立 Alpha 通道。此選項針對那些通常以完全不透明方式繪製的影像，在建立時省略其 Alpha 通道，從而減少不必要的處理開銷。根據遊戲不同，這能帶來顯著的效能提升，且影響可忽略不計。",
+        "J2ME 規範要求所有影像（包括完全空白的影像及虛擬手機的 LCD 螢幕）都必須建立 Alpha 通道。此選項針對那些通常以完全不透明方式繪製的影像，在建立時省略其 Alpha 通道，從而減少不必要的處理開銷。根據遊戲不同，這能帶來顯著的效能提升，且影響可忽略不計。",
         "speed_hacks",
         {
             { "on",  "啟用" },
             { "off", "禁用" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_spdhackm3ghalfres",
+        "Speed Hacks > Render M3G at Half Resolution",
+        "M3G 半解析度渲染",
+        "FreeJ2ME-Plus 對 M3G（Mobile 3D Graphics） 使用軟體渲染。若程式較為複雜，或是熒幕解析度過高，可能會導致效能問題。若 CPU 無法進行全解析度渲染，請啟用此選項。",
+        "FreeJ2ME-Plus 對 M3G（Mobile 3D Graphics） 使用軟體渲染。若程式較為複雜，或是熒幕解析度過高，可能會導致效能問題。若 CPU 無法進行全解析度渲染，請啟用此選項。",
+        "speed_hacks",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
             { NULL, NULL },
         },
         "off"
@@ -593,6 +652,20 @@ struct retro_core_option_v2_definition core_options[] =
         "off"
     },
     {
+        "freej2me_compatignorevolumechanges",
+        "Compatibility Settings > Ignore volume changes",
+        "音量變更忽略",
+        "在 J2ME 子系統中，媒體播放可能是因廠商而在實作或使用上的不同，而導致差異最大的模塊。有些程式甚至會對已經停止的串流進行音量變更，這可能致使其他正在播放的媒體出現問題（如『Sonic 2』 的 MIDP 版）。啟用此選項可改善此類情況。",
+        "在 J2ME 子系統中，媒體播放可能是因廠商而在實作或使用上的不同，而導致差異最大的模塊。有些程式甚至會對已經停止的串流進行音量變更，這可能致使其他正在播放的媒體出現問題（如『Sonic 2』 的 MIDP 版）。啟用此選項可改善此類情況。",
+        "compat_settings",
+        {
+            { "on",  "啟用" },
+            { "off", "禁用" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
         "freej2me_m3grenderuntextured",
         "M3G Debug Settings > Draw only vertex colors",
         "僅渲染頂點顏色",
@@ -655,6 +728,7 @@ struct retro_core_option_definition core_options_v1 [] =
             { "208x208",   NULL },
             { "180x320",   NULL },
             { "320x180",   NULL },
+            { "240x240",   NULL },
             { "208x320",   NULL },
             { "240x320",   NULL },
             { "320x240",   NULL },
@@ -674,15 +748,40 @@ struct retro_core_option_definition core_options_v1 [] =
         "240x320"
     },
     {
-        "freej2me_rotate",
-        "Rotate Screen",
-        "Some games, especially ones that support touch controls, tend to expect the screen to be rotated. This option comes in handy on those cases.",
+        "freej2me_dojaversion",
+        "DoJa API Version",
+        "DoCoMo's Java VM implementation is separated into a set of different APIs with some breaking changes between major versions. This setting allows you to set a specific version that might fix any transparency, audio and gameplay issues on the DoJa/Star app you are running.",
         {
-            { "off", "Disabled" },
-            { "on",  "Enabled"  },
+            { "10"   "DoJa-1.0" },
+            { "20",  "DoJa-2.0 & 1.5 OE" },
+            { "30",  "DoJa-3.0 & 2.5 OE" },
+            { "35",  "DoJa-3.5" },
+            { "40",  "DoJa-4.0" },
+            { "41",  "DoJa-4.1" },
+            { "50",  "DoJa-5.0" },
+            { "51",  "DoJa-5.1" },
+            { "100", "Star-1.0" },
+            { "110", "Star-1.1" },
+            { "120", "Star-1.2" },
+            { "130", "Star-1.3" },
+            { "150", "Star-1.5" },
+            { "200", "Star-2.0" },
             { NULL, NULL },
         },
-        "off"
+        "200"
+    },
+    {
+        "freej2me_rotate",
+        "Rotate Screen",
+        "For applications that expect the screen to be rotated, this option allows you to set the rotation in 90-degree steps. 270 degrees is the most commonly used",
+        {
+            { "0",   "Disabled" },
+            { "90",  "90 degrees"  },
+            { "180", "180 degrees"  },
+            { "270", "270 degrees"  },
+            { NULL, NULL },
+        },
+        "0"
     },
     {
         "freej2me_phone",
@@ -941,7 +1040,18 @@ struct retro_core_option_definition core_options_v1 [] =
     {
         "freej2me_spdhacknoalpha",
         "No Alpha on Blank Images (Restart Required)",
-        "J2ME dictates that all images, including fully blank ones, have to be created with an alpha channel, and this includes the virtual phone's LCD screen. However, FreeJ2ME can create those without an alpha channel instead, cutting back on alpha processing for those images that usually are always fully painted with no transparency. Provides a Moderate to Large performance boost depending on the app with little to no side effects",
+        "J2ME dictates that all images, including fully blank ones, have to be created with an alpha channel, and this includes the virtual phone's LCD screen. However, FreeJ2ME can create those without an alpha channel instead, cutting back on alpha processing for those images that usually are always fully painted with no transparency. Provides a measurable performance boost depending on the app with little to no side effects",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
+        "freej2me_spdhackm3ghalfres",
+        "Render M3G at Half Resolution",
+        "FreeJ2ME-Plus uses a software renderer for M3G (Mobile 3D Graphics), which can be intensive in more complex applications and higher phone resolutions. Use this if your cpu cannot keep up with full resolution rendering.",
         {
             { "on",  "Enabled"            },
             { "off", "Disabled (Default)" },
@@ -1018,6 +1128,17 @@ struct retro_core_option_definition core_options_v1 [] =
         "off"
     },
     {
+        "freej2me_compatignorevolumechanges",
+        "Ignore volume changes",
+        "Media playback is probably the J2ME subsystem whose implementation and utilization varies the most by vendor. Some applications go as far as setting volume changes to streams they already stopped beforehand, which can cause playback issues on other media that's currently playing. Sonic 2's MIDP versions are some such cases... enabling this option helps them.",
+        {
+            { "on",  "Enabled"            },
+            { "off", "Disabled (Default)" },
+            { NULL, NULL },
+        },
+        "off"
+    },
+    {
         "freej2me_m3grenderuntextured",
         "Draw only vertex colors",
         "Enabling this makes M3G render only vertex colored, untextured polygons. Useful for debugging blending and vertex coloring seams.",
@@ -1050,11 +1171,15 @@ static const struct retro_variable vars[] =
 {
     { /* Screen Resolution */
         "freej2me_resolution",
-        "Phone Resolution (Core Restart may be required); 240x320|96x65|101x64|101x80|128x128|130x130|120x160|128x160|132x176|176x208|176x220|220x176|208x208|180x320|320x180|208x320|320x240|240x400|400x240|240x432|240x480|360x360|352x416|360x640|640x360|640x480|480x800|800x480" 
+        "Phone Resolution (Core Restart may be required); 240x320|96x65|101x64|101x80|128x128|130x130|120x160|128x160|132x176|176x208|176x220|220x176|208x208|180x320|320x180|240x240|208x320|320x240|240x400|400x240|240x432|240x480|360x360|352x416|360x640|640x360|640x480|480x800|800x480" 
+    },
+    { /* DoJa API Version */
+        "freej2me_dojaversion",
+        "DoJa API Version; 200|10|20|30|35|40|41|50|51|100|110|120|130|150",
     },
     { /* Screen Rotation */
         "freej2me_rotate",
-        "Rotate Screen; off|on" 
+        "Rotate Screen; 0|90|180|270" 
     },
     { /* Phone Control Type */
         "freej2me_phone",
@@ -1131,7 +1256,11 @@ static const struct retro_variable vars[] =
     { /* No Alpha on Blank Images speed hack */
         "freej2me_spdhacknoalpha",
         "No Alpha on Blank Images(SpeedHack); off|on"
-    }, 
+    },
+    { /* Render M3G at Half Resolution speed hack */
+        "freej2me_spdhackm3ghalfres",
+        "Render M3G at Half Resolution(SpeedHack); off|on",
+    },
     { /* Framerate Unlock Hack */
         "freej2me_spdhackfpsunlock",
         "Framerate Unlock Hack; 0|1|2|3"
@@ -1155,6 +1284,10 @@ static const struct retro_variable vars[] =
     { /* Siemens-friendly drawing methods */
         "freej2me_compatsiemensfriendlydraw",
         "Siemens-friendly drawing methods; off|on",
+    },
+    { /* Ignore volume changes */
+        "freej2me_compatignorevolumechanges",
+        "Ignore volume changes; off|on",
     },
     { /* M3G draw only vertex colors */
         "freej2me_m3grenderuntextured",
