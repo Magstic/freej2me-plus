@@ -185,6 +185,7 @@ public final class AWTGUI
 	final CheckboxMenuItem fullScreen = new CheckboxMenuItem("Toggle Fullscreen (Ctrl+Alt+F)");
 	final CheckboxMenuItem enableAudio = new CheckboxMenuItem("Enable Audio", false);
 	final CheckboxMenuItem useCustomMidi = new CheckboxMenuItem("Use custom midi soundfont", false);
+	final CheckboxMenuItem useVirtualMidiSynth = new CheckboxMenuItem("Use VirtualMIDISynth (Restart Required)", false);
 	final CheckboxMenuItem useCustomFont = new CheckboxMenuItem("Use custom text font", false);
 
 	final CheckboxMenuItem[] dojaVersions = 
@@ -663,6 +664,17 @@ public final class AWTGUI
 			}
 		});
 
+		useVirtualMidiSynth.addItemListener(new ItemListener() 
+		{
+			public void itemStateChanged(ItemEvent e) 
+			{
+				if(useVirtualMidiSynth.getState()){ config.updateMIDISearchVMS("on"); hasPendingChange = true; }
+				else{ config.updateMIDISearchVMS("off"); hasPendingChange = true; }
+
+				showRestartDialog();
+			}
+		});
+
 		useCustomFont.addItemListener(new ItemListener() 
 		{
 			public void itemStateChanged(ItemEvent e) 
@@ -1032,6 +1044,7 @@ public final class AWTGUI
 		optionMenu.add(fullScreen);
 		optionMenu.add(enableAudio);
 		optionMenu.add(useCustomMidi);
+		optionMenu.add(useVirtualMidiSynth);
 		optionMenu.add(useCustomFont);
 		optionMenu.add(resChangeMenuItem);
 		optionMenu.add(mapInputs);
@@ -1098,6 +1111,7 @@ public final class AWTGUI
 			fullScreen.setState(FreeJ2ME.isFullscreen);
 			enableAudio.setState(config.settings.get("sound").equals("on"));
 			useCustomMidi.setState(config.settings.get("soundfont").equals("Custom"));
+			useVirtualMidiSynth.setState(config.sysSettings.get("MIDISearchVMS").equals("on"));
 			useCustomFont.setState(config.settings.get("textfont").equals("Custom"));
 
 			for(int i = 0; i < dojaVersions.length; i++) { dojaVersions[i].setState(config.settings.get("dojaversion").equals(dojaVersionValues[i])); }

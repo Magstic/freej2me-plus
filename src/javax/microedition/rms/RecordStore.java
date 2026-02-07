@@ -23,6 +23,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -270,7 +271,7 @@ public class RecordStore
 			version++;
 			nextid++;
 			
-			saveRecordStore();
+			saveRecordStoreRecord(nextid - 1);
 
 			return nextid-1; // Return the new record's id, not the next one's.
 		}
@@ -305,7 +306,7 @@ public class RecordStore
 		records.remove(recordIds.indexOf(recordId));
 		recordTags.remove(recordIds.indexOf(recordId));
 		recordIds.remove(recordIds.indexOf(recordId));
-		saveRecordStore();
+		saveRecordStoreDeletedRecord(recordId);
 		for(int i=0; i<listeners.size(); i++)
 		{
 			listeners.get(i).recordDeleted(this, recordId);
@@ -559,7 +560,7 @@ public class RecordStore
 		}
 		lastModified = System.currentTimeMillis();
 		version++;
-		saveRecordStore();
+		saveRecordStoreRecord(recordId);
 		for(int i=0; i<listeners.size(); i++) { listeners.get(i).recordChanged(this, recordId); }
 	}
 
@@ -753,25 +754,38 @@ public class RecordStore
 				Saving to and loading from disk
 	    *********************************************************** */
 
-    public void saveRecordStore() 
-	{
+	private static void writeFileReplace(String path, byte[] data) throws IOException {
+		File tmp = new File(path + ".tmp");
+		FileOutputStream fos = null;
+		try {
+			fos = new FileOutputStream(tmp);
+			fos.write(data);
+		} finally {
+			if (fos != null) {
+				try { fos.close(); } catch (Exception ignore) { }
+			}
+		}
+		Files.move(tmp.toPath(), new File(path).toPath(), StandardCopyOption.REPLACE_EXISTING);
+	}
+
+	private byte[] buildRecordStoreJsonBytes() {
 		final String ownerVersion = Mobile.isDoJa ? Mobile.getPlatform().loader.getProperty("AppVer") : Mobile.getPlatform().loader.getProperty("MIDlet-Version");
-        String recordName = name; // TODO: For doja, get the sp index
+		String recordName = name; // TODO: For doja, get the sp index
 
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    	String lastModifiedDate = dateFormat.format(new Date(lastModified));
+		String lastModifiedDate = dateFormat.format(new Date(lastModified));
 
-		int[] validRecords = new int[recordIds.size()-1];
+		int[] validRecords = new int[recordIds.size() - 1];
 
-        // Building JSON string
-        StringBuilder jsonBuilder = new StringBuilder();
-        jsonBuilder.append("{\n")
-			.append("  \"rmsVersion\": ").append("\""+RMS_VERSION+"\"").append(",\n")
-			.append("  \"rmsDate\": ").append("\""+lastModifiedDate+"\"").append(",\n")
+		// Building JSON string
+		StringBuilder jsonBuilder = new StringBuilder();
+		jsonBuilder.append("{\n")
+			.append("  \"rmsVersion\": ").append("\"" + RMS_VERSION + "\"").append(",\n")
+			.append("  \"rmsDate\": ").append("\"" + lastModifiedDate + "\"").append(",\n")
 			.append("  \"ownerVersion\": \"").append(ownerVersion).append("\",\n")
 			.append("  \"otherWrite\": ").append(writablebyothers ? 1 : 0).append(",\n")
 			.append("  \"lastModified\": ").append(lastModified).append(",\n")
-        	.append("  \"modificationCount\": ").append(getVersion()).append(",\n")
+			.append("  \"modificationCount\": ").append(getVersion()).append(",\n")
 			.append("  \"authentication\": ").append(authmode).append(",\n")
 			.append("  \"ownerVendor\": \"").append(vendorname).append("\",\n")
 			.append("  \"password\": \"").append(password).append("\",\n")
@@ -781,31 +795,74 @@ public class RecordStore
 			.append("  \"compatibleLastId\": ").append(nextid).append(",\n");
 
 		// Write tags, followed by the record IDs
-		for(int i = 1; i < recordIds.size(); i++) // Tags
+		for (int i = 1; i < recordIds.size(); i++) // Tags
 		{
 			jsonBuilder.append("  \"tag:").append(recordIds.get(i)).append("\": ").append(recordTags.get(i)).append(",\n");
-			validRecords[i-1] = recordIds.get(i);
+			validRecords[i - 1] = recordIds.get(i);
 		}
 		jsonBuilder.append("  \"ids\": ").append(Arrays.toString(validRecords)); // IDs
 
-		jsonBuilder.append("\n}"); // JSON has been properly created in memory, now save it to disk
+		jsonBuilder.append("\n}");
+		return jsonBuilder.toString().getBytes();
+	}
 
-		// TODO: Delete any previously saved data before writing the updated records
-		deleteOutdatedRecords(rmsPath + "/", basename);
+	private void saveRecordStoreRecord(int recordId) {
+		try {
+			writeFileReplace(rmsPath + "/" + basename + ".rms", buildRecordStoreJsonBytes());
+			int idx = recordIds.indexOf(recordId);
+			if (idx <= 0) {
+				return;
+			}
+			byte[] data = records.get(idx);
+			if (data == null) {
+				data = new byte[]{};
+			}
+			writeFileReplace(rmsPath + "/" + basename + "." + recordId, data);
+		} catch (Exception e) {
+			Mobile.log(Mobile.LOG_ERROR, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Couldn't save RecordStore record " + recordId + " in " + name + " :" + e.getMessage());
+			e.printStackTrace();
+		}
+	}
 
-		// Write the JSON data to disk, as well as the records' binary data
+	private void saveRecordStoreDeletedRecord(int recordId) {
+		try {
+			writeFileReplace(rmsPath + "/" + basename + ".rms", buildRecordStoreJsonBytes());
+			try {
+				new File(rmsPath + "/" + basename + "." + recordId).delete();
+			} catch (Exception ignore) {
+			}
+		} catch (Exception e) {
+			Mobile.log(Mobile.LOG_ERROR, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "> Couldn't save RecordStore delete " + recordId + " in " + name + " :" + e.getMessage());
+			e.printStackTrace();
+		}
+	}
+
+	private void resetToEmptyStore() {
+		if (listeners != null) { listeners.removeAllElements(); }
+		records.removeAllElements();
+		recordIds.removeAllElements();
+		recordTags.removeAllElements();
+
+		records.add(new byte[]{}); // dummy record (record ids start at 1)
+		recordIds.add(0);
+		recordTags.add(0);
+
+		version = 1;
+		nextid = records.size();
+		lastModified = System.currentTimeMillis();
+	}
+
+    public void saveRecordStore() 
+	{
+		// Full save: write the JSON data to disk, as well as the records' binary data
 		try
 		{
-			FileOutputStream fos = new FileOutputStream(rmsPath + "/" + basename + ".rms");
-            fos.write(jsonBuilder.toString().getBytes());
-			fos.close();
+			writeFileReplace(rmsPath + "/" + basename + ".rms", buildRecordStoreJsonBytes());
 
 			for(int i = 1; i < recordIds.size(); i++) // Write Binary Data
 			{
 				if(records.get(i) == null) { continue; } // Skip records that have been deleted and whose IDs are not to be used anymore
-				fos = new FileOutputStream(rmsPath + "/" + basename + "." + recordIds.get(i));
-				fos.write(records.get(i));
-				fos.close();
+				writeFileReplace(rmsPath + "/" + basename + "." + recordIds.get(i), records.get(i));
 			}
 			
         } 
@@ -854,6 +911,14 @@ public class RecordStore
 			fis.close();
 
 			String jsonString = jsonBuilder.toString();
+			if (jsonString == null || jsonString.length() < 2) {
+				if (createIfNecessary) {
+					resetToEmptyStore();
+					saveRecordStore();
+					return;
+				}
+				throw new RecordStoreException("Invalid RecordStore metadata: " + rmsFile);
+			}
 			// Remove outer braces
 			jsonString = jsonString.substring(1, jsonString.length() - 1).trim();
 
@@ -873,9 +938,7 @@ public class RecordStore
 					if (value.startsWith("\"") && value.endsWith("\"")) 
 					{
 						// String values
-
-						if(key.equals("lastModified"))  { lastModified = Integer.parseInt(value); } // lastModified date
-						else if(key.equals("password")) { password = value.substring(1, value.length() - 1); } // Retrieve password without quotes
+						if(key.equals("password")) { password = value.substring(1, value.length() - 1); } // Retrieve password without quotes
 						// If the json representation expands further, this might have more keys being matched
 					} 
 					else if (value.startsWith("[") && value.endsWith("]"))
@@ -899,6 +962,7 @@ public class RecordStore
 						// Numerical/boolean values
 						if(key.contains("tag:")) { recordTags.add(Integer.parseInt(value)); }
 						else if(key.equals("otherWrite")) { writablebyothers = (Integer.parseInt(value) == 1); }
+						else if(key.equals("lastModified")) { lastModified = Long.parseLong(value); }
 						else if(key.equals("authentication")) { authmode = Integer.parseInt(value); }
 						else if(key.equals("modificationCount")) { version = Integer.parseInt(value); }
 						else if(key.equals("compatibleLastId")) { nextid = Integer.parseInt(value); }
@@ -906,22 +970,39 @@ public class RecordStore
 				}
 			}
 
+			while (recordTags.size() < recordIds.size()) { recordTags.add(0); }
+
 			// Throw a security exception if the record is from a different suite and is set to not be accessed by others
 			if(!Mobile.getPlatform().loader.suitename.equals(this.suitename) && authmode != AUTHMODE_ANY) { throw new SecurityException("This suite does not have authorization to access the requested RecordStore:" + name); }
 
 			for(int i = 1; i < recordIds.size(); i++) // Read Binary Data
 			{
-				FileInputStream binfis = new FileInputStream(rmsFile.substring(0, rmsFile.length()-4) + "." + recordIds.get(i));
-				byte[] binData = new byte[binfis.available()];
-				binfis.read(binData);
-				records.add(binData);
-				binfis.close();
+				FileInputStream binfis = null;
+				try {
+					binfis = new FileInputStream(rmsFile.substring(0, rmsFile.length()-4) + "." + recordIds.get(i));
+					byte[] binData = new byte[binfis.available()];
+					binfis.read(binData);
+					records.add(binData);
+				} catch (Exception e) {
+					records.add(new byte[]{});
+				} finally {
+					if (binfis != null) {
+						try { binfis.close(); } catch (Exception ignore) { }
+					}
+				}
 			}
 		} 
 		catch (Exception e) 
 		{ 
 			Mobile.log(Mobile.LOG_ERROR, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": Couldn't load recordStore:" + name + " :" + e.getMessage());
-			e.printStackTrace(); 
+			e.printStackTrace();
+			if (createIfNecessary) {
+				resetToEmptyStore();
+				saveRecordStore();
+				return;
+			}
+			if (e instanceof RecordStoreException) { throw (RecordStoreException) e; }
+			throw new RecordStoreException("Couldn't load recordStore: " + name);
 		}
 	}
 

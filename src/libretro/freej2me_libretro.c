@@ -167,6 +167,7 @@ int backlightColor = 1; /* 0=Disabled, 1=Green, etc. */
 int gameFPS; /* Auto(0), 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10 */
 int soundEnabled; /* also acts as a boolean */
 int customMidi; /* Also acts as a boolean */
+int midiSearchVMS = 1; /* Also acts as a boolean, search for VirtualMIDISynth */
 int customFont; /* Also acts as a boolean */
 int fontOffset = 0; /* -4, -3, -2, -1, 0 (Default), 1, 2, 3, 4 */
 int dumpAudioStreams;
@@ -449,6 +450,13 @@ static void check_variables(bool first_time_startup)
 		else if (!strcmp(var.value, "on")) { customMidi = 1; }
 	}
 
+	var.key = "freej2me_midisearchvms";
+	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		if (!strcmp(var.value, "off"))     { midiSearchVMS = 0; }
+		else if (!strcmp(var.value, "on")) { midiSearchVMS = 1; }
+	}
+
 	var.key = "freej2me_textfont";
 	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
 	{
@@ -674,10 +682,10 @@ static void check_variables(bool first_time_startup)
 	/* Prepare a string to pass those core options to the Java app */
 	options_update = malloc(sizeof(char) * PIPE_MAX_LEN);
 
-	snprintf(options_update, PIPE_MAX_LEN, "FJ2ME_LR_OPTS:|%lux%lu|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d", screenRes[0], screenRes[1], rotateScreen, 
+	snprintf(options_update, PIPE_MAX_LEN, "FJ2ME_LR_OPTS:|%lux%lu|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d", screenRes[0], screenRes[1], rotateScreen, 
 		phoneType, gameFPS, soundEnabled, customMidi, dumpAudioStreams, loggingLevel, spdHackNoAlpha, backlightColor, compatFantasyZoneFix, 
 		compatTransToOriginOnGFXReset, customFont, fontOffset, dumpGraphicsData, deleteTemporaryKJXFiles, m3gUntextured, m3gWireframe, spdFrameRateUnlock, compatImmediateRepaintCalls,
-		compatOverridePlatCheck, compatSiemensFriendlyDraw, spdHackM3GHalfRes, dojaVersion, compatIgnoreVolumeChanges);
+		compatOverridePlatCheck, compatSiemensFriendlyDraw, spdHackM3GHalfRes, dojaVersion, compatIgnoreVolumeChanges, midiSearchVMS);
 	optstrlen = strlen(options_update);
 
 	/* 0xD = 13, which is the special case where the java app will receive the updated configs */
@@ -856,12 +864,28 @@ bool retro_load_game(const struct retro_game_info *info)
 
 	/* Tell java app to load and run game */
 	char romPath[PATH_MAX_LENGTH];
-
-#ifdef __linux__
-	realpath(info->path, romPath);
-#elif _WIN32
-	_fullpath(romPath, info->path, PATH_MAX_LENGTH);
-#endif
+	if (path_is_absolute(info->path))
+	{
+		snprintf(romPath, sizeof(romPath), "%s", info->path);
+		path_resolve_realpath(romPath, sizeof(romPath));
+	}
+	else
+	{
+		char refpath[PATH_MAX_LENGTH];
+		refpath[0] = '\0';
+		if (systemPath && systemPath[0] != '\0')
+		{
+			snprintf(refpath, sizeof(refpath), "%s%s", systemPath, path_default_slash());
+			path_parent_dir(refpath);
+			fill_pathname_resolve_relative(romPath, refpath, info->path, sizeof(romPath));
+			path_resolve_realpath(romPath, sizeof(romPath));
+		}
+		else
+		{
+			snprintf(romPath, sizeof(romPath), "%s", info->path);
+			path_resolve_realpath(romPath, sizeof(romPath));
+		}
+	}
 
 	len = strlen(romPath);
 	log_fn(RETRO_LOG_INFO, "Loading freej2me app from %s\n", romPath);

@@ -33,6 +33,7 @@ import javax.sound.midi.MetaEventListener;
 import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiEvent;
+import javax.sound.midi.MidiMessage;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Patch;
@@ -135,6 +136,7 @@ public class PlatformPlayer implements Player
 						contentType = "audio/midi";
 						player = new midiPlayer(new ByteArrayInputStream(data));
 					}
+
 					else if (data.length >= 15 && data[8] == 'Q' && data[9] == 'L' && data[10] == 'C' && data[11] == 'M' && data[12] == 'f' && data[13] == 'm' && data[14] == 't') 
 					{
 						// This is for Qualcomm's QCP format, it has to be checked before wav, because Qualcomm's PureVoice also has RIFF as its first bytes
@@ -657,12 +659,429 @@ public class PlatformPlayer implements Player
 		public Sequence getSequence() { return null; }
 	}
 
+	private class VolumeFilteredReceiver implements Receiver
+	{
+		private final Receiver out;
+		private final volumeControl vc;
+		private boolean primed = false;
+
+		// External synth workaround: guard against stuck Pitch Bend detune.
+		private static final int PB_CENTER_LSB = 0;
+		private static final int PB_CENTER_MSB = 64;
+		// If PB stays non-centered for this long and notes keep coming, force a PB center.
+		private static final long STUCK_PB_NS = 500000000L;
+		private static final int STUCK_PB_NOTE_ON_COUNT = 2;
+		private final int[] pbLsb = new int[16];
+		private final int[] pbMsb = new int[16];
+		private final long[] pbLastChangeNs = new long[16];
+		private final int[] noteOnSincePb = new int[16];
+
+		private long normalizeTs(long timeStamp)
+		{
+			return Manager.isUsingExternalMidiReceiver() ? -1 : timeStamp;
+		}
+
+		public VolumeFilteredReceiver(Receiver out, volumeControl vc)
+		{
+			this.out = out;
+			this.vc = vc;
+			for (int i = 0; i < 16; i++)
+			{
+				pbLsb[i] = PB_CENTER_LSB;
+				pbMsb[i] = PB_CENTER_MSB;
+				pbLastChangeNs[i] = 0L;
+				noteOnSincePb[i] = 0;
+			}
+		}
+
+		public void resetPriming() { primed = false; }
+
+		// Prime synth before tick-0 events. Resets RPN state (pitch bend sensitivity,
+		// fine/coarse tuning), bank/program, and volume to defaults so that no channel
+		// state leaks from a previously played MIDI sequence.
+		public void primeNow(long timeStamp)
+		{
+			if (primed) { return; }
+			panic(timeStamp);
+			resetPitchRpnToDefaults(timeStamp);
+			reassertAllChannels(timeStamp);
+			resetProgramAndBankToDefaults(timeStamp);
+			primed = true;
+		}
+
+		// Reset pitch-related RPN defaults only (avoid CC121 which clears effects/expressive controllers).
+		private void resetPitchRpnToDefaults(long timeStamp)
+		{
+			long ts = normalizeTs(timeStamp);
+			for (int ch = 0; ch < 16; ch++)
+			{
+				try
+				{
+					// RPN 0,0: Pitch Bend Sensitivity (default 2 semitones, 0 cents)
+					ShortMessage rpn101 = new ShortMessage();
+					rpn101.setMessage(ShortMessage.CONTROL_CHANGE | ch, 101, 0);
+					out.send(rpn101, ts);
+					ShortMessage rpn100 = new ShortMessage();
+					rpn100.setMessage(ShortMessage.CONTROL_CHANGE | ch, 100, 0);
+					out.send(rpn100, ts);
+					ShortMessage de6 = new ShortMessage();
+					de6.setMessage(ShortMessage.CONTROL_CHANGE | ch, 6, 2);
+					out.send(de6, ts);
+					ShortMessage de38 = new ShortMessage();
+					de38.setMessage(ShortMessage.CONTROL_CHANGE | ch, 38, 0);
+					out.send(de38, ts);
+
+					// RPN 0,1: Fine Tuning (default 8192 -> MSB 64, LSB 0)
+					rpn101.setMessage(ShortMessage.CONTROL_CHANGE | ch, 101, 0);
+					out.send(rpn101, ts);
+					rpn100.setMessage(ShortMessage.CONTROL_CHANGE | ch, 100, 1);
+					out.send(rpn100, ts);
+					de6.setMessage(ShortMessage.CONTROL_CHANGE | ch, 6, 64);
+					out.send(de6, ts);
+					de38.setMessage(ShortMessage.CONTROL_CHANGE | ch, 38, 0);
+					out.send(de38, ts);
+
+					// RPN 0,2: Coarse Tuning (default 64)
+					rpn101.setMessage(ShortMessage.CONTROL_CHANGE | ch, 101, 0);
+					out.send(rpn101, ts);
+					rpn100.setMessage(ShortMessage.CONTROL_CHANGE | ch, 100, 2);
+					out.send(rpn100, ts);
+					de6.setMessage(ShortMessage.CONTROL_CHANGE | ch, 6, 64);
+					out.send(de6, ts);
+
+					// RPN null
+					rpn101.setMessage(ShortMessage.CONTROL_CHANGE | ch, 101, 127);
+					out.send(rpn101, ts);
+					rpn100.setMessage(ShortMessage.CONTROL_CHANGE | ch, 100, 127);
+					out.send(rpn100, ts);
+				}
+				catch (Throwable ignore) { }
+			}
+		}
+
+		// Ensure external synth does not keep previous track's bank/program when the MIDI lacks explicit init.
+		private void resetProgramAndBankToDefaults(long timeStamp)
+		{
+			long ts = normalizeTs(timeStamp);
+			for (int ch = 0; ch < 16; ch++)
+			{
+				if (ch == 9) { continue; }
+				try
+				{
+					ShortMessage bankMsb = new ShortMessage();
+					bankMsb.setMessage(ShortMessage.CONTROL_CHANGE | ch, 0, 0);
+					out.send(bankMsb, ts);
+
+					ShortMessage bankLsb = new ShortMessage();
+					bankLsb.setMessage(ShortMessage.CONTROL_CHANGE | ch, 32, 0);
+					out.send(bankLsb, ts);
+
+					ShortMessage pc0 = new ShortMessage();
+					pc0.setMessage(ShortMessage.PROGRAM_CHANGE | ch, 0, 0);
+					out.send(pc0, ts);
+				}
+				catch (Throwable ignore) { }
+			}
+		}
+
+		private boolean isPitchBendCentered(int ch)
+		{
+			return pbLsb[ch] == PB_CENTER_LSB && pbMsb[ch] == PB_CENTER_MSB;
+		}
+
+		private void updatePitchBendState(int ch, int lsb, int msb)
+		{
+			int nl = lsb & 0x7F;
+			int nm = msb & 0x7F;
+			// Only treat real value changes as state changes; repeated PB messages should not reset the stuck detector.
+			if (pbLsb[ch] == nl && pbMsb[ch] == nm) { return; }
+			pbLsb[ch] = nl;
+			pbMsb[ch] = nm;
+			pbLastChangeNs[ch] = System.nanoTime();
+			noteOnSincePb[ch] = 0;
+		}
+
+		private void sendPitchBendCenterIfStuck(int ch, long timeStamp)
+		{
+			if (!Manager.isUsingExternalMidiReceiver()) { return; }
+			if (isPitchBendCentered(ch)) { return; }
+			long lastNs = pbLastChangeNs[ch];
+			if (lastNs == 0L) { return; }
+			long nowNs = System.nanoTime();
+			if ((nowNs - lastNs) < STUCK_PB_NS) { return; }
+			if (noteOnSincePb[ch] < STUCK_PB_NOTE_ON_COUNT) { return; }
+			try
+			{
+				ShortMessage pbCenter = new ShortMessage();
+				pbCenter.setMessage(ShortMessage.PITCH_BEND | ch, PB_CENTER_LSB, PB_CENTER_MSB);
+				out.send(pbCenter, normalizeTs(timeStamp));
+				updatePitchBendState(ch, PB_CENTER_LSB, PB_CENTER_MSB);
+			}
+			catch (Throwable ignore) { }
+		}
+
+		// Panic: silence all channels without clearing effect/expressive controllers.
+		public void panic(long timeStamp)
+		{
+			long ts = normalizeTs(timeStamp);
+			for (int ch = 0; ch < 16; ch++)
+			{
+				try
+				{
+					ShortMessage cc120 = new ShortMessage();
+					cc120.setMessage(ShortMessage.CONTROL_CHANGE | ch, 120, 0); // All Sound Off
+					out.send(cc120, ts);
+
+					ShortMessage cc123 = new ShortMessage();
+					cc123.setMessage(ShortMessage.CONTROL_CHANGE | ch, 123, 0); // All Notes Off
+					out.send(cc123, ts);
+
+					ShortMessage rpnNull101 = new ShortMessage();
+					rpnNull101.setMessage(ShortMessage.CONTROL_CHANGE | ch, 101, 127);
+					out.send(rpnNull101, ts);
+					ShortMessage rpnNull100 = new ShortMessage();
+					rpnNull100.setMessage(ShortMessage.CONTROL_CHANGE | ch, 100, 127);
+					out.send(rpnNull100, ts);
+
+					ShortMessage pbCenter = new ShortMessage();
+					pbCenter.setMessage(ShortMessage.PITCH_BEND | ch, 0, 64); // Center
+					out.send(pbCenter, ts);
+					pbLsb[ch] = PB_CENTER_LSB;
+					pbMsb[ch] = PB_CENTER_MSB;
+					pbLastChangeNs[ch] = System.nanoTime();
+					noteOnSincePb[ch] = 0;
+				}
+				catch (Throwable ignore) { }
+			}
+		}
+
+		private int currentPercent()
+		{
+			int v = 100;
+			try
+			{
+				// Do not use vc.getLevel(): it may return -1 at certain player states.
+				// Read the backing field directly to keep scaling consistent.
+				if (vc != null) { v = (vc.volume & 0xFF); }
+			}
+			catch (Throwable ignore) { }
+			try { if (vc != null && vc.isMuted()) { v = 0; } } catch (Throwable ignore) { }
+			if (v < 0) { return 0; }
+			if (v > 100) { return 100; }
+			return v;
+		}
+
+		private int scale7(int value, int percent)
+		{
+			if (value < 0) { value = 0; }
+			else if (value > 127) { value = 127; }
+			return (value * percent) / 100;
+		}
+
+		private void reassertChannelVolume(int channel, long timeStamp)
+		{
+			long ts = normalizeTs(timeStamp);
+			int percent = currentPercent();
+			int ccVol = (percent * 127) / 100;
+			try
+			{
+				ShortMessage cc7 = new ShortMessage();
+				cc7.setMessage(ShortMessage.CONTROL_CHANGE | channel, 7, ccVol);
+				out.send(cc7, ts);
+			}
+			catch (Throwable ignore) { }
+		}
+
+		private void reassertAllChannels(long timeStamp)
+		{
+			long ts = normalizeTs(timeStamp);
+			int percent = currentPercent();
+			int ccVol = (percent * 127) / 100;
+			int mv14 = (percent * 16383) / 100;
+			try
+			{
+				byte[] mv = new byte[]
+				{
+					(byte) 0xF0, (byte) 0x7F, (byte) 0x7F, (byte) 0x04, (byte) 0x01,
+					(byte) (mv14 & 0x7F), (byte) ((mv14 >> 7) & 0x7F), (byte) 0xF7
+				};
+				SysexMessage sx = new SysexMessage();
+				sx.setMessage(mv, mv.length);
+				out.send(sx, ts);
+			}
+			catch (Throwable ignore) { }
+
+			if (Manager.isUsingExternalMidiReceiver()) { return; }
+
+			for (int ch = 0; ch < 16; ch++)
+			{
+				try
+				{
+					ShortMessage cc7 = new ShortMessage();
+					cc7.setMessage(ShortMessage.CONTROL_CHANGE | ch, 7, ccVol);
+					out.send(cc7, ts);
+				}
+				catch (Throwable ignore) { }
+			}
+		}
+
+		private boolean isUniversalMasterVolume(byte[] msg)
+		{
+			// F0 7F <device> 04 01 <lsb> <msb> F7
+			if (msg == null || msg.length < 8) { return false; }
+			if ((msg[0] & 0xFF) != 0xF0) { return false; }
+			if ((msg[1] & 0xFF) != 0x7F) { return false; }
+			if ((msg[3] & 0xFF) != 0x04 || (msg[4] & 0xFF) != 0x01) { return false; }
+			return (msg[msg.length - 1] & 0xFF) == 0xF7;
+		}
+
+		private boolean isGmResetLike(byte[] msg)
+		{
+			if (msg == null || msg.length < 6) { return false; }
+			if ((msg[0] & 0xFF) != 0xF0) { return false; }
+			if ((msg[msg.length - 1] & 0xFF) != 0xF7) { return false; }
+
+			// GM1 System On: F0 7E 7F 09 01 F7
+			if ((msg[1] & 0xFF) == 0x7E && (msg[3] & 0xFF) == 0x09 && (msg[4] & 0xFF) == 0x01) { return true; }
+			// GS Reset (Roland)
+			if ((msg[1] & 0xFF) == 0x41 && msg.length >= 11 && (msg[3] & 0xFF) == 0x42 && (msg[4] & 0xFF) == 0x12) { return true; }
+			// XG System On (Yamaha)
+			if ((msg[1] & 0xFF) == 0x43 && msg.length >= 9 && (msg[3] & 0xFF) == 0x4C && (msg[6] & 0xFF) == 0x7E) { return true; }
+			return false;
+		}
+
+		public void send(MidiMessage message, long timeStamp)
+		{
+			if (out == null || message == null) { return; }
+			long ts = normalizeTs(timeStamp);
+			try
+			{
+				if (message instanceof ShortMessage)
+				{
+					ShortMessage sm = (ShortMessage) message;
+
+					if (sm.getCommand() == ShortMessage.PITCH_BEND)
+					{
+						int ch = sm.getChannel();
+						updatePitchBendState(ch, sm.getData1(), sm.getData2());
+						out.send(message, ts);
+						return;
+					}
+
+					// Before any sounding event, re-assert volume once to avoid start burst / untimely volume.
+					if (sm.getCommand() == ShortMessage.NOTE_ON && sm.getData2() > 0)
+					{
+						int ch = sm.getChannel();
+						noteOnSincePb[ch]++;
+						sendPitchBendCenterIfStuck(ch, timeStamp);
+						if (!primed)
+						{
+							panic(-1);
+							reassertAllChannels(-1);
+							primed = true;
+						}
+						out.send(message, ts);
+						return;
+					}
+
+					// System reset may restore defaults; force re-assert on next NoteOn.
+					if (sm.getStatus() == ShortMessage.SYSTEM_RESET)
+					{
+						primed = false;
+						out.send(message, ts);
+						return;
+					}
+
+					if (sm.getCommand() == ShortMessage.CONTROL_CHANGE)
+					{
+						int ch = sm.getChannel();
+						int ctrl = sm.getData1();
+						int val = sm.getData2();
+
+						// Reset All Controllers can restore full volume/expression; re-assert our volume after it.
+						if (ctrl == 121)
+						{
+							primed = false;
+							out.send(message, ts);
+							return;
+						}
+
+						// Scale only MSB (CC7/CC11). Force LSB (CC39/CC43) to 0 to avoid incorrect 14-bit scaling.
+						if (ctrl == 39 || ctrl == 43)
+						{
+							int newVal = 0;
+							ShortMessage nm = new ShortMessage();
+							nm.setMessage(sm.getCommand(), ch, ctrl, newVal);
+							out.send(nm, ts);
+							return;
+						}
+						if (ctrl == 7 || ctrl == 11)
+						{
+							int percent = currentPercent();
+							int newVal = scale7(val, percent);
+							ShortMessage nm = new ShortMessage();
+							nm.setMessage(sm.getCommand(), ch, ctrl, newVal);
+							out.send(nm, ts);
+							return;
+						}
+					}
+					out.send(message, ts);
+					return;
+				}
+
+				byte[] raw = message.getMessage();
+				if (raw != null && raw.length > 0 && (raw[0] & 0xFF) == 0xF0)
+				{
+					if (isUniversalMasterVolume(raw))
+					{
+						int percent = currentPercent();
+						int lsb = raw[5] & 0x7F;
+						int msb = raw[6] & 0x7F;
+						int v14 = lsb | (msb << 7);
+						int newV14 = (v14 * percent) / 100;
+						if (newV14 < 0) { newV14 = 0; }
+						else if (newV14 > 16383) { newV14 = 16383; }
+
+						byte[] mv = (byte[]) raw.clone();
+						mv[5] = (byte) (newV14 & 0x7F);
+						mv[6] = (byte) ((newV14 >> 7) & 0x7F);
+						SysexMessage sx = new SysexMessage();
+						sx.setMessage(mv, mv.length);
+						if (Manager.isUsingExternalMidiReceiver()) {
+							out.send(sx, -1);
+						} else {
+							out.send(sx, ts);
+						}
+						return;
+					}
+
+					if (isGmResetLike(raw))
+					{
+						primed = false;
+						out.send(message, ts);
+						reassertAllChannels(-1);
+						return;
+					}
+				}
+
+				out.send(message, ts);
+			}
+			catch (Throwable t)
+			{
+				try { out.send(message, -1); } catch (Throwable ignore) { }
+			}
+		}
+
+		public void close() { }
+	}
+
 	private class midiPlayer extends audioplayer
 	{
 		private Sequencer midi;
 		private Sequence midiSequence;
 		public Synthesizer synthesizer;
 		private int synthIdx = 0;
+		public Receiver rawReceiver;
 		public Receiver receiver;
 		private Transmitter transmitter;
 		private int numLoops = 0;
@@ -730,10 +1149,10 @@ public class PlatformPlayer implements Player
 								notifyListeners(PlayerListener.LOOPED, getMediaTime());
 								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
 								setMediaTime(0);
-								Manager.synthIdxInUse[synthIdx] = false; // It just stopped, so set synth usage to false or the start call will get a new one
+								if(!Manager.isUsingExternalMidiReceiver()) { Manager.synthIdxInUse[synthIdx] = false; } // It just stopped, so set synth usage to false or the start call will get a new one
 								start();
 							}
-							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); Manager.synthIdxInUse[synthIdx] = false; }
+							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); if(!Manager.isUsingExternalMidiReceiver()) { Manager.synthIdxInUse[synthIdx] = false; } }
 						}
 					}
 				});
@@ -751,9 +1170,11 @@ public class PlatformPlayer implements Player
 		{
 			try 
 			{
-				// If the currently bound synth is already in use before starting, jump to another one
-				if(Manager.synthIdxInUse[synthIdx] == true) { prepareMidiSubsystem(); }
-				Manager.synthIdxInUse[synthIdx] = true;
+				if(!Manager.isUsingExternalMidiReceiver())
+				{
+					if(Manager.synthIdxInUse[synthIdx] == true) { prepareMidiSubsystem(); }
+					Manager.synthIdxInUse[synthIdx] = true;
+				}
 
 				if(curTime >= getDuration()) { setMediaTime(0); } // If mediaTime >= getDuration, we should start playing from the beginning
 				else { setMediaTime(curTime); } // Else, resume from where it stopped
@@ -761,6 +1182,11 @@ public class PlatformPlayer implements Player
 				state = Player.STARTED;
 				notifyListeners(PlayerListener.STARTED, getMediaTime());
 
+				// Assert volume before tick-0 messages to avoid start burst.
+				try { ((volumeControl) controls[0]).setLevel(((volumeControl) controls[0]).volume & 0xFF); } catch (Throwable ignore) { }
+				try { if (receiver instanceof VolumeFilteredReceiver) { ((VolumeFilteredReceiver) receiver).resetPriming(); } } catch (Throwable ignore) { }
+				try { if (receiver instanceof VolumeFilteredReceiver && curTime <= 0) { ((VolumeFilteredReceiver) receiver).primeNow(-1); } } catch (Throwable ignore) { }
+				if (Manager.isUsingExternalMidiReceiver()) { LockSupport.parkNanos(20000000L); }
 				midi.start();
 			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to clean MIDI sequencer and start playback:" + e.getMessage()); }
@@ -769,7 +1195,7 @@ public class PlatformPlayer implements Player
 		public void stop()
 		{
 			midi.stop();
-			Manager.synthIdxInUse[synthIdx] = false;
+			if(!Manager.isUsingExternalMidiReceiver()) { Manager.synthIdxInUse[synthIdx] = false; }
 			getMediaTime();
 			state = Player.PREFETCHED;
 			notifyListeners(PlayerListener.STOPPED, getMediaTime());
@@ -778,6 +1204,7 @@ public class PlatformPlayer implements Player
 		public void deallocate() 
 		{ 
 			transmitter = null;
+			rawReceiver = null;
 			receiver = null;
 			if(midi != null) { midi.close(); }
 		}
@@ -835,10 +1262,21 @@ public class PlatformPlayer implements Player
 		{
 			if(midi.getSequence() == null || Manager.synthIdxInUse[synthIdx] == true) 
 			{
-				this.synthIdx = Manager.retrieveAvailableSynthIndex();
-				this.synthesizer = Manager.exclusiveSynths[synthIdx];
-				this.receiver = this.synthesizer.getReceiver();
-				transmitter.setReceiver(receiver);
+				if(Manager.isUsingExternalMidiReceiver() && Manager.getExternalMidiReceiver() != null)
+				{
+					this.synthIdx = 0;
+					this.synthesizer = null;
+					this.rawReceiver = Manager.getExternalMidiReceiver();
+				}
+				else
+				{
+					this.synthIdx = Manager.retrieveAvailableSynthIndex();
+					this.synthesizer = Manager.exclusiveSynths[synthIdx];
+					this.rawReceiver = this.synthesizer.getReceiver();
+				}
+
+				this.receiver = new VolumeFilteredReceiver(this.rawReceiver, (volumeControl) controls[0]);
+				transmitter.setReceiver(this.receiver);
 				midi.setSequence(midiSequence);
 			}
 		}
@@ -851,6 +1289,7 @@ public class PlatformPlayer implements Player
 		private Sequence midiSequence;
 		public Synthesizer synthesizer;
 		private int synthIdx = 0;
+		public Receiver rawReceiver;
 		public Receiver receiver;
 		private Transmitter transmitter;
 		private int numLoops = 0;
@@ -911,10 +1350,10 @@ public class PlatformPlayer implements Player
 								notifyListeners(PlayerListener.LOOPED, getMediaTime());
 								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
 								setMediaTime(0);
-								Manager.synthIdxInUse[synthIdx] = false; // It just stopped, so set synth usage to false or the start call will get a new one
+								if(!Manager.isUsingExternalMidiReceiver()) { Manager.synthIdxInUse[synthIdx] = false; }
 								start();
 							}
-							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); Manager.synthIdxInUse[synthIdx] = false; isPlaying = false; }
+							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); if(!Manager.isUsingExternalMidiReceiver()) { Manager.synthIdxInUse[synthIdx] = false; } isPlaying = false; }
 						}
 					}
 				});
@@ -944,9 +1383,12 @@ public class PlatformPlayer implements Player
 		{
 			try 
 			{
-				// If the currently bound synth is already in use before starting, jump to another one
-				if(Manager.synthIdxInUse[synthIdx] == true) { prepareMidiSubsystem(); }
-				Manager.synthIdxInUse[synthIdx] = true;
+				if(!Manager.isUsingExternalMidiReceiver())
+				{
+					// If the currently bound synth is already in use before starting, jump to another one
+					if(Manager.synthIdxInUse[synthIdx] == true) { prepareMidiSubsystem(); }
+					Manager.synthIdxInUse[synthIdx] = true;
+				}
 
 				if(curTime >= getDuration()) { setMediaTime(0); } // If mediaTime >= getDuration, we should start playing from the beginning
 				else { setMediaTime(curTime); } // Else, resume from where it stopped
@@ -969,6 +1411,10 @@ public class PlatformPlayer implements Player
 		{	
 			Set<Integer> playedPositions = new HashSet<Integer>();
 
+			// Assert volume before tick-0 messages to avoid start burst.
+			try { ((volumeControl) controls[0]).setLevel(((volumeControl) controls[0]).volume & 0xFF); } catch (Throwable ignore) { }
+			try { if (receiver instanceof VolumeFilteredReceiver) { ((VolumeFilteredReceiver) receiver).resetPriming(); } } catch (Throwable ignore) { }
+			if (Manager.isUsingExternalMidiReceiver()) { LockSupport.parkNanos(20000000L); }
 			midi.start();
 			while (isPlaying && wavClips != null) 
 			{
@@ -1020,7 +1466,7 @@ public class PlatformPlayer implements Player
 		public void stop()
 		{
 			midi.stop();
-			Manager.synthIdxInUse[synthIdx] = false;
+			if(!Manager.isUsingExternalMidiReceiver()) { Manager.synthIdxInUse[synthIdx] = false; }
 			getMediaTime();
 			if(wavClips != null) 
 			{
@@ -1038,6 +1484,7 @@ public class PlatformPlayer implements Player
 		public void deallocate() 
 		{
 			transmitter = null;
+			rawReceiver = null;
 			receiver = null;
 			if(midi != null) { midi.close(); }
 
@@ -1118,12 +1565,22 @@ public class PlatformPlayer implements Player
 
 		private void prepareMidiSubsystem() throws MidiUnavailableException, InvalidMidiDataException
 		{
-			if(midi.getSequence() == null || Manager.synthIdxInUse[synthIdx] == true) 
+			if(midi.getSequence() == null || (!Manager.isUsingExternalMidiReceiver() && Manager.synthIdxInUse[synthIdx] == true)) 
 			{
-				this.synthIdx = Manager.retrieveAvailableSynthIndex();
-				this.synthesizer = Manager.exclusiveSynths[synthIdx];
-				this.receiver = this.synthesizer.getReceiver();
-				transmitter.setReceiver(receiver);
+				if(Manager.isUsingExternalMidiReceiver() && Manager.getExternalMidiReceiver() != null)
+				{
+					this.synthIdx = 0;
+					this.synthesizer = null;
+					this.rawReceiver = Manager.getExternalMidiReceiver();
+				}
+				else
+				{
+					this.synthIdx = Manager.retrieveAvailableSynthIndex();
+					this.synthesizer = Manager.exclusiveSynths[synthIdx];
+					this.rawReceiver = this.synthesizer.getReceiver();
+				}
+				this.receiver = new VolumeFilteredReceiver(this.rawReceiver, (volumeControl) controls[0]);
+				transmitter.setReceiver(this.receiver);
 				midi.setSequence(midiSequence);
 			}
 		}
@@ -1597,7 +2054,7 @@ public class PlatformPlayer implements Player
 
 					// Create the SysexMessage
 					SysexMessage sysexMessage = new SysexMessage(0xF0, sysExData, sysExData.length);
-					player.receiver.send(sysexMessage, player.getMediaTime() + 50000L); // Send the message
+					player.receiver.send(sysexMessage, -1); // Send the message
 				}
 				else // If it is not, send data as a series of short messages (probably implemented incorrectly, and being untested only makes things worse)
 				{
@@ -1610,7 +2067,7 @@ public class PlatformPlayer implements Player
 						else if (msgLength == 2) { shortMessage.setMessage(data[i] & 0xFF, data[i + 1] & 0xFF, 0); } // Status byte + one data byte
 						else if (msgLength == 3) { shortMessage.setMessage(data[i] & 0xFF, data[i + 1] & 0xFF, data[i + 2] & 0xFF); } // Full short message
 
-						player.receiver.send(shortMessage, player.getMediaTime() + 50000L);
+						player.receiver.send(shortMessage, -1);
 					}
 				}
 				return length; // Return the number of bytes sent
@@ -1673,7 +2130,7 @@ public class PlatformPlayer implements Player
 				midiMessage.setMessage(type, data1, data2);
 		
 				// Send the MIDI message to the receiver
-				player.receiver.send(midiMessage, player.getMediaTime() + 50000L); // Send message after 50ms
+				player.receiver.send(midiMessage, -1); // Send message
 			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to send short MIDI event: " + e.getMessage()); }
 		}
@@ -1686,14 +2143,14 @@ public class PlatformPlayer implements Player
 		private byte volume = 100;
 		private int panValue = 64; // Center panning
 
-		// MIDI Volume Sysex message
+		// MIDI Master Volume SysEx message (Universal Realtime)
 		private byte[] volumeSysEx = new byte[] 
 		{
 			(byte) 0xF0, // SysEx indicator
 			(byte) 0x7F, (byte) 0x7F,
 			(byte) 0x04, (byte) 0x01, // GM-Compatible device and manufacturer ID
-			0, // Lower 7 volume bits, ignored for java's volume which goes from 0 to 127
-			volume, // Volume value
+			0, // Lower 7 volume bits (LSB)
+			volume, // Upper 7 volume bits (MSB)
 			(byte) 0xF7  // End of Sysex
 		};
 		SysexMessage sysexMessage = new SysexMessage();
@@ -1713,17 +2170,31 @@ public class PlatformPlayer implements Player
 			if(level > 100) { level = 100; }
 			else if(level < 0) { level = 0; }
 
-			if(level == getLevel() || Mobile.compatIgnoreVolumeChanges) { return level; }
+			if(Mobile.compatIgnoreVolumeChanges) { return level; }
+			if(level == getLevel() && !(player instanceof midiPlayer) && !(player instanceof SMAFPlayer)) { return level; }
 
 			try 
 			{
 				if (player instanceof midiPlayer) 
 				{
-					if(((midiPlayer)player).synthesizer == null) { return getLevel(); } // Only make changes if the midi subsystem for this player is available
+					midiPlayer mp = (midiPlayer) player;
+					Receiver recv = (mp.rawReceiver != null) ? mp.rawReceiver : mp.receiver;
+					if (recv == null) { return getLevel(); }
 
-					volumeSysEx[6] = isMuted() ? 0 : (byte) (level * 127 / 100); // Convert to MIDI volume range
+					int ccVol = isMuted() ? 0 : (level * 127 / 100);
+					int mv14 = isMuted() ? 0 : (level * 16383 / 100);
+					volumeSysEx[5] = (byte) (mv14 & 0x7F);
+					volumeSysEx[6] = (byte) ((mv14 >> 7) & 0x7F);
 					sysexMessage.setMessage(volumeSysEx, volumeSysEx.length);
-					((midiPlayer)player).receiver.send(sysexMessage, -1); // Send the volume change message
+					recv.send(sysexMessage, -1);
+
+					// Fallback for synths/drivers that ignore SysEx master volume.
+					for (int ch = 0; ch < 16; ch++)
+					{
+						ShortMessage cc7 = new ShortMessage();
+						cc7.setMessage(ShortMessage.CONTROL_CHANGE | ch, 7, ccVol);
+						recv.send(cc7, -1);
+					}
 				}
 				else if(player instanceof wavPlayer)
 				{
@@ -1739,12 +2210,24 @@ public class PlatformPlayer implements Player
 				{
 					FloatControl volumeControl;
 					float dB = isMuted() ? -80.0f : -40.0f + ((level / 100.0f) * (40.0f));
+					SMAFPlayer sp = (SMAFPlayer) player;
+					Receiver recv = (sp.rawReceiver != null) ? sp.rawReceiver : sp.receiver;
+					if (recv != null)
+					{
+						int ccVol = isMuted() ? 0 : (level * 127 / 100);
+						int mv14 = isMuted() ? 0 : (level * 16383 / 100);
+						volumeSysEx[5] = (byte) (mv14 & 0x7F);
+						volumeSysEx[6] = (byte) ((mv14 >> 7) & 0x7F);
+						sysexMessage.setMessage(volumeSysEx, volumeSysEx.length);
+						recv.send(sysexMessage, -1);
 
-					if(((SMAFPlayer)player).synthesizer == null) { return getLevel(); } // Only make changes if the midi subsystem for this player is available
-
-					volumeSysEx[6] = isMuted() ? 0 : (byte) (level * 127 / 100);
-					sysexMessage.setMessage(volumeSysEx, volumeSysEx.length);
-					((SMAFPlayer)player).receiver.send(sysexMessage, -1); // Send the volume change message
+						for (int ch = 0; ch < 16; ch++)
+						{
+							ShortMessage cc7 = new ShortMessage();
+							cc7.setMessage(ShortMessage.CONTROL_CHANGE | ch, 7, ccVol);
+							recv.send(cc7, -1);
+						}
+					}
 
 					if(((SMAFPlayer) player).wavClips != null) 
 					{

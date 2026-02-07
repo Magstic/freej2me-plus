@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
 
 import javax.sound.midi.MidiChannel;
+import javax.sound.midi.MidiDevice;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
@@ -59,8 +60,71 @@ public class Manager
 	public static Synthesizer toneSynth = null;
 	public static Receiver toneReceiver = null;
 	public static Sequencer toneSequencer = null;
+	private static MidiDevice externalMidiDevice = null;
+	private static Receiver externalMidiReceiver = null;
 	private static MidiChannel toneChannel;
 	private static Thread toneThread;
+
+	public static boolean isUsingExternalMidiReceiver()
+	{
+		return externalMidiReceiver != null;
+	}
+
+	public static Receiver getExternalMidiReceiver()
+	{
+		return externalMidiReceiver;
+	}
+
+	private static boolean isVirtualMidiSynthEnabled()
+	{
+		try
+		{
+			if (Mobile.config == null)
+				return false;
+			String v = Mobile.config.sysSettings.get("MIDISearchVMS");
+			return v != null && v.equals("on");
+		}
+		catch (Exception e)
+		{
+			return false;
+		}
+	}
+
+	private static void initExternalMidiReceiver()
+	{
+		if (externalMidiReceiver != null)
+			return;
+		if (!isVirtualMidiSynthEnabled())
+			return;
+
+		try
+		{
+			MidiDevice.Info[] deviceInfo = MidiSystem.getMidiDeviceInfo();
+			for (int i = 0; i < deviceInfo.length; i++)
+			{
+				MidiDevice.Info info = deviceInfo[i];
+				String name = info.getName();
+				if (name != null && name.toLowerCase().contains("virtualmidisynth"))
+				{
+					externalMidiDevice = MidiSystem.getMidiDevice(info);
+					externalMidiDevice.open();
+					externalMidiReceiver = externalMidiDevice.getReceiver();
+					Mobile.log(Mobile.LOG_INFO, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Using external MIDI device: " + name);
+					break;
+				}
+			}
+			if (externalMidiReceiver == null)
+			{
+				Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "MIDISearchVMS is enabled, but VirtualMIDISynth was not found. Falling back to internal MIDI synth.");
+			}
+		}
+		catch (Exception e)
+		{
+			externalMidiDevice = null;
+			externalMidiReceiver = null;
+			Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Failed to initialize external MIDI receiver: " + e.getMessage());
+		}
+	}
 
 	public static synchronized Player createPlayer(InputStream stream, String type) throws IOException, MediaException
 	{
@@ -394,6 +458,7 @@ public class Manager
 
 	public static int retrieveAvailableSynthIndex() 
 	{
+		if (isUsingExternalMidiReceiver()) { return 0; }
 		for(int i = 0; i < NUM_EXCLUSIVE_SYNTHS; i++) 
 		{
 			if(synthIdxInUse[i] == false) { return i; }
@@ -408,11 +473,20 @@ public class Manager
 	{
 		try  
 		{
-			for(int i = 0; i < NUM_EXCLUSIVE_SYNTHS; i++) 
+			initExternalMidiReceiver();
+			if (isUsingExternalMidiReceiver())
 			{
-				exclusiveSynths[i] = prepareSynthesizer();
+				toneSynth = prepareSynthesizer();
+				for(int i = 0; i < NUM_EXCLUSIVE_SYNTHS; i++) { exclusiveSynths[i] = toneSynth; }
 			}
-			toneSynth = exclusiveSynths[NUM_EXCLUSIVE_SYNTHS-1]; // Get the last synth of PlatformPlayer
+			else
+			{
+				for(int i = 0; i < NUM_EXCLUSIVE_SYNTHS; i++)
+				{
+					exclusiveSynths[i] = prepareSynthesizer();
+				}
+				toneSynth = exclusiveSynths[NUM_EXCLUSIVE_SYNTHS-1]; // Get the last synth of PlatformPlayer
+			}
 			toneReceiver = toneSynth.getReceiver();	
 			toneChannel = toneSynth.getChannels()[15]; // Also get the last channel of the last synth, to minimize chances of this causing issues with other MIDI streams
 

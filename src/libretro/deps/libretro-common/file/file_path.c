@@ -728,10 +728,27 @@ void path_resolve_realpath(char *buf, size_t size)
    strlcpy(tmp, buf, sizeof(tmp));
 
 #ifdef _WIN32
-   if (!_fullpath(buf, tmp, size))
-      strlcpy(buf, tmp, size);
-#else
+   {
+      wchar_t wrel_path[PATH_MAX_LENGTH];
+      wchar_t wabs_path[PATH_MAX_LENGTH];
 
+      int wlen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, tmp, -1, wrel_path, PATH_MAX_LENGTH);
+      if (wlen == 0)
+         wlen = MultiByteToWideChar(CP_ACP, 0, tmp, -1, wrel_path, PATH_MAX_LENGTH);
+
+      if (wlen > 0 && _wfullpath(wabs_path, wrel_path, PATH_MAX_LENGTH))
+      {
+         int u8len = WideCharToMultiByte(CP_UTF8, 0, wabs_path, -1, buf, (int)size, NULL, NULL);
+         if (u8len == 0)
+            u8len = WideCharToMultiByte(CP_ACP, 0, wabs_path, -1, buf, (int)size, NULL, NULL);
+
+         if (u8len == 0)
+            strlcpy(buf, tmp, size);
+      }
+      else if (!_fullpath(buf, tmp, size))
+         strlcpy(buf, tmp, size);
+   }
+#else
    /* NOTE: realpath() expects at least PATH_MAX_LENGTH bytes in buf.
     * Technically, PATH_MAX_LENGTH needn't be defined, but we rely on it anyways.
     * POSIX 2008 can automatically allocate for you,

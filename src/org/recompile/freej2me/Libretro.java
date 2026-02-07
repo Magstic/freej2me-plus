@@ -23,7 +23,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import java.io.File;
-import java.net.URLDecoder;
+import java.io.IOException;
 
 public class Libretro
 {
@@ -229,6 +229,19 @@ public class Libretro
 			private int bytesRead = 0;
 			private String path;
 
+			private int readFully(byte[] dst, int len) throws IOException
+			{
+				int off = 0;
+				while (off < len)
+				{
+					int r = System.in.read(dst, off, len - off);
+					if (r < 0)
+						break;
+					off += r;
+				}
+				return off;
+			}
+
 			public void run()
 			{
 				try // to read keys
@@ -337,11 +350,12 @@ public class Libretro
 
 								case 10: // load jar
 									buffer = new byte[code];
-									bytesRead = System.in.read(buffer);
+									bytesRead = readFully(buffer, code);
+									if (bytesRead != code) { return; }
 
-									path = new String(buffer, 0, bytesRead);
+									path = new String(buffer, 0, bytesRead, "UTF-8");
 
-									if(Mobile.getPlatform().load(getFormattedLocation(URLDecoder.decode(path.toString(), Mobile.textEncoding))))
+									if(Mobile.getPlatform().load(getFormattedLocation(path)))
 									{
 										// Check config
 
@@ -463,17 +477,19 @@ public class Libretro
 
 								case 11: // set save path //
 									buffer = new byte[code];
-									bytesRead = System.in.read(buffer);
+									bytesRead = readFully(buffer, code);
+									if (bytesRead != code) { return; }
 
-									Mobile.getPlatform().dataPath = new String(buffer, 0, bytesRead);
+									Mobile.getPlatform().dataPath = new String(buffer, 0, bytesRead, "UTF-8");
 								break;
 
 								case 13:
 									/* Received updated settings from libretro core */
 									buffer = new byte[code];
-									bytesRead = System.in.read(buffer);
+									bytesRead = readFully(buffer, code);
+									if (bytesRead != code) { return; }
 									
-									String cfgvars = new String(buffer, 0, bytesRead);
+									String cfgvars = new String(buffer, 0, bytesRead, "UTF-8");
 									/* Tokens: [0]="FJ2ME_LR_OPTS:", [1]=width, [2]=height, [3]=rotate, [4]=phone, [5]=fps, ... */
 									cfgtokens = cfgvars.split("[| x]", 0);
 									/* 
@@ -566,6 +582,8 @@ public class Libretro
 									if(Integer.parseInt(cfgtokens[26])==0) { Mobile.config.settings.put("compatignorevolumechanges", "off");  }
 									else { Mobile.config.settings.put("compatignorevolumechanges", "on"); }
 
+									if(Integer.parseInt(cfgtokens[27])==0) { Mobile.config.sysSettings.put("MIDISearchVMS", "off");  }
+									else { Mobile.config.sysSettings.put("MIDISearchVMS", "on"); }
 
 									Mobile.config.saveConfig();
 									settingsChanged();
@@ -672,7 +690,7 @@ public class Libretro
 
 	private static String getFormattedLocation(String loc)
 	{
-		if (loc.startsWith("file://") || loc.startsWith("http://") || loc.startsWith("https://"))
+		if (loc.startsWith("file:") || loc.startsWith("http://") || loc.startsWith("https://"))
 			return loc;
 
 		File file = new File(loc);

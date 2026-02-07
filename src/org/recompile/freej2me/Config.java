@@ -154,6 +154,7 @@ public class Config
 				sFile.createNewFile();
 				sysSettings.put("fpsCounterPosition", "Off");
 				sysSettings.put("logLevel", "2");
+				sysSettings.put("MIDISearchVMS", "on");
 				sysSettings.put("M3GWireframe", "off");
 				sysSettings.put("M3GUntextured", "off");
 				sysSettings.put("deleteTempKJXFiles", "on");
@@ -235,6 +236,7 @@ public class Config
 
 			if(!sysSettings.containsKey("fpsCounterPosition")) { sysSettings.put("fpsCounterPosition", "Off"); }
 			if(!sysSettings.containsKey("logLevel")) { sysSettings.put("logLevel", "2"); }
+			if(!sysSettings.containsKey("MIDISearchVMS")) { sysSettings.put("MIDISearchVMS", "on"); }
 			if(!sysSettings.containsKey("M3GWireframe")) { sysSettings.put("M3GWireframe", "off"); }
 			if(!sysSettings.containsKey("M3GUntextured")) { sysSettings.put("M3GUntextured", "off"); }
 			if(!sysSettings.containsKey("deleteTempKJXFiles")) { sysSettings.put("deleteTempKJXFiles", "on"); }
@@ -510,6 +512,14 @@ public class Config
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "SysConfig: logLevel "+value);
 		sysSettings.put("logLevel", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateMIDISearchVMS(String value) 
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "SysConfig: MIDISearchVMS "+value);
+		sysSettings.put("MIDISearchVMS", value);
 		saveConfig();
 		onChange.run();
 	}

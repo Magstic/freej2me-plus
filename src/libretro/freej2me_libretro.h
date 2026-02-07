@@ -118,28 +118,28 @@ struct retro_core_option_v2_category option_categories[] =
 {
     {
         "system_settings",
-        "System",
-        "Options related to FreeJ2ME's internal phone emulation such as screen resolution, rotation and game FPS limit."
+        "系統",
+        "Free-J2ME 模擬相關設定。"
     },
     {
         "advanced_settings",
-        "Advanced Settings",
-        "Options related to FreeJ2ME's libretro core, such as the on-screen pointer type and speed, as well as logging."
+        "高級",
+        "Free-J2ME 核心相關設定。"
     },
     {
         "speed_hacks",
-        "Speed Hacks",
-        "Options that can increase FreeJ2ME or app's performance in exchange for lower compatibility by going out of J2ME specifications."
+        "優化",
+        "Free-J2ME 優化相關設定。"
     },
     {
         "compat_settings",
-        "Compatibility Settings",
-        "Options that help some specific games run, but that may break others."
+        "相容",
+        "Free-J2ME 兼容相關設定。"
     },
     {
         "m3g_debug",
-        "M3G Debug Settings",
-        "Debug settings related to FreeJ2ME's M3G rendering implementation."
+        "M3G 偵錯",
+        "Free-J2ME M3G 渲染相關設定。"
     },
 };
 
@@ -149,9 +149,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_resolution",
         "System > Phone Resolution (Core Restart may be required)",
-        "Phone Resolution (Core Restart may be required)",
-        "Not all J2ME games run at the same screen resolution. If the game's window is too small, or has sections of it cut off, try increasing or decreasing the internal screen resolution. Some games also break when the screen size is updated while it's running, so in those cases, a restart is required.",
-        "Not all J2ME games run at the same screen resolution. If the game's window is too small, or has sections of it cut off, try increasing or decreasing the internal screen resolution. Some games also break when the screen size is updated while it's running, so in those cases, a restart is required.",
+        "解析度（需重載核心）",
+        "J2ME 遊戲的解析度並非固定。若遊戲視窗過小或被截斷，請嘗試調整該選項。若遊戲在運行時更改解析度出現錯誤，請重啟遊戲。",
+        "J2ME 遊戲的解析度並非固定。若遊戲視窗過小或被截斷，請嘗試調整該選項。若遊戲在運行時更改解析度出現錯誤，請重啟遊戲。",
         "system_settings",
         {
             { "96x65",     NULL },
@@ -191,9 +191,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_dojaversion",
         "System > DoJa API Version",
-        "DoJa API Version",
-        "DoCoMo's Java VM implementation is separated into a set of different APIs with some breaking changes between major versions. This setting allows you to set a specific version that might fix any transparency, audio and gameplay issues on the DoJa/Star app you are running.",
-        "DoCoMo's Java VM implementation is separated into a set of different APIs with some breaking changes between major versions. This setting allows you to set a specific version that might fix any transparency, audio and gameplay issues on the DoJa/Star app you are running.",
+        "DoJa API 版本",
+        "DoCoMo 的 Java VM 實作被分為多組 API，且其間存在不相容情況。該設定允許核心使用特定版本的 Doja/Star API，以解決圖形、音訊或是運行方面的問題。",
+        "DoCoMo 的 Java VM 實作被分為多組 API，且其間存在不相容情況。該設定允許核心使用特定版本的 Doja/Star API，以解決圖形、音訊或是運行方面的問題。",
         "system_settings",
         {
             { "10"   "DoJa-1.0" },
@@ -218,8 +218,8 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_rotate",
         "System > Rotate Screen",
         "Rotate Screen",
-        "For applications that expect the screen to be rotated, this option allows you to set the rotation in 90-degree steps. 270 degrees is the most commonly used",
-        "For applications that expect the screen to be rotated, this option allows you to set the rotation in 90-degree steps. 270 degrees is the most commonly used",
+        "一些遊戲通常需要旋轉螢幕。該選項允許你以 90° 為單位來旋轉熒幕，通常使用 270° 為基準。",
+        "一些遊戲通常需要旋轉螢幕。該選項允許你以 90° 為單位來旋轉熒幕，通常使用 270° 為基準。",
         "system_settings",
         {
             { "0",   "Disabled" },
@@ -233,9 +233,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_phone",
         "System > Phone Key Layout",
-        "Phone Key Layout",
-        "Due to the different mobile phone manufacturers on the J2ME space, it's usual to have some games expecting a certain phone's key layout like Nokia's for example. If a game is not responding to the inputs correctly, try changing this option.",
-        "Due to the different mobile phone manufacturers on the J2ME space, it's usual to have some games expecting a certain phone's key layout like Nokia's for example. If a game is not responding to the inputs correctly, try changing this option.",
+        "鍵值佈局",
+        "J2ME 平台存在不同的手機製造商，這導致遊戲之間的按鍵佈局也不盡相同。若遊戲的按鍵響應非常奇怪，請嘗試調整該選項。",
+        "J2ME 平台存在不同的手機製造商，這導致遊戲之間的按鍵佈局也不盡相同。若遊戲的按鍵響應非常奇怪，請嘗試調整該選項。",
         "system_settings",
         {
             { "Default",             NULL },
@@ -256,17 +256,17 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_backlightcolor",
         "System > LCD Backlight Color",
-        "LCD Backlight Color",
-        "Mostly used for monochrome games, where they request the screen to be lit/unlit for additional effects. This option allows you to select a color for the backlight to mimic some of these devices, like Green (Nokia 3410), Cyan (Nokia 6310i), Orange (Siemens C55), etc. If the game you're running has colored graphics and requests screen backlight anyway, or you don't like those backlight effects, disable this option.",
-        "Mostly used for monochrome games, where they request the screen to be lit/unlit for additional effects. This option allows you to select a color for the backlight to mimic some of these devices, like Green (Nokia 3410), Cyan (Nokia 6310i), Orange (Siemens C55), etc. If the game you're running has colored graphics and requests screen backlight anyway, or you don't like those backlight effects, disable this option.",
+        "LCD 背光",
+        "單色遊戲適用。這些遊戲會點亮 / 熄滅螢幕以產生額外效果（如‘Nokia 3410（綠）’、‘Nokia 6310i（青）’、『西門子 C55（橘）』）。若遊戲為全彩或是您不喜歡背光效果，請停用該選項。",
+        "單色遊戲適用。這些遊戲會點亮 / 熄滅螢幕以產生額外效果（如‘Nokia 3410（綠）’、‘Nokia 6310i（青）’、『西門子 C55（橘）』）。若遊戲為全彩或是您不喜歡背光效果，請停用該選項。",
         "system_settings",
         {
-            { "Disabled", NULL },
-            { "Green",    NULL },
-            { "Cyan",     NULL },
-            { "Orange",   NULL },
-            { "Violet",   NULL },
-            { "Red",      NULL },
+            { "Disabled", "禁用" },
+            { "Green",    "綠色" },
+            { "Cyan",     "青色" },
+            { "Orange",   "橘色" },
+            { "Violet",   "紫色" },
+            { "Red",      "紅色" },
             { NULL, NULL },
         },
         "Green"
@@ -274,9 +274,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_fps",
         "System > Game FPS Limit",
-        "Game FPS Limit",
-        "The J2ME platform allows a great deal of freedom when dealing with synchronization, so while many games are locked to a certain framerate internally, others allow for variable framerates when uncapped at the cost of higher CPU usage, and some even run faster than intended when they get over a certain FPS threshold. Use the option that best suits the game at hand.",
-        "The J2ME platform allows a great deal of freedom when dealing with synchronization, so while many games are locked to a certain framerate internally, others allow for variable framerates when uncapped at the cost of higher CPU usage, and some even run faster than intended when they get over a certain FPS threshold. Use the option that best suits the game at hand.",
+        "FPS 限制",
+        "J2ME 在處理同步時的自由度很大，一些 FPS 不設限的遊戲在運行時幀率可能會爆炸。請根據實際情況酌情配置該選項。",
+        "J2ME 在處理同步時的自由度很大，一些 FPS 不設限的遊戲在運行時幀率可能會爆炸。請根據實際情況酌情配置該選項。",
         "system_settings",
         {
             { "Auto", "Disabled" },
@@ -298,13 +298,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_sound",
         "System > Virtual Phone Sound (Core Restart required)",
-        "Virtual Phone Sound (Core Restart required)",
-        "Enables or disables the virtual phone's ability to load and play audio samples/tones. Some games require support for codecs not yet implemented, or have issues that can be worked around by disabling audio in FreeJ2ME. If a game doesn't run or has issues during longer sessions, try disabling this option.",
-        "Enables or disables the virtual phone's ability to load and play audio samples/tones. Some games require support for codecs not yet implemented, or have issues that can be worked around by disabling audio in FreeJ2ME. If a game doesn't run or has issues during longer sessions, try disabling this option.",
+        "模擬手機聲音",
+        "一些遊戲的音訊尚未被編解碼器支持，該選項可模擬手機加載和播放音訊 / 音調的功能。若出現音訊未支援的情況，請嘗試停用核心的音訊。若遊戲無法運作或是開啟過久出現錯誤，請嘗試停用該選項。",
+        "一些遊戲的音訊尚未被編解碼器支持，該選項可模擬手機加載和播放音訊 / 音調的功能。若出現音訊未支援的情況，請嘗試停用核心的音訊。若遊戲無法運作或是開啟過久出現錯誤，請嘗試停用該選項。",
         "system_settings",
         {
-            { "on",  "On"  },
-            { "off", "Off" },
+            { "on",  "啟用" },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "on"
@@ -312,27 +312,41 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_midifont",
         "System > MIDI Soundfont",
-        "MIDI Soundfont",
-        "Selects which kind of MIDI soundfont to use. 'Default' uses the soundfont bundled with the system or Java VM, while 'Custom' allows you to place a custom soundfont on '<freej2me-lr.jar folder>/freej2me_system/customMIDI' and use it on J2ME apps to simulate a specific phone or improve MIDI sound quality. WARNING: Big soundfonts greatly increase the emulator's RAM footprint and processing requirements, while smaller ones can actually help it perform better.",
-        "Selects which kind of MIDI soundfont to use. 'Default' uses the soundfont bundled with the system or Java VM, while 'Custom' allows you to place a custom soundfont on '<freej2me-lr.jar folder>/freej2me_system/customMIDI' and use it on J2ME apps to simulate a specific phone or improve MIDI sound quality. WARNING: Big soundfonts greatly increase the emulator's RAM footprint and processing requirements, while smaller ones can actually help it perform better.",
+        "MIDI 音源",
+        "『預設』使用系統或 VM 自帶的音色庫，而『自訂』則允許您在『<freej2me-lr.jar folder>/freej2me_system/customMIDI』路徑下放置 SF2 音色庫來獲得更好的聽感體驗。警告：大型音色庫可能無法正常運作！",
+        "『預設』使用系統或 VM 自帶的音色庫，而『自訂』則允許您在『<freej2me-lr.jar folder>/freej2me_system/customMIDI』路徑下放置 SF2 音色庫來獲得更好的聽感體驗。警告：大型音色庫可能無法正常運作！",
         "system_settings",
         {
-            { "off", "Default" },
-            { "on",  "Custom" },
+            { "off", "預設" },
+            { "on",  "自訂" },
             { NULL, NULL },
         },
         "off"
     },
     {
-        "freej2me_textfont",
-        "System > Text Font",
-        "Text Font",
-        "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes, so you might need to adjust the size offset.",
-        "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes, so you might need to adjust the size offset.",
+        "freej2me_midisearchvms",
+        "System > VirtualMIDISynth (Core Restart required)",
+        "VirtualMIDISynth（需重載核心）",
+        "啟用後，核心將搜尋系統中的 VirtualMIDISynth 設備並將其作為外部 MIDI 輸出。這可以獲得更高品質的 MIDI 播放效果。需要預先安裝 VirtualMIDISynth。",
+        "啟用後，核心將搜尋系統中的 VirtualMIDISynth 設備並將其作為外部 MIDI 輸出。這可以獲得更高品質的 MIDI 播放效果。需要預先安裝 VirtualMIDISynth。",
         "system_settings",
         {
-            { "off", "Default" },
-            { "on",  "Custom" },
+            { "on",  "啟用" },
+            { "off", "禁用" },
+            { NULL, NULL },
+        },
+        "on"
+    },
+    {
+        "freej2me_textfont",
+        "System > Text Font",
+        "文本字體",
+        "『預設』使用系統或 VM 自帶的字體，而『自訂』則允許您在『<freej2me-lr.jar folder>/freej2me_system/customFont』路徑下放置字體來模擬特定手機的字體。注意：在特定螢幕解析度上，某些字體可能會偏大或偏小。",
+        "『預設』使用系統或 VM 自帶的字體，而『自訂』則允許您在『<freej2me-lr.jar folder>/freej2me_system/customFont』路徑下放置字體來模擬特定手機的字體。注意：在特定螢幕解析度上，某些字體可能會偏大或偏小。",
+        "system_settings",
+        {
+            { "off", "預設" },
+            { "on",  "自訂" },
             { NULL, NULL },
         },
         "off"
@@ -340,9 +354,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_fontoffset",
         "System > Font Size Offset",
-        "Font Size Offset",
-        "Adjust the offset used for font sizing in order to make text bigger or smaller. Also helps with custom fonts that might be too big or small by default.",
-        "Adjust the offset used for font sizing in order to make text bigger or smaller. Also helps with custom fonts that might be too big or small by default.",
+        "字體尺寸",
+        "調整字體的尺寸偏移量，以使其變大或變小。對於某些顯示過大或過小的自訂字體也有幫助。",
+        "調整字體的尺寸偏移量，以使其變大或變小。對於某些顯示過大或過小的自訂字體也有幫助。",
         "system_settings",
         {
             { "-4", "-4 pt" },
@@ -361,13 +375,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_analogasentirekeypad",
         "System > Use Analog As Entire Keypad",
-        "Use Analog As Entire Keypad",
-        "A few games like Time Crisis Elite and Rayman Raving Rabbids can benefit from having the analog serve as the entire keypad for smoother gameplay (in TC Elite's case, with num 5 as pressing the analog too). If you have a game that appears to benefit from this by using the diagonal keypad keys instead of allowing for num2 and num4 to be pressed simultaneously for the same effect for example, try enabling it.",
-        "A few games like Time Crisis Elite and Rayman Raving Rabbids can benefit from having the analog serve as the entire keypad for smoother gameplay (in TC Elite's case, with num 5 as pressing the analog too). If you have a game that appears to benefit from this by using the diagonal keypad keys instead of allowing for num2 and num4 to be pressed simultaneously for the same effect for example, try enabling it.",
+        "使用搖桿作為數字鍵盤",
+        "在某些遊戲中，可以透過將搖桿映射為完整的數字鍵盤，以獲取更舒適的遊戲體驗。代表性遊戲：《Time Crisis Elite》，《Rayman Raving Rabbids》。",
+        "在某些遊戲中，可以透過將搖桿映射為完整的數字鍵盤，以獲取更舒適的遊戲體驗。代表性遊戲：《Time Crisis Elite》，《Rayman Raving Rabbids》。",
         "system_settings",
         {
-            { "off", "Disabled" },
-            { "on",  "Enabled" },
+            { "off", "禁用" },
+            { "on",  "啟用" },
             { NULL, NULL },
         },
         "off"
@@ -375,9 +389,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_logginglevel",
         "Advanced Settings > Logging Level",
-        "Logging Level",
-        "When enabled, this option allows FreeJ2ME to log messages of the specified level and higher into 'freej2me_system/FreeJ2ME.log' to facilitate debugging",
-        "When enabled, this option allows FreeJ2ME to log messages of the specified level and higher into 'freej2me_system/FreeJ2ME.log' to facilitate debugging",
+        "日誌級別",
+        "*偵錯用* 此選項允許核心將指定或更高等級的日誌記錄到『freej2me_system/FreeJ2ME.log』。",
+        "*偵錯用* 此選項允許核心將指定或更高等級的日誌記錄到『freej2me_system/FreeJ2ME.log』。",
         "advanced_settings",
         {
             { "0",  "Disable"           },
@@ -393,12 +407,12 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_dumpaudiostreams",
         "Advanced Settings > Dump Audio Streams",
         "Dump Audio Streams",
-        "This option allows FreeJ2ME to dump incoming Audio Data into $SYSTEM/FreeJ2MEDumps/Audio/appname/*, mostly useful for debugging",
-        "This option allows FreeJ2ME to dump incoming Audio Data into $SYSTEM/FreeJ2MEDumps/Audio/appname/*, mostly useful for debugging",
+        "*偵錯用* 該選項允許核心將音訊串流資料匯出至『$SYSTEM/FreeJ2MEDumps/Audio/appname/*』。",
+        "*偵錯用* 該選項允許核心將音訊串流資料匯出至『$SYSTEM/FreeJ2MEDumps/Audio/appname/*』。",
         "advanced_settings",
         {
-            { "off",  "Disable"            },
-            { "on",  "Enable"              },
+            { "off",  "禁用"            },
+            { "on",  "啟用"              },
             { NULL, NULL },
         },
         "off"
@@ -407,12 +421,12 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_dumpgraphicsdata",
         "Advanced Settings > Dump Graphics Data (Stub)",
         "Dump Graphics Data (Stub)",
-        "This option allows FreeJ2ME to dump incoming Graphics Data into $SYSTEM/FreeJ2MEDumps/Graphics/appname/*, mostly useful for debugging",
-        "This option allows FreeJ2ME to dump incoming Graphics Data into $SYSTEM/FreeJ2MEDumps/Audio/appname/*, mostly useful for debugging",
+        "*偵錯用* 該選項允許核心將接收到的圖形資料匯出至『$SYSTEM/FreeJ2MEDumps/Graphics/appname/*』。",
+        "*偵錯用* 該選項允許核心將接收到的圖形資料匯出至『$SYSTEM/FreeJ2MEDumps/Graphics/appname/*』。",
         "advanced_settings",
         {
-            { "off",  "Disable"            },
-            { "on",  "Enable"              },
+            { "off",  "禁用"            },
+            { "on",  "啟用"              },
             { NULL, NULL },
         },
         "off"
@@ -420,13 +434,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_deletetempkjxfiles",
         "Advanced Settings > Delete KJX files' temporary JAR/JAD",
-        "Delete KJX files' temporary JAR/JAD",
-        "Disabling this option allows FreeJ2ME to keep the decompiled JAR and JAD files from a KDDI KJX container in $SYSTEM/FreeJ2MEDumps/KDDI/, useful if you want to archive those files outside their KJX container or try running them somewhere that doesn't handle KJX files",
-        "Disabling this option allows FreeJ2ME to keep the decompiled JAR and JAD files from a KDDI KJX container in $SYSTEM/FreeJ2MEDumps/KDDI/, useful if you want to archive those files outside their KJX container or try running them somewhere that doesn't handle KJX files",
+        "清理 KJX 檔的臨時 JAR/JAD",
+        "該選項可清理在執行 KJX 檔時解包出的 JAR/JAD，如果禁用，這些檔案則會保存在『$SYSTEM/FreeJ2MEDumps/KDDI/』，這對於備份或是在其他不支援 KJX 的模擬器上執行它們會很有幫助。",
+        "該選項可清理在執行 KJX 檔時解包出的 JAR/JAD，如果禁用，這些檔案則會保存在『$SYSTEM/FreeJ2MEDumps/KDDI/』，這對於備份或是在其他不支援 KJX 的模擬器上執行它們會很有幫助。",
         "advanced_settings",
         {
-            { "off",  "Disable"            },
-            { "on",  "Enable"              },
+            { "off",  "禁用"            },
+            { "on",  "啟用"              },
             { NULL, NULL },
         },
         "on"
@@ -434,14 +448,14 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointertype",
         "Advanced Settings > Pointer Type",
-        "Pointer Type",
-        "This option sets the type of pointer used by FreeJ2ME, can be set to use a Mouse, a Touchscreen or neither. Please note that only Mouse supports drag and drop motions",
-        "This option sets the type of pointer used by FreeJ2ME, can be set to use a Mouse, a Touchscreen or neither. Please note that only Mouse supports drag and drop motions",
+        "遊標類型",
+        "設定核心所用的遊標類型。請注意，僅有滑鼠支援縮放操作。",
+        "設定核心所用的遊標類型。請注意，僅有滑鼠支援縮放操作。",
         "advanced_settings",
         {
-            { "Mouse",  "Mouse"                    },
-            { "Touch",  "Touchscreen"              },
-            { "None",   "No Pointer/Joypad Analog" },
+            { "Mouse",  "滑鼠"                    },
+            { "Touch",  "觸控"              },
+            { "None",   "無遊標 / 手把模擬" },
             { NULL, NULL },
         },
         "Mouse"
@@ -449,15 +463,15 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointerxspeed",
         "Advanced Settings > Pointer X Speed",
-        "Pointer X Speed",
-        "This option sets the horizontal speed of the on-screen pointer when controlled by a joypad's analog stick.",
-        "This option sets the horizontal speed of the on-screen pointer when controlled by a joypad's analog stick.",
+        "遊標 X 軸速度",
+        "設定使用搖桿操控遊標時，其在 X 軸上的速度。",
+        "設定使用搖桿操控遊標時，其在 X 軸上的速度。",
         "advanced_settings",
         {
-            { "2",  "Slow"    },
-            { "4",  "Normal"  },
-            { "8",  "Fast"    },
-            { "16", "Faster"  },
+            { "2",  "慢速"    },
+            { "4",  "正常"  },
+            { "8",  "快速"    },
+            { "16", "極快"  },
             { NULL, NULL },
         },
         "4"
@@ -465,15 +479,15 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointeryspeed",
         "Advanced Settings > Pointer Y Speed",
-        "Pointer Y Speed",
-        "This option sets the vertical speed of the on-screen pointer when controlled by a joypad's analog stick.",
-        "This option sets the vertical speed of the on-screen pointer when controlled by a joypad's analog stick.",
+        "遊標 Y 軸速度",
+        "設定使用搖桿操控遊標時，其在 Y 軸上的速度。",
+        "設定使用搖桿操控遊標時，其在 Y 軸上的速度。",
         "advanced_settings",
         {
-            { "2",  "Slow"    },
-            { "4",  "Normal"  },
-            { "8",  "Fast"    },
-            { "16", "Faster"  },
+            { "2",  "慢速"    },
+            { "4",  "正常"  },
+            { "8",  "快速"    },
+            { "16", "極快"  },
             { NULL, NULL },
         },
         "4"
@@ -481,19 +495,19 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointerinnercolor",
         "Advanced Settings > Pointer Inner Color",
-        "Pointer Inner Color",
-        "This option sets the on-screen pointer's inner color.",
-        "This option sets the on-screen pointer's inner color.",
+        "遊標內部顏色",
+        "設定遊標的內部顏色。",
+        "設定遊標的內部顏色。",
         "advanced_settings",
         {
-            { "Black",  "Black"            },
-            { "Red",    "Red"              },
-            { "Green",  "Green"            },
-            { "Blue",   "Blue"             },
-            { "Yellow", "Yellow"           },
-            { "Pink",   "Pink"             },
-            { "Cyan",   "Cyan"             },
-            { "White",  "White (Default)"  },
+            { "Black",  "黑"            },
+            { "Red",    "紅"              },
+            { "Green",  "綠"            },
+            { "Blue",   "藍"             },
+            { "Yellow", "黃"           },
+            { "Pink",   "粉"             },
+            { "Cyan",   "青"             },
+            { "White",  "白"  },
             { NULL, NULL },
         },
         "White"
@@ -501,19 +515,19 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointeroutercolor",
         "Advanced Settings > Pointer Outline Color",
-        "Pointer Outline Color",
-        "This option sets the on-screen pointer's outline color.",
-        "This option sets the on-screen pointer's outline color.",
+        "遊標輪廓顏色",
+        "設定遊標的輪廓顏色。",
+        "設定遊標的輪廓顏色。",
         "advanced_settings",
         {
-            { "Black",  "Black (Default)"  },
-            { "Red",    "Red"              },
-            { "Green",  "Green"            },
-            { "Blue",   "Blue"             },
-            { "Yellow", "Yellow"           },
-            { "Pink",   "Pink"             },
-            { "Cyan",   "Cyan"             },
-            { "White",  "White"            },
+            { "Black",  "黑"            },
+            { "Red",    "紅"              },
+            { "Green",  "綠"            },
+            { "Blue",   "藍"             },
+            { "Yellow", "黃"           },
+            { "Pink",   "粉"             },
+            { "Cyan",   "青"             },
+            { "White",  "白"  },
             { NULL, NULL },
         },
         "Black"
@@ -521,19 +535,19 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_pointerclickcolor",
         "Advanced Settings > Pointer Click Indicator Color",
-        "Pointer Click Indicator Color",
-        "This option sets the on-screen pointer's click indicator color.",
-        "This option sets the on-screen pointer's click indicator color.",
+        "遊標點選顏色",
+        "設定遊標的內部顏色。",
+        "設定遊標的內部顏色。",
         "advanced_settings",
         {
-            { "Black",  "Black"            },
-            { "Red",    "Red"              },
-            { "Green",  "Green"            },
-            { "Blue",   "Blue"             },
-            { "Yellow", "Yellow (Default)" },
-            { "Pink",   "Pink"             },
-            { "Cyan",   "Cyan"             },
-            { "White",  "White"            },
+            { "Black",  "黑"            },
+            { "Red",    "紅"              },
+            { "Green",  "綠"            },
+            { "Blue",   "藍"             },
+            { "Yellow", "黃"           },
+            { "Pink",   "粉"             },
+            { "Cyan",   "青"             },
+            { "White",  "白"  },
             { NULL, NULL },
         },
         "Yellow"
@@ -541,13 +555,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_spdhacknoalpha",
         "Speed Hacks > No Alpha on Blank Images (Restart Required)",
-        "No Alpha on Blank Images (Restart Required)",
-        "J2ME dictates that all images, including fully blank ones, have to be created with an alpha channel, and this includes the virtual phone's LCD screen. However, FreeJ2ME can create those without an alpha channel instead, cutting back on alpha processing for those images that usually are always fully painted with no transparency. Provides a measurable performance boost depending on the app with little to no side effects",
-        "J2ME dictates that all images, including fully blank ones, have to be created with an alpha channel, and this includes the virtual phone's LCD screen. However, FreeJ2ME can create those without an alpha channel instead, cutting back on alpha processing for those images that usually are always fully painted with no transparency. Provides a measurable performance boost depending on the app with little to no side effects",
+        "無 Alpha 空白影像（需重載核心）",
+        "J2ME 規範要求所有影像（包括完全空白的影像及虛擬手機的 LCD 螢幕）都必須建立 Alpha 通道。此選項針對那些通常以完全不透明方式繪製的影像，在建立時省略其 Alpha 通道，從而減少不必要的處理開銷。根據遊戲不同，這能帶來顯著的效能提升，且影響可忽略不計。",
+        "J2ME 規範要求所有影像（包括完全空白的影像及虛擬手機的 LCD 螢幕）都必須建立 Alpha 通道。此選項針對那些通常以完全不透明方式繪製的影像，在建立時省略其 Alpha 通道，從而減少不必要的處理開銷。根據遊戲不同，這能帶來顯著的效能提升，且影響可忽略不計。",
         "speed_hacks",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "啟用" },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
@@ -555,9 +569,9 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_spdhackm3ghalfres",
         "Speed Hacks > Render M3G at Half Resolution",
-        "Render M3G at Half Resolution",
-        "FreeJ2ME-Plus uses a software renderer for M3G (Mobile 3D Graphics), which can be intensive in more complex applications and higher phone resolutions. Use this if your cpu cannot keep up with full resolution rendering.",
-        "FreeJ2ME-Plus uses a software renderer for M3G (Mobile 3D Graphics), which can be intensive in more complex applications and higher phone resolutions. Use this if your cpu cannot keep up with full resolution rendering.",
+        "M3G 半解析度渲染",
+        "FreeJ2ME-Plus 對 M3G（Mobile 3D Graphics） 使用軟體渲染。若程式較為複雜，或是熒幕解析度過高，可能會導致效能問題。若 CPU 無法進行全解析度渲染，請啟用此選項。",
+        "FreeJ2ME-Plus 對 M3G（Mobile 3D Graphics） 使用軟體渲染。若程式較為複雜，或是熒幕解析度過高，可能會導致效能問題。若 CPU 無法進行全解析度渲染，請啟用此選項。",
         "speed_hacks",
         {
             { "on",  "Enabled"            },
@@ -569,12 +583,12 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_spdhackfpsunlock",
         "Speed Hacks > Framerate Unlock Hack",
-        "Framerate Unlock Hack",
-        "Hijacks calls to Java methods normally used for delays and synchronization in order to increase the app's internal framerate. Higher aggressiveness levels increase the scope and type of calls intercepted. 'Safe' tackles only sleep() calls that reside in the same function of a rendering call, 'Extended' extends it to all sleep() calls, and 'Aggressive' goes beyond and hijacks system calls used for timing as well. Works best when the FPS limiter is set to anything other than 'Auto'.",
-        "Hijacks calls to Java methods normally used for delays and synchronization in order to increase the app's internal framerate. Higher aggressiveness levels increase the scope and type of calls intercepted. 'Safe' tackles only sleep() calls that reside in the same function of a rendering call, 'Extended' extends it to all sleep() calls, and 'Aggressive' goes beyond and hijacks system calls used for timing as well. Works best when the FPS limiter is set to anything other than 'Auto'.",
+        "FPS Hack",
+        "攔截 Java 方法中的延遲與同步調用，以提升應用的內部幀率。更高的激進等級會增加攔截的範圍與方法類型。『Safe』僅攔截與繪圖函數在同一方法中的 sleep() 調用，『Extended』會攔截所有 sleep() 調用，『Aggressive』甚至會攔截系統層級的時間相關調用。『FPS 限制』為非『Auto』時效果最佳。",
+        "攔截 Java 方法中的延遲與同步調用，以提升應用的內部幀率。更高的激進等級會增加攔截的範圍與方法類型。『Safe』僅攔截與繪圖函數在同一方法中的 sleep() 調用，『Extended』會攔截所有 sleep() 調用，『Aggressive』甚至會攔截系統層級的時間相關調用。『FPS 限制』為非『Auto』時效果最佳。",
         "speed_hacks",
         {
-            { "0",  "Disabled (Default)"    },
+            { "0",  "禁用"    },
             { "1",  "Safe"                  },
             { "2",  "Extended"              },
             { "3",  "Aggressive"            },
@@ -585,13 +599,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_compatfantasyzonefix",
         "Compatibility Settings > Fix for Fantasy Zone 176x208 weird mirroring",
-        "Fix for Fantasy Zone 176x208 weird mirroring",
-        "Fantasy Zone 176x208's MIDP version goes entirely out of spec with its mirroring operation. It's broken on every other emulator out there and even on actual devices that aren't some Nokia S40 devices. This setting fixes it at the expense of breaking other applications that use the same draw path for S40.",
-        "Fantasy Zone 176x208's MIDP version goes entirely out of spec with its mirroring operation. It's broken on every other emulator out there and even on actual devices that aren't some Nokia S40 devices. This setting fixes it at the expense of breaking other applications that use the same draw path for S40.",
+        "修復《Fantasy Zone(176x208)》的奇異鏡像問題",
+        "《Fantasy Zone(176x208)》 的 MIDP 版在鏡像操作上完全違反規範。該遊戲在其他所有模擬器上都有問題，甚至在非 Nokia S40 的真機上也無法正常運作。該設定可修復此問題，但會破壞其他使用相同 S40 繪製路徑的應用程式。",
+        "《Fantasy Zone(176x208)》 的 MIDP 版在鏡像操作上完全違反規範。該遊戲在其他所有模擬器上都有問題，甚至在非 Nokia S40 的真機上也無法正常運作。該設定可修復此問題，但會破壞其他使用相同 S40 繪製路徑的應用程式。",
         "compat_settings",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "啟用" },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
@@ -599,13 +613,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_compattranstooriginongfxreset",
         "Compatibility Settings > Translate to origin on gfx reset",
-        "Translate to origin on gfx reset",
-        "Some apps like Fantasy Zone's 128x128 version rely on the graphics object being translated to the origin before every draw, this compatibility setting helps with that, and any case where the drawn area keeps moving in any given direction for no reason.",
-        "Some apps like Fantasy Zone's 128x128 version rely on the graphics object being translated to the origin before every draw, this compatibility setting helps with that, and any case where the drawn area keeps moving in any given direction for no reason.",
+        "圖像重設時平移至原點",
+        "《Fantasy Zone》的『128x128』版本 依賴圖形物件在每次繪圖前平移至原點。啟用該選項可改善這類情況，並解決繪製區域莫名持續移動的問題。",
+        "《Fantasy Zone》的『128x128』版本 依賴圖形物件在每次繪圖前平移至原點。啟用該選項可改善這類情況，並解決繪製區域莫名持續移動的問題。",
         "compat_settings",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "啟用" },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
@@ -613,13 +627,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_compatimmediaterepaintcalls",
         "Compatibility Settings > Process canvas repaint calls immediately",
-        "Process canvas repaint calls immediately",
-        "By default, J2ME expects canvas repaints to be queued up, and applications can either request serviceRepaints() or use serial calls to synchronize rendering. However, some apps might cause deadlocks by improper usage of the repaint queue and in turn, freeze. This setting may help cases where an app is freezing for no apparent reason.",
-        "By default, J2ME expects canvas repaints to be queued up, and applications can either request serviceRepaints() or use serial calls to synchronize rendering. However, some apps might cause deadlocks by improper usage of the repaint queue and in turn, freeze. This setting may help cases where an app is freezing for no apparent reason.",
+        "即時處理畫布重繪呼叫",
+        "預設情況下，J2ME 會將 Canvas 的重繪呼叫加入佇列，應用需呼叫『serviceRepaints()』或使用『Serial calls』來同步繪製。某些應用程式誤用重繪佇列，可能導致死鎖而造成凍結。該選項可用於解決應用程式無故凍結的問題。",
+        "預設情況下，J2ME 會將 Canvas 的重繪呼叫加入佇列，應用需呼叫『serviceRepaints()』或使用『Serial calls』來同步繪製。某些應用程式誤用重繪佇列，可能導致死鎖而造成凍結。該選項可用於解決應用程式無故凍結的問題。",
         "compat_settings",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "啟用" },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
@@ -627,13 +641,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_compatoverrideplatcheck",
         "Compatibility Settings > Override Mobile Platform checks",
-        "Override Mobile Platform checks",
-        "Some applications check against specific platform strings (such as 'Nokia', 'Siemens S60'), whenever this happens, FreeJ2ME's platform string doesn't match what they expect so they refuse to run. This setting overrides any platform strings by FreeJ2ME's own. This option helps far more than breaks, so it's on by default",
-        "Some applications check against specific platform strings (such as 'Nokia', 'Siemens S60'), whenever this happens, FreeJ2ME's platform string doesn't match what they expect so they refuse to run. This setting overrides any platform strings by FreeJ2ME's own. This option helps far more than breaks, so it's on by default",
+        "覆寫行動平台檢查",
+        "部分應用程式會檢查特定的平台字串（如 'Nokia', 'Siemens S60'），若 FreeJ2ME 的平台字串不符預期，便會拒絕執行。該選項會將模擬器的平台字串覆寫為遊戲期望的內容，以通過檢查。該選項利大於弊，故預設啟用。",
+        "部分應用程式會檢查特定的平台字串（如 'Nokia', 'Siemens S60'），若 FreeJ2ME 的平台字串不符預期，便會拒絕執行。該選項會將模擬器的平台字串覆寫為遊戲期望的內容，以通過檢查。該選項利大於弊，故預設啟用。",
         "compat_settings",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "啟用" },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "on"
@@ -641,13 +655,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_compatsiemensfriendlydraw",
         "Compatibility Settings > Siemens-friendly drawing methods",
-        "Siemens-friendly drawing methods",
-        "MIDP-Compliant J2ME drawing operations do no need to check for negative translation values in order to draw images properly. However, some Siemens apps like STCC (Swedish Touring Car Championship) won't work properly with the default behavior. This option tries to correct translations in a way that is closer to what Siemens' VM probably does drawing. Note that enabling this will break jars that use negative translations but are tailored for the J2ME specification.",
-        "MIDP-Compliant J2ME drawing operations do no need to check for negative translation values in order to draw images properly. However, some Siemens apps like STCC (Swedish Touring Car Championship) won't work properly with the default behavior. This option tries to correct translations in a way that is closer to what Siemens' VM probably does drawing. Note that enabling this will break jars that use negative translations but are tailored for the J2ME specification.",
+        "西門子友好型繪圖方法",
+        "符合 MIDP 規範的 J2ME 繪圖操作無需檢查負值平移即可正常繪製圖像。然而，一些西門子應用程式（如《Swedish Touring Car Championship》）在預設行為下無法正常運作。該選項會嘗試以一種更接近西門子虛擬機器可能採用的繪圖方式來修正平移。請注意，啟用此選項將會破壞那些使用負值平移且專為標準 J2ME 規範設計的遊戲。",
+        "符合 MIDP 規範的 J2ME 繪圖操作無需檢查負值平移即可正常繪製圖像。然而，一些西門子應用程式（如《Swedish Touring Car Championship》）在預設行為下無法正常運作。該選項會嘗試以一種更接近西門子虛擬機器可能採用的繪圖方式來修正平移。請注意，啟用此選項將會破壞那些使用負值平移且專為標準 J2ME 規範設計的遊戲。",
         "compat_settings",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "啟用" },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
@@ -655,13 +669,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_compatignorevolumechanges",
         "Compatibility Settings > Ignore volume changes",
-        "Ignore volume changes",
-        "Media playback is probably the J2ME subsystem whose implementation and utilization varies the most by vendor. Some applications go as far as setting volume changes to streams they already stopped beforehand, which can cause playback issues on other media that's currently playing. Sonic 2's MIDP versions are some such cases... enabling this option helps them.",
-        "Media playback is probably the J2ME subsystem whose implementation and utilization varies the most by vendor. Some applications go as far as setting volume changes to streams they already stopped beforehand, which can cause playback issues on other media that's currently playing. Sonic 2's MIDP versions are some such cases... enabling this option helps them.",
+        "音量變更忽略",
+        "在 J2ME 子系統中，媒體播放可能是因廠商而在實作或使用上的不同，而導致差異最大的模塊。有些程式甚至會對已經停止的串流進行音量變更，這可能致使其他正在播放的媒體出現問題（如『Sonic 2』 的 MIDP 版）。啟用此選項可改善此類情況。",
+        "在 J2ME 子系統中，媒體播放可能是因廠商而在實作或使用上的不同，而導致差異最大的模塊。有些程式甚至會對已經停止的串流進行音量變更，這可能致使其他正在播放的媒體出現問題（如『Sonic 2』 的 MIDP 版）。啟用此選項可改善此類情況。",
         "compat_settings",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "啟用" },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
@@ -669,13 +683,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_m3grenderuntextured",
         "M3G Debug Settings > Draw only vertex colors",
-        "Draw only vertex colors",
-        "Enabling this makes M3G render only vertex colored, untextured polygons. Useful for debugging blending and vertex coloring seams.",
-        "Enabling this makes M3G render only vertex colored, untextured polygons. Useful for debugging blending and vertex coloring seams.",
+        "僅渲染頂點顏色",
+        "*偵錯用* 使 M3G 僅渲染帶有頂點顏色、無紋理的多邊形。對於偵錯「顏色混合 (Blending)」以及「頂點著色接縫 (Vertex coloring seams)」問題很有幫助。",
+        "*偵錯用* 使 M3G 僅渲染帶有頂點顏色、無紋理的多邊形。對於偵錯「顏色混合 (Blending)」以及「頂點著色接縫 (Vertex coloring seams)」問題很有幫助。",
         "m3g_debug",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "啟用" },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
@@ -683,13 +697,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_m3grenderwireframe",
         "M3G Debug Settings > Draw Wireframe",
-        "Draw Wireframe",
-        "Enabling this makes M3G render only wireframes. Useful for debugging triangle clipping and culling.",
-        "Enabling this makes M3G render only wireframes. Useful for debugging triangle clipping and culling.",
+        "渲染線框",
+        "*偵錯用* 使 M3G 僅渲染線框。對於偵錯「三角形裁剪 (Triangle clipping)」和「剔除 (Culling)」問題很有幫助。",
+        "*偵錯用* 使 M3G 僅渲染線框。對於偵錯「三角形裁剪 (Triangle clipping)」和「剔除 (Culling)」問題很有幫助。",
         "m3g_debug",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "啟用" },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
