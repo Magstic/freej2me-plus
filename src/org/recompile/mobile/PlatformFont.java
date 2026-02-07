@@ -33,11 +33,33 @@ public class PlatformFont
 {
 	protected static final byte[] fontSizes = 
 	{
-		 7,  8, 10, 12, // < 128 minimum px dimension
-		 9, 11, 13, 14, // < 176 minimum px dimension
-		10, 12, 13, 15, // < 220 minimum px dimension
-		11, 13, 15, 17, // >= 220 minimum px dimension
+		 8,  8, 8, 8, // < 128 minimum px dimension
+		10, 10, 10, 10, // < 176 minimum px dimension
+		12, 12, 12, 12, // < 220 minimum px dimension
+		12, 12, 12, 12, // >= 220 minimum px dimension
 	};
+
+	private static int getCustomFontBucketPx()
+	{
+		int st = screenType;
+		if (st < 0) { st = 0; }
+		int idx = 4 * st + 2;
+		if (idx < 0 || idx >= fontSizes.length) { idx = 2; }
+		return fontSizes[idx];
+	}
+
+	private static String selectCustomFontFile(String[] fontfiles)
+	{
+		if (fontfiles == null || fontfiles.length <= 0) { return null; }
+
+		final String token = ("" + getCustomFontBucketPx() + "px").toLowerCase();
+		for (int i = 0; i < fontfiles.length; i++)
+		{
+			final String name = fontfiles[i];
+			if (name != null && name.toLowerCase().contains(token)) { return name; }
+		}
+		return fontfiles[0];
+	}
 
 	// Helps LCDUI to better adjust for different screen sizes.
 	public static final byte[] fontPadding =
@@ -115,7 +137,8 @@ public class PlatformFont
 		{
             try 
 			{
-                awtFont = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new File(textfontDir, fontfiles[0])).deriveFont(isLCDUI ? getStyle() : convertDoJaToLCDUIStyle(getStyle()), getPointSize());
+				String selectedFontFile = selectCustomFontFile(fontfiles);
+				awtFont = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new File(textfontDir, selectedFontFile)).deriveFont(isLCDUI ? getStyle() : convertDoJaToLCDUIStyle(getStyle()), getPointSize());
             } 
 			catch (Exception e) // If there's an issue loading it, we can still fallback to the default
 			{
@@ -128,7 +151,7 @@ public class PlatformFont
 				awtFont = new java.awt.Font(fontFace, isLCDUI ? getStyle() : convertDoJaToLCDUIStyle(getStyle()), getPointSize());
             }
         }
-		else if(!Mobile.useCustomTextFont) // If the user is not going to use custom fonts, or there are no custom fonts in the directory, load the defaults
+		else // If the user is not going to use custom fonts, or there are no custom fonts in the directory, load the defaults
 		{
 			// We'll use SansSerif for SYSTEM
 			String fontFace = java.awt.Font.SANS_SERIF;
