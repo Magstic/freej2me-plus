@@ -143,8 +143,8 @@ struct retro_core_option_v2_category option_categories[] =
     },
     {
         "mcv3_debug",
-        "MascotCapsuleV3 Debug Settings",
-        "Debug settings related to FreeJ2ME's MascotCapsuleV3 renderer."
+        "MCV3 偵錯",
+        "Free-J2ME MascotCapsuleV3 渲染相關設定。"
     },
 };
 
@@ -581,8 +581,8 @@ struct retro_core_option_v2_definition core_options[] =
         "FreeJ2ME-Plus 對 M3G（Mobile 3D Graphics） 使用軟體渲染。若程式較為複雜，或是熒幕解析度過高，可能會導致效能問題。若 CPU 無法進行全解析度渲染，請啟用此選項。",
         "speed_hacks",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "啟用" },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
@@ -590,13 +590,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_spdhackmcv3halfres",
         "Speed Hacks > Render MascotCapsuleV3 at Half Resolution",
-        "Render MascotCapsuleV3 at Half Resolution",
-        "FreeJ2ME-Plus also uses a software renderer for MascotCapsuleV3 (courtesy of Roman Lahin, @rmn20), which can be intensive in more complex applications and higher phone resolutions. Use this if your cpu cannot keep up with full resolution rendering.",
-        "FreeJ2ME-Plus also uses a software renderer for MascotCapsuleV3 (courtesy of Roman Lahin, @rmn20), which can be intensive in more complex applications and higher phone resolutions. Use this if your cpu cannot keep up with full resolution rendering.",
+        "MCV3 半解析度渲染",
+        "FreeJ2ME-Plus 亦對 MascotCapsuleV3 使用軟體渲染（由 Roman Lahin，@rmn20 提供）。若程式較為複雜，或是熒幕解析度過高，可能會導致效能問題。若 CPU 無法進行全解析度渲染，請啟用此選項。",
+        "FreeJ2ME-Plus 亦對 MascotCapsuleV3 使用軟體渲染（由 Roman Lahin，@rmn20 提供）。若程式較為複雜，或是熒幕解析度過高，可能會導致效能問題。若 CPU 無法進行全解析度渲染，請啟用此選項。",
         "speed_hacks",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "啟用" },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
@@ -604,13 +604,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_spdhackmcv3nolight",
         "Speed Hacks > Disable MascotCapsuleV3 lighting",
-        "Disable MascotCapsuleV3 lighting",
-        "FreeJ2ME-Plus allows disabling all lighting operations on its MCV3 renderer. Helps games that use complex lighting setups, otherwise, doesn't have much of a performance impact.",
-        "FreeJ2ME-Plus allows disabling all lighting operations on its MCV3 renderer. Helps games that use complex lighting setups, otherwise, doesn't have much of a performance impact.",
+        "MCV3 光照禁用",
+        "FreeJ2ME-Plus 允許在 MCV3 渲染器中停用所有光照運算。對使用複雜光照設定的程式有幫助。",
+        "FreeJ2ME-Plus 允許在 MCV3 渲染器中停用所有光照運算。對使用複雜光照設定的程式有幫助。",
         "speed_hacks",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "啟用" },
+            { "off", "禁用" },
             { NULL, NULL },
         },
         "off"
@@ -718,13 +718,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_compatmcv3horfovfix",
         "Compatibility Settings > MascotCapsuleV3 Horizontal FOV Fix",
-        "MascotCapsuleV3 Horizontal FOV Fix",
-        "Might help games meant for portrait resolutions work better in landscape resolutions.",
-        "Might help games meant for portrait resolutions work better in landscape resolutions.",
+        "MascotCapsuleV3 水平視野修正",
+        "啟用此選項可能有助於讓原本為直向解析度設計的遊戲在橫向解析度下更為正常。",
+        "啟用此選項可能有助於讓原本為直向解析度設計的遊戲在橫向解析度下更為正常。",
         "compat_settings",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "啟用"            },
+            { "off", "禁用"            },
             { NULL, NULL },
         },
         "off"
@@ -760,13 +760,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_mcv3showheap",
         "MascotCapsuleV3 Debug Settings > Show Heap Usage",
-        "Show Heap Usage",
-        "Shows how much Heap is being used by MascotCapsuleV3's renderer.",
-        "Shows how much Heap is being used by MascotCapsuleV3's renderer.",
+        "檢視 Heap 使用",
+        "檢視 MascotCapsuleV3 渲染器目前佔用的堆記憶體大小。",
+        "檢視 MascotCapsuleV3 渲染器目前佔用的堆記憶體大小。",
         "mcv3_debug",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "啟用"            },
+            { "off", "禁用"            },
             { NULL, NULL },
         },
         "off"
@@ -774,13 +774,13 @@ struct retro_core_option_v2_definition core_options[] =
     {
         "freej2me_mcv3showtimestats",
         "MascotCapsuleV3 Debug Settings > Show Time Stats",
-        "Show Time Stats",
-        "Shows frametime statistics for the most important blocks of MascotCapsuleV3's renderer.",
-        "Shows frametime statistics for the most important blocks of MascotCapsuleV3's renderer.",
+        "檢視時間統計",
+        "檢視 MascotCapsuleV3 渲染器關鍵模組的幀時間統計資訊。",
+        "檢視 MascotCapsuleV3 渲染器關鍵模組的幀時間統計資訊。",
         "mcv3_debug",
         {
-            { "on",  "Enabled"            },
-            { "off", "Disabled (Default)" },
+            { "on",  "啟用"            },
+            { "off", "禁用"            },
             { NULL, NULL },
         },
         "off"
