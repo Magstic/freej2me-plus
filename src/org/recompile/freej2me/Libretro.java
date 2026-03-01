@@ -32,6 +32,7 @@ public class Libretro
 	int[] lcdData;
 
 	private boolean soundEnabled = true;
+	private boolean midiSearchVMS = true;
 	private static volatile boolean canPause = false;
 
 	private static final long PAUSE_DELAY_MS = 250;
@@ -184,6 +185,9 @@ public class Libretro
 
 		/* MascotCapsuleV3 Show Heap debug setting */
 		Mobile.MCV3ShowTimeMetrics = Integer.parseInt(args[30]) != 0;
+
+		/* Search and use VirtualMIDISynth as external MIDI device */
+		if(args.length > 31) { midiSearchVMS = Integer.parseInt(args[31]) != 0; }
 
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
@@ -428,8 +432,8 @@ public class Libretro
 
 										Mobile.config.sysSettings.put("dumpAudioStreams", Mobile.dumpAudioStreams ? "on" : "off");
 										Mobile.config.sysSettings.put("dumpGraphicsObjects", Mobile.dumpGraphicsObjects ? "on" : "off");
+										Mobile.config.sysSettings.put("MIDISearchVMS", midiSearchVMS ? "on" : "off");
 
-							
 										if(Mobile.libretroRestartRequested == 1) 
 										{
 											frameHeader[14] = Mobile.libretroRestartRequested;
@@ -556,7 +560,7 @@ public class Libretro
 
 									Mobile.config.settings.put("MCV3ShowTimeMetrics", Integer.parseInt(cfgtokens[31]) == 1 ? "on" : "off");
 
-									if(Integer.parseInt(cfgtokens[27])==0) { Mobile.config.sysSettings.put("MIDISearchVMS", "off");  }
+									if(cfgtokens.length > 32 && Integer.parseInt(cfgtokens[32])==0) { Mobile.config.sysSettings.put("MIDISearchVMS", "off");  }
 									else { Mobile.config.sysSettings.put("MIDISearchVMS", "on"); }
 
 									Mobile.config.saveConfig();
