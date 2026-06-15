@@ -134,7 +134,7 @@ public class Mobile
 
 	// Moto Funlight Regions (here, corners of the screen, Display region is handled through the LCD mask)
 	public static boolean funLightsEnabled = false;
-	public static int[] funLightRegionColor = 
+	public static int[] funLightRegionColor =
 	{
 		0x88FFFFFE, // Blank Region color, not used
 		0x88FFFFFE, // Display Region color, not used (handled by lcdMaskColors above)
@@ -167,13 +167,14 @@ public class Mobile
 	public static boolean motorola = false;
 	public static boolean motoV8 = false;
 	public static boolean motoTriplets = false;
+	public static boolean motoA1000 = false;
 	public static boolean nokiaKeyboard = false;
 	public static boolean sagem = false;
 	public static boolean siemens = false;
 	public static boolean sharp = false;
 	public static boolean skt = false;
 
-	/*                                               
+	/*
 	 * For AWTGUI, the input array is as follows:    [LeftSoft, RightSoft, Up, Left, Fire, Right, Down, 1, 2, 3, 4, 5, 6, 7, 8, 9, *, 0, #, Fast-Forward, Screenshot]
 	 * Whereas in SDL it's:                          [Fire, 7, 9, #, LeftSoft, 0, RightSoft, 5, CLR, 1, 3, Up, Down, Left, Right, 2(todo), 4(todo), 6(todo), 8(todo)] // Special hotkeys are not implemented
 	 * While on Libretro, it's:                      [Up, Down, Left, Right, 9, 7, 0, Fire, RightSoft, LeftSoft, 1,  3.  *.  #,  2,  4,  6,  8,  5] // Fast-Forward, pause/resume and screenshot are frontend-governed
@@ -213,10 +214,10 @@ public class Mobile
 	//KDDI keycodes
 	public static final int KDDI_UP    = 1;
 	public static final int KDDI_DOWN  = 6;
-	public static final int KDDI_LEFT  = 2; 
+	public static final int KDDI_LEFT  = 2;
 	public static final int KDDI_RIGHT = 5;
-	public static final int KDDI_SOFT1 = 20; 
-	public static final int KDDI_SOFT2 = 21; 
+	public static final int KDDI_SOFT1 = 20;
+	public static final int KDDI_SOFT2 = 21;
 	public static final int KDDI_FIRE  = 8; // TODO, ELEVATOR ACTION doesn't use this key for anything, CLR takes its place so let's duplicate for now
 	public static final int KDDI_CLR   = 8;
 
@@ -225,17 +226,18 @@ public class Mobile
 	public static final int LG_DOWN  = -2;
 	public static final int LG_LEFT  = -3;
 	public static final int LG_RIGHT = -4;
-	public static final int LG_SOFT1 = -202; 
-	public static final int LG_SOFT2 = -203; 
+	public static final int LG_SOFT1 = -202;
+	public static final int LG_SOFT2 = -203;
 	public static final int LG_FIRE  = -5;
+	public static final int LG_CLR   = -204;
 
 	//Motorola E1000/Alcatel/Softbank keycodes
 	public static final int MOTOROLA_UP    = -1;
 	public static final int MOTOROLA_DOWN  = -6;
 	public static final int MOTOROLA_LEFT  = -2;
 	public static final int MOTOROLA_RIGHT = -5;
-	public static final int MOTOROLA_SOFT1 = -21; 
-	public static final int MOTOROLA_SOFT2 = -22; 
+	public static final int MOTOROLA_SOFT1 = -21;
+	public static final int MOTOROLA_SOFT2 = -22;
 	public static final int MOTOROLA_FIRE  = -20;
 
 	//Motorola V8 keycodes
@@ -252,9 +254,18 @@ public class Mobile
 	public static final int TRIPLETS_DOWN  = 6;
 	public static final int TRIPLETS_LEFT  = 2;
 	public static final int TRIPLETS_RIGHT = 5;
-	public static final int TRIPLETS_SOFT1 = 21; 
-	public static final int TRIPLETS_SOFT2 = 22; 
-	public static final int TRIPLETS_FIRE = 20;
+	public static final int TRIPLETS_SOFT1 = 21;
+	public static final int TRIPLETS_SOFT2 = 22;
+	public static final int TRIPLETS_FIRE  = 20;
+
+	//Motorola A1000 keycodes
+	public static final int A1000_UP    = -1;
+	public static final int A1000_DOWN  = -2;
+	public static final int A1000_LEFT  = -3;
+	public static final int A1000_RIGHT = -4;
+	public static final int A1000_SOFT1 = -10;
+	public static final int A1000_SOFT2 = -11;
+	public static final int A1000_FIRE  =  13;
 
 	//Nokia keycodes
 	public static final int NOKIA_UP    = -1; // KEY_UP_ARROW = -1;
@@ -311,15 +322,15 @@ public class Mobile
 	public static final int SIEMENS_DOWN  = -60;
 	public static final int SIEMENS_LEFT  = -61;
 	public static final int SIEMENS_RIGHT = -62;
-	public static final int SIEMENS_SOFT1 = -1; 
-	public static final int SIEMENS_SOFT2 = -4; 
-	public static final int SIEMENS_FIRE  = -26; 
+	public static final int SIEMENS_SOFT1 = -1;
+	public static final int SIEMENS_SOFT2 = -4;
+	public static final int SIEMENS_FIRE  = -26;
 
 	public static MobilePlatform getPlatform() { return platform; }
 
-	public static void setPlatform(MobilePlatform p, Runnable r) 
-	{ 
-		platform = p; 
+	public static void setPlatform(MobilePlatform p, Runnable r)
+	{
+		platform = p;
 
 		config = new Config();
 		config.onChange = r;
@@ -344,17 +355,17 @@ public class Mobile
 		return platform.loader.getMIDletResourceAsByteArray(resource);
 	}
 
-	public static final int convertSDLKeycode(int keycode) 
+	public static final int convertSDLKeycode(int keycode)
 	{
 		return sdlguiKeycodes[keycode]; // Cast the received sdl key to the correct value.
 	}
 
-	public static final int convertAWTKeycode(int keycode) 
+	public static final int convertAWTKeycode(int keycode)
 	{
 		return awtguiKeycodes[keycode]; // Cast the received awt key to the correct value.
 	}
 
-	public static final int getMobileKey(int keycode) 
+	public static final int getMobileKey(int keycode)
 	{
 		// These keys are overridden by the modifier variables (comments simulate the Libretro interface with a NS Pro Controller)
 		if(kddi)
@@ -368,20 +379,21 @@ public class Mobile
 				case 7:  return KDDI_FIRE; // Y
 				case 8:  return KDDI_SOFT2; // Start
 				case 9:  return KDDI_SOFT1; // Select
-				case 19: return KDDI_CLR; // Select
+				case 19: return KDDI_CLR;
 			}
 		}
 		if(lg)
 		{
 			switch(keycode)
 			{
-				case 0: return LG_UP; // Up
-				case 1: return LG_DOWN; // Down
-				case 2: return LG_LEFT; // Left
-				case 3: return LG_RIGHT; // Right
-				case 7: return LG_FIRE; // Y
-				case 8: return LG_SOFT2; // Start
-				case 9: return LG_SOFT1; // Select
+				case 0:  return LG_UP; // Up
+				case 1:  return LG_DOWN; // Down
+				case 2:  return LG_LEFT; // Left
+				case 3:  return LG_RIGHT; // Right
+				case 7:  return LG_FIRE; // Y
+				case 8:  return LG_SOFT2; // Start
+				case 9:  return LG_SOFT1; // Select
+				case 19: return LG_CLR;
 			}
 		}
 		if(motorola)
@@ -421,6 +433,19 @@ public class Mobile
 				case 7: return MOTOV8_FIRE; // Y
 				case 8: return MOTOV8_SOFT2; // Start
 				case 9: return MOTOV8_SOFT1; // Select
+			}
+		}
+		if(motoA1000)
+		{
+			switch(keycode)
+			{
+				case 0: return A1000_UP; // Up
+				case 1: return A1000_DOWN; // Down
+				case 2: return A1000_LEFT; // Left
+				case 3: return A1000_RIGHT; // Right
+				case 7: return A1000_FIRE; // Y
+				case 8: return A1000_SOFT2; // Start
+				case 9: return A1000_SOFT1; // Select
 			}
 		}
 		if(nokiaKeyboard)
@@ -532,7 +557,7 @@ public class Mobile
 	}
 
 	// This is just for a correct handling of Canvas.getGameAction(), though it didn't fix some siemens jars that still get stuck in the LCDUI menu
-	public static final int getGameAction(int keycode) 
+	public static final int getGameAction(int keycode)
 	{
 		// NOTE: Canvas doesn't support SOFT keys by default. Those cases are all returning NOKIA softkeys to abstract lcdui's menu navigation
 		if (kddi)
@@ -548,9 +573,9 @@ public class Mobile
 				case KDDI_SOFT2: return Canvas.GAME_B;
 			}
 		}
-		if (lg) 
+		if (lg)
 		{
-			switch (keycode) 
+			switch (keycode)
 			{
 				case LG_UP:    return Canvas.UP; // Up
 				case LG_DOWN:  return Canvas.DOWN; // Down
@@ -559,9 +584,9 @@ public class Mobile
 				case LG_FIRE:  return Canvas.FIRE; // Y
 			}
 		}
-		if (motorola) 
+		if (motorola)
 		{
-			switch (keycode) 
+			switch (keycode)
 			{
 				case MOTOROLA_UP:    return Canvas.UP; // Up
 				case MOTOROLA_DOWN:  return Canvas.DOWN; // Down
@@ -570,9 +595,9 @@ public class Mobile
 				case MOTOROLA_FIRE:  return Canvas.FIRE; // Y
 			}
 		}
-		if (motoTriplets) 
+		if (motoTriplets)
 		{
-			switch (keycode) 
+			switch (keycode)
 			{
 				case TRIPLETS_UP:    return Canvas.UP; // Up
 				case TRIPLETS_DOWN:  return Canvas.DOWN; // Down
@@ -581,9 +606,9 @@ public class Mobile
 				case TRIPLETS_FIRE:  return Canvas.FIRE; // Y
 			}
 		}
-		if (motoV8) 
+		if (motoV8)
 		{
-			switch (keycode) 
+			switch (keycode)
 			{
 				case MOTOV8_UP:    return Canvas.UP; // Up
 				case MOTOV8_DOWN:  return Canvas.DOWN; // Down
@@ -593,9 +618,20 @@ public class Mobile
 
 			}
 		}
-		if (nokiaKeyboard) 
+		if (motoA1000)
 		{
-			switch (keycode) 
+			switch (keycode)
+			{
+				case A1000_UP:    return Canvas.UP; // Up
+				case A1000_DOWN:  return Canvas.DOWN; // Down
+				case A1000_LEFT:  return Canvas.LEFT; // Left
+				case A1000_RIGHT: return Canvas.RIGHT; // Right
+				case A1000_FIRE:  return Canvas.FIRE; // Y
+			}
+		}
+		if (nokiaKeyboard)
+		{
+			switch (keycode)
 			{
 				case NOKIAKB_UP:    return Canvas.UP; // Up
 				case NOKIAKB_DOWN:  return Canvas.DOWN; // Down
@@ -616,9 +652,9 @@ public class Mobile
 				case NOKIAKB_POUND: return Canvas.KEY_POUND;
 			}
 		}
-		if (sagem) 
+		if (sagem)
 		{
-			switch (keycode) 
+			switch (keycode)
 			{
 				case SAGEM_UP:    return Canvas.UP; // Up
 				case SAGEM_DOWN:  return Canvas.DOWN; // Down
@@ -627,9 +663,9 @@ public class Mobile
 				case SAGEM_SOFT3: return Canvas.FIRE; // Y
 			}
 		}
-		if (siemens) 
+		if (siemens)
 		{
-			switch (keycode) 
+			switch (keycode)
 			{
 				case SIEMENS_UP:    return Canvas.UP; // Up
 				case SIEMENS_DOWN:  return Canvas.DOWN; // Down
@@ -638,9 +674,9 @@ public class Mobile
 				case SIEMENS_FIRE:  return Canvas.FIRE; // Y
 			}
 		}
-		if (sharp) 
+		if (sharp)
 		{
-			switch (keycode) 
+			switch (keycode)
 			{
 				case SHARP_UP:    return Canvas.UP; // Up
 				case SHARP_DOWN:  return Canvas.DOWN; // Down
@@ -688,7 +724,7 @@ public class Mobile
 	}
 
 	// The difference between this and getGameAction is that the num keys and arrow keys are separated here.
-	public static final int getCanvasAction(int keycode) 
+	public static final int getCanvasAction(int keycode)
 	{
 		// NOTE: Canvas doesn't support SOFT keys by default. Those cases are all returning NOKIA softkeys to abstract lcdui's menu navigation
 		if (kddi)
@@ -704,9 +740,9 @@ public class Mobile
 				case KDDI_SOFT2: return Canvas.KEY_SOFT_RIGHT; // Select (gameAction is GAME_B, but we go with the special keys for CanvasAction)
 			}
 		}
-		if (lg) 
+		if (lg)
 		{
-			switch (keycode) 
+			switch (keycode)
 			{
 				case LG_UP: return Canvas.UP; // Up
 				case LG_DOWN: return Canvas.DOWN; // Down
@@ -717,9 +753,9 @@ public class Mobile
 				case LG_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
-		if (motorola) 
+		if (motorola)
 		{
-			switch (keycode) 
+			switch (keycode)
 			{
 				case MOTOROLA_UP: return Canvas.UP; // Up
 				case MOTOROLA_DOWN: return Canvas.DOWN; // Down
@@ -730,9 +766,9 @@ public class Mobile
 				case MOTOROLA_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
-		if (motoTriplets) 
+		if (motoTriplets)
 		{
-			switch (keycode) 
+			switch (keycode)
 			{
 				case TRIPLETS_UP: return Canvas.UP; // Up
 				case TRIPLETS_DOWN: return Canvas.DOWN; // Down
@@ -743,9 +779,9 @@ public class Mobile
 				case TRIPLETS_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
-		if (motoV8) 
+		if (motoV8)
 		{
-			switch (keycode) 
+			switch (keycode)
 			{
 				case MOTOV8_UP: return Canvas.UP; // Up
 				case MOTOV8_DOWN: return Canvas.DOWN; // Down
@@ -756,9 +792,22 @@ public class Mobile
 				case MOTOV8_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
-		if (nokiaKeyboard) 
+		if (motoA1000)
 		{
-			switch (keycode) 
+			switch (keycode)
+			{
+				case A1000_UP: return Canvas.UP; // Up
+				case A1000_DOWN: return Canvas.DOWN; // Down
+				case A1000_LEFT: return Canvas.LEFT; // Left
+				case A1000_RIGHT: return Canvas.RIGHT; // Right
+				case A1000_FIRE: return Canvas.FIRE; // Y
+				case A1000_SOFT1: return Canvas.KEY_SOFT_LEFT;
+				case A1000_SOFT2: return Canvas.KEY_SOFT_RIGHT;
+			}
+		}
+		if (nokiaKeyboard)
+		{
+			switch (keycode)
 			{
 				case NOKIAKB_UP:    return Canvas.UP; // Up
 				case NOKIAKB_DOWN:  return Canvas.DOWN; // Down
@@ -781,9 +830,9 @@ public class Mobile
 				case NOKIAKB_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
-		if (sagem) 
+		if (sagem)
 		{
-			switch (keycode) 
+			switch (keycode)
 			{
 				case SAGEM_UP:    return Canvas.UP; // Up
 				case SAGEM_DOWN:  return Canvas.DOWN; // Down
@@ -794,9 +843,9 @@ public class Mobile
 				case SAGEM_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
-		if (siemens) 
+		if (siemens)
 		{
-			switch (keycode) 
+			switch (keycode)
 			{
 				case SIEMENS_UP:    return Canvas.UP; // Up
 				case SIEMENS_DOWN:  return Canvas.DOWN; // Down
@@ -807,9 +856,9 @@ public class Mobile
 				case SIEMENS_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
-		if (sharp) 
+		if (sharp)
 		{
-			switch (keycode) 
+			switch (keycode)
 			{
 				case SHARP_UP:    return Canvas.UP; // Up
 				case SHARP_DOWN:  return Canvas.DOWN; // Down
@@ -833,7 +882,7 @@ public class Mobile
 				case Canvas.KEY_COMR:  return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
-		
+
 		// J2ME Canvas standard keycodes, to match against any keys not covered above (Canvas does not handle left/right soft keys).
 		switch (keycode)
 		{
@@ -862,19 +911,19 @@ public class Mobile
 		return 0;
 	}
 
-	public static final void log(final byte logLevel, final String text) 
+	public static final void log(final byte logLevel, final String text)
 	{
 		if(logLevel == 0 || logLevel < minLogLevel || MobilePlatform.appTerminated) { return; }
 
-		synchronized (pendingLogs) 
-		{ 
-			pendingLogs.add(new Runnable() 
+		synchronized (pendingLogs)
+		{
+			pendingLogs.add(new Runnable()
 			{
 				@Override
-				public void run() 
-				{ 
+				public void run()
+				{
 					String logText = "";
-					switch(logLevel) 
+					switch(logLevel)
 					{
 						case LOG_DEBUG:
 							logText = new String("[DEBUG] " + text);
@@ -895,7 +944,7 @@ public class Mobile
 
 					// Log to console only if not libretro, as it won't be seen there anyway
 					if(!MobilePlatform.isLibretro) { System.out.println(logText); }
-					
+
 					try
 					{
 						logWriter.write(logText);
@@ -903,13 +952,13 @@ public class Mobile
 						logWriter.flush();
 					} catch (IOException e) { System.out.println("Couldn't write to log file: " + e.getMessage()); e.printStackTrace(); }
 				}
-			}); 
+			});
 			pendingLogs.notify();
 		}
 	}
 
 	/* Clears old log file at boot. */
-	public static final void clearOldLog() 
+	public static final void clearOldLog()
 	{
 		logFile = new File(LOG_FILE);
         if (logFile.exists()) { logFile.delete(); }
@@ -918,19 +967,19 @@ public class Mobile
 		try { logWriter = new BufferedWriter(new FileWriter(logFile, true)); } // This one doesn't need to be closed, it dies with FreeJ2ME-Plus
 		catch(IOException e) { System.out.println("Failed to preparate file writer: " + e.getMessage()); e.printStackTrace(); }
 
-		new Thread(new Runnable() 
+		new Thread(new Runnable()
 		{
 			@Override
 			public void run() { processLogs(); }
 		}, "Logging-Thread").start();
 	}
 
-	private static final void processLogs() 
+	private static final void processLogs()
 	{
 		Runnable call = null;
-		while(true) 
+		while(true)
 		{
-			synchronized (pendingLogs) 
+			synchronized (pendingLogs)
 			{
 				while(pendingLogs.isEmpty()) // If we have no serial events to process, and no current displayable change, wait.
 				{
@@ -938,17 +987,17 @@ public class Mobile
 					catch (Exception e) { }
 				}
 
-				call = pendingLogs.poll(); 
+				call = pendingLogs.poll();
 				if(call != null) { call.run(); }
 			}
 		}
 	}
 
-	public static boolean updateSettings() 
+	public static boolean updateSettings()
 	{
 		// Start with system settings
 		minLogLevel = (byte) Integer.parseInt(config.sysSettings.get("logLevel"));
-		
+
 		String showFPS = config.sysSettings.get("fpsCounterPosition");
 		platform.setShowFPS(showFPS);
 
@@ -966,15 +1015,23 @@ public class Mobile
 
 		dumpGraphicsObjects = config.sysSettings.get("dumpGraphicsObjects").equals("on");
 
+		String soundEnabled = config.sysSettings.get("sound");
+		sound = false;
+		if(soundEnabled.equals("on")) { sound = true; }
+
+		String midiSoundfont = config.sysSettings.get("soundfont");
+		if(midiSoundfont.equals("Custom") && useCustomMidi == false)      { useCustomMidi = true;  Manager.changeCustomMidi(); }
+		else if(midiSoundfont.equals("Default") && useCustomMidi == true) { useCustomMidi = false; Manager.changeCustomMidi(); }
+
+		String textFont = config.sysSettings.get("textfont");
+		if(textFont.equals("Custom"))       { useCustomTextFont = true; }
+		else if(textFont.equals("Default")) { useCustomTextFont = false; }
+
 		// Then move on to per-app settings
 		lcdWidth = Integer.parseInt(config.settings.get("scrwidth"));
 		lcdHeight = Integer.parseInt(config.settings.get("scrheight"));
 
 		limitFPS = Integer.parseInt(config.settings.get("fps"));
-
-		String soundEnabled = config.settings.get("sound");
-		sound = false;
-		if(soundEnabled.equals("on")) { sound = true; }
 
 		String phone = config.settings.get("phone");
 		kddi = false;
@@ -982,6 +1039,7 @@ public class Mobile
 		motorola = false;
 		motoTriplets = false;
 		motoV8 = false;
+		motoA1000 = false;
 		nokiaKeyboard = false;
 		sagem = false;
 		siemens = false;
@@ -992,15 +1050,12 @@ public class Mobile
 		if(phone.equals("Motorola"))      { motorola = true;}
 		if(phone.equals("MotoTriplets"))  { motoTriplets = true;}
 		if(phone.equals("MotoV8"))        { motoV8 = true;}
+		if(phone.equals("MotoA1000"))     { motoA1000 = true;}
 		if(phone.equals("NokiaKeyboard")) { nokiaKeyboard = true;}
 		if(phone.equals("Sagem"))         { sagem = true;}
 		if(phone.equals("Siemens"))       { siemens = true;}
 		if(phone.equals("Sharp"))         { sharp = true;}
 		if(phone.equals("SKT"))           { skt = true;}
-
-		String midiSoundfont = config.settings.get("soundfont");
-		if(midiSoundfont.equals("Custom") && useCustomMidi == false)      { useCustomMidi = true;  Manager.changeCustomMidi(); }
-		else if(midiSoundfont.equals("Default") && useCustomMidi == true) { useCustomMidi = false; Manager.changeCustomMidi(); }
 
 		String lcdBacklightColor = config.settings.get("backlightcolor");
 		if(lcdBacklightColor.equals("Disabled"))    { maskIndex = 0; }
@@ -1060,10 +1115,6 @@ public class Mobile
 		else if (MCV3HorizFovFix.equals("off")) { compatMCV3HorizontalFovFix = false; };
 
 		// Other settings
-		String textFont = config.settings.get("textfont");
-		if(textFont.equals("Custom"))       { useCustomTextFont = true; }
-		else if(textFont.equals("Default")) { useCustomTextFont = false; }
-
 		String fontOffset = config.settings.get("fontoffset");
 		fontSizeOffset = (byte) Integer.parseInt(fontOffset);
 
@@ -1082,7 +1133,7 @@ public class Mobile
 		if(rotate.equals("on"))  { rotate = "270"; }
 		if(rotate.equals("off")) { rotate = "0"; }
 
-		if(Integer.parseInt(rotate) != rotateDisplay) 
+		if(Integer.parseInt(rotate) != rotateDisplay)
 		{
 			rotateDisplay = Integer.parseInt(rotate);
 			return true;
@@ -1091,9 +1142,9 @@ public class Mobile
 		return false;
 	}
 
-	public static void restartApp() 
+	public static void restartApp()
 	{
-		try 
+		try
 		{
 			String java = System.getProperty("java.home") + "/bin/java";
 			String classPath = System.getProperty("java.class.path");
@@ -1102,13 +1153,13 @@ public class Mobile
 			String mainClass = getMainClassFromJar("file:" + classPath);
 
 			String jarPath = null;
-			
-			if(MobilePlatform.fileName != null) 
-			{ 	
+
+			if(MobilePlatform.fileName != null)
+			{
 				File jarFile = new File(platform.fileName.replace("file:", "").trim());
-				jarPath = jarFile.getCanonicalPath(); 
+				jarPath = jarFile.getCanonicalPath();
 			}
-			
+
 			if(!MobilePlatform.isLibretro)
 			{
 				String[] commands = new String[] { java, "-jar", "-Dfile.encoding="+textEncoding, classPath, jarPath};
@@ -1117,7 +1168,7 @@ public class Mobile
 
 				if(jarPath != null) { processBuilder = new ProcessBuilder(new String[] { java, "-jar", "-Dfile.encoding="+textEncoding, classPath, jarPath}); }
 				else { processBuilder = new ProcessBuilder(new String[] { java, "-jar", "-Dfile.encoding="+textEncoding, classPath}); }
-				
+
 				processBuilder.start();
 
 				System.exit(0);
@@ -1134,17 +1185,17 @@ public class Mobile
 		catch(Exception e) { log(Mobile.LOG_INFO, Mobile.class.getPackage().getName() + "." + Mobile.class.getSimpleName() + ": " + "Failed to restart FreeJ2ME: " + e.getMessage()); e.printStackTrace(); }
 	}
 
-	private static String getMainClassFromJar(String classPath) 
+	private static String getMainClassFromJar(String classPath)
 	{
-        try 
+        try
 		{
             URL jarUrl = new URL(classPath);
-			
+
 			JarFile jarFile = new JarFile(jarUrl.getFile());
 			Manifest manifest = jarFile.getManifest();
 			Attributes attributes = manifest.getMainAttributes();
 			return attributes.getValue("Main-Class");
-        } 
+        }
 		catch (Exception e) { return null; } // This normally shouldn't fail
     }
 }

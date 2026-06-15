@@ -49,7 +49,7 @@ public class Libretro
 	private int mousex;
 	private int mousey;
 
-	/* 
+	/*
 	 * StringBuilder used to get the updated configs from the libretro core
 	 * String[] used to tokenize each setting as its own string.
 	 */
@@ -68,16 +68,16 @@ public class Libretro
 		lcdWidth  = Mobile.lcdWidth;
 		lcdHeight = Mobile.lcdHeight;
 
-		/* 
-		 * Notify the MIDlet class that this version of FreeJ2ME is for Libretro, which disables 
+		/*
+		 * Notify the MIDlet class that this version of FreeJ2ME is for Libretro, which disables
 		 * the ability to close the jar when a J2ME app requests an exit as this can cause segmentation
 		 * faults on libretro frontends and also close the unexpectedly.
 		*/
 		Mobile.getPlatform().isLibretro = true;
 
-		/* 
+		/*
 		 * Checks if the arguments were received from the commandline -> width, height, rotate, phonetype, fps, sound, ...
-		 * 
+		 *
 		 * NOTE:
 		 * Due to differences in how linux and win32 pass their cmd arguments, we can't explictly check for a given size
 		 * on the argv array. Linux includes the "java", "-jar" and "path/to/freej2me" into the array while WIN32 doesn't.
@@ -92,6 +92,7 @@ public class Libretro
 		Mobile.motorola = false;
 		Mobile.motoTriplets = false;
 		Mobile.motoV8 = false;
+		Mobile.motoA1000 = false;
 		Mobile.nokiaKeyboard = false;
 		Mobile.sagem = false;
 		Mobile.siemens = false;
@@ -102,12 +103,13 @@ public class Libretro
 		else if(Integer.parseInt(args[3]) == 2)  { Mobile.motorola = true;  }
 		else if(Integer.parseInt(args[3]) == 3)  { Mobile.motoTriplets = true; }
 		else if(Integer.parseInt(args[3]) == 4)  { Mobile.motoV8 = true; }
-		else if(Integer.parseInt(args[3]) == 5)  { Mobile.nokiaKeyboard = true; }
-		else if(Integer.parseInt(args[3]) == 6)  { Mobile.sagem = true; }
-		else if(Integer.parseInt(args[3]) == 7)  { Mobile.siemens = true; }
-		else if(Integer.parseInt(args[3]) == 8)  { Mobile.sharp = true; }
-		else if(Integer.parseInt(args[3]) == 9)  { Mobile.skt = true; }
-		else if(Integer.parseInt(args[3]) == 10) { Mobile.kddi = true; }
+		else if(Integer.parseInt(args[3]) == 5)  { Mobile.motoA1000 = true; }
+		else if(Integer.parseInt(args[3]) == 6)  { Mobile.nokiaKeyboard = true; }
+		else if(Integer.parseInt(args[3]) == 7)  { Mobile.sagem = true; }
+		else if(Integer.parseInt(args[3]) == 8)  { Mobile.siemens = true; }
+		else if(Integer.parseInt(args[3]) == 9)  { Mobile.sharp = true; }
+		else if(Integer.parseInt(args[3]) == 10) { Mobile.skt = true; }
+		else if(Integer.parseInt(args[3]) == 11) { Mobile.kddi = true; }
 
 		Mobile.limitFPS = Integer.parseInt(args[4]);
 
@@ -128,7 +130,7 @@ public class Libretro
 		Mobile.maskIndex = Integer.parseInt(args[10]);
 
 		/* Compat setting to fix Fantasy Zone 176x208 weird mirroring */
-		Mobile.compatFantasyZoneFix = Integer.parseInt(args[11]) != 0; 
+		Mobile.compatFantasyZoneFix = Integer.parseInt(args[11]) != 0;
 
 		/* Compat setting to translate back to the origin whenever graphics object is reset */
 		Mobile.compatTranslateToOriginOnReset = Integer.parseInt(args[12]) != 0;
@@ -207,7 +209,7 @@ public class Libretro
 		lio = new LibretroIO();
 
 		lio.start();
-		
+
 		System.out.println("+READY");
 		System.out.flush();
 	}
@@ -274,13 +276,13 @@ public class Libretro
 								case 2:	// joypad key up
 									MobilePlatform.pressedKeys[code] = false;
 									MobilePlatform.keyReleased(Mobile.getMobileKey(code));
-									for(int i = 0; i < MobilePlatform.pressedKeys.length; i++) 
+									for(int i = 0; i < MobilePlatform.pressedKeys.length; i++)
 									{
 										if(MobilePlatform.pressedKeys[i]) { MobilePlatform.keyRepeated(Mobile.getMobileKey(i)); }
 									}
 								break;
 
-								case 3: // joypad key down					
+								case 3: // joypad key down
 									MobilePlatform.pressedKeys[code] = true;
 									MobilePlatform.keyPressed(Mobile.getMobileKey(code));
 								break;
@@ -288,7 +290,7 @@ public class Libretro
 								case 4: // mouse up
 									mousex = (din[1]<<8) | din[2];
 									mousey = (din[3]<<8) | din[4];
-									
+
 									if(Mobile.rotateDisplay == 0)
 									{
 										MobilePlatform.pointerReleased(mousex, mousey);
@@ -297,7 +299,7 @@ public class Libretro
 									{
 										MobilePlatform.pointerReleased(mousey, lcdHeight - mousex);
 									}
-									if(Mobile.rotateDisplay == 180) 
+									if(Mobile.rotateDisplay == 180)
 									{
 										MobilePlatform.pointerReleased(lcdWidth - mousex, lcdHeight - mousey);
 									}
@@ -319,7 +321,7 @@ public class Libretro
 									{
 										MobilePlatform.pointerPressed(mousey, lcdHeight - mousex);
 									}
-									if(Mobile.rotateDisplay == 180) 
+									if(Mobile.rotateDisplay == 180)
 									{
 										MobilePlatform.pointerPressed(lcdWidth - mousex, lcdHeight - mousey);
 									}
@@ -341,7 +343,7 @@ public class Libretro
 									{
 										MobilePlatform.pointerDragged(mousey, lcdHeight - mousex);
 									}
-									if(Mobile.rotateDisplay == 180) 
+									if(Mobile.rotateDisplay == 180)
 									{
 										MobilePlatform.pointerDragged(lcdWidth - mousex, lcdHeight - mousey);
 									}
@@ -373,6 +375,7 @@ public class Libretro
 										else if(Mobile.motorola)      { Mobile.config.settings.put("phone", "Motorola");  }
 										else if(Mobile.motoTriplets)  { Mobile.config.settings.put("phone", "MotoTriplets"); }
 										else if(Mobile.motoV8)        { Mobile.config.settings.put("phone", "MotoV8"); }
+										else if(Mobile.motoA1000)     { Mobile.config.settings.put("phone", "MotoA1000"); }
 										else if(Mobile.nokiaKeyboard) { Mobile.config.settings.put("phone", "NokiaKeyboard"); }
 										else if(Mobile.sagem)         { Mobile.config.settings.put("phone", "Sagem"); }
 										else if(Mobile.siemens)       { Mobile.config.settings.put("phone", "Siemens"); }
@@ -434,7 +437,7 @@ public class Libretro
 										Mobile.config.sysSettings.put("dumpGraphicsObjects", Mobile.dumpGraphicsObjects ? "on" : "off");
 										Mobile.config.sysSettings.put("MIDISearchVMS", midiSearchVMS ? "on" : "off");
 
-										if(Mobile.libretroRestartRequested == 1) 
+										if(Mobile.libretroRestartRequested == 1)
 										{
 											frameHeader[14] = Mobile.libretroRestartRequested;
 											frameHeader[15] = Mobile.libretroEncodingRequested;
@@ -472,13 +475,13 @@ public class Libretro
 									buffer = new byte[code];
 									bytesRead = readFully(buffer, code);
 									if (bytesRead != code) { return; }
-									
+
 									String cfgvars = new String(buffer, 0, bytesRead, "UTF-8");
 									/* Tokens: [0]="FJ2ME_LR_OPTS:", [1]=width, [2]=height, [3]=rotate, [4]=phone, [5]=fps, ... */
 									cfgtokens = cfgvars.split("[| x]", 0);
-									/* 
-									 * cfgtokens[0] is the string used to indicate that the 
-									 * received string is a config update. Only useful for debugging, 
+									/*
+									 * cfgtokens[0] is the string used to indicate that the
+									 * received string is a config update. Only useful for debugging,
 									 * but better leave it in there as we might make adjustments later.
 									 */
 									Mobile.config.settings.put("scrwidth",  ""+Integer.parseInt(cfgtokens[1]));
@@ -491,12 +494,13 @@ public class Libretro
 									if(Integer.parseInt(cfgtokens[4])==2)  { Mobile.config.settings.put("phone", "Motorola");  }
 									if(Integer.parseInt(cfgtokens[4])==3)  { Mobile.config.settings.put("phone", "MotoTriplets"); }
 									if(Integer.parseInt(cfgtokens[4])==4)  { Mobile.config.settings.put("phone", "MotoV8"); }
-									if(Integer.parseInt(cfgtokens[4])==5)  { Mobile.config.settings.put("phone", "NokiaKeyboard"); }
-									if(Integer.parseInt(cfgtokens[4])==6)  { Mobile.config.settings.put("phone", "Sagem"); }
-									if(Integer.parseInt(cfgtokens[4])==7)  { Mobile.config.settings.put("phone", "Siemens"); }
-									if(Integer.parseInt(cfgtokens[4])==8)  { Mobile.config.settings.put("phone", "Sharp"); }
-									if(Integer.parseInt(cfgtokens[4])==9)  { Mobile.config.settings.put("phone", "SKT"); }
-									if(Integer.parseInt(cfgtokens[4])==10) { Mobile.config.settings.put("phone", "KDDI"); }
+									if(Integer.parseInt(cfgtokens[4])==5)  { Mobile.config.settings.put("phone", "MotoA1000"); }
+									if(Integer.parseInt(cfgtokens[4])==6)  { Mobile.config.settings.put("phone", "NokiaKeyboard"); }
+									if(Integer.parseInt(cfgtokens[4])==7)  { Mobile.config.settings.put("phone", "Sagem"); }
+									if(Integer.parseInt(cfgtokens[4])==8)  { Mobile.config.settings.put("phone", "Siemens"); }
+									if(Integer.parseInt(cfgtokens[4])==9)  { Mobile.config.settings.put("phone", "Sharp"); }
+									if(Integer.parseInt(cfgtokens[4])==10) { Mobile.config.settings.put("phone", "SKT"); }
+									if(Integer.parseInt(cfgtokens[4])==11) { Mobile.config.settings.put("phone", "KDDI"); }
 
 									Mobile.config.settings.put("fps", ""+ Integer.parseInt(cfgtokens[5]));
 
@@ -519,7 +523,7 @@ public class Libretro
 
 									Mobile.config.settings.put("compatfantasyzonefix", Integer.parseInt(cfgtokens[12]) == 1 ? "on" : "off");
 
-									Mobile.config.settings.put("compattranstooriginonreset", Integer.parseInt(cfgtokens[13]) == 1 ? "on" : "off"); 
+									Mobile.config.settings.put("compattranstooriginonreset", Integer.parseInt(cfgtokens[13]) == 1 ? "on" : "off");
 
 									Mobile.config.settings.put("textfont", Integer.parseInt(cfgtokens[14]) == 1 ? "Custom" : "Default");
 
@@ -578,11 +582,11 @@ public class Libretro
 										break;
 									}
 									else // The frontend is requesting a new frame
-									{ 
-										canPause = false; 
+									{
+										canPause = false;
 										if(Mobile.isPaused) // Resume if it was paused previously
-										{ 
-											MobilePlatform.pauseResumeApp(); 
+										{
+											MobilePlatform.pauseResumeApp();
 										}
 									}
 
@@ -653,14 +657,14 @@ public class Libretro
 		} // timer
 	} // LibretroIO
 
-	private static void updatePauseTimer() 
+	private static void updatePauseTimer()
 	{
 		if(!canPause) { return; } // Only start counting this after libretro has finished processing the last sent frame
 		long currentTime = System.currentTimeMillis();
-		
-		// Check if the timer has expired since the last core update, as anything beyond the PAUSE_DELAY_MS delta 
+
+		// Check if the timer has expired since the last core update, as anything beyond the PAUSE_DELAY_MS delta
 		// between core updates means the frontend is pretty much effectively paused as well)
-		if (!Mobile.isPaused && (currentTime - lastCoreUpdateTime >= PAUSE_DELAY_MS)) 
+		if (!Mobile.isPaused && (currentTime - lastCoreUpdateTime >= PAUSE_DELAY_MS))
 		{
 			MobilePlatform.pauseResumeApp(); // Call to pause the app
 		}
@@ -686,7 +690,7 @@ public class Libretro
 		Mobile.updateSettings();
 
 		frameHeader[5] = (byte) (Mobile.rotateDisplay / 90);
-		
+
 		if(lcdWidth != Mobile.lcdWidth || lcdHeight != Mobile.lcdHeight)
 		{
 			lcdWidth = Mobile.lcdWidth;

@@ -20,7 +20,7 @@ public class Vector3D {
 
 	public Vector3D(Vector3D v) {
 		if (v == null) throw new NullPointerException();
-		
+
 		x = v.x;
 		y = v.y;
 		z = v.z;
@@ -40,19 +40,19 @@ public class Vector3D {
 
 	public final int innerProduct(Vector3D v) {
 		if (v == null) throw new NullPointerException();
-		
+
 		return x * v.x + y * v.y + z * v.z;
 	}
 
 	public static int innerProduct(Vector3D v1, Vector3D v2) {
 		if (v1 == null) throw new NullPointerException();
-		
+
 		return v1.innerProduct(v2);
 	}
 
 	public final void outerProduct(Vector3D v) {
 		if (v == null) throw new NullPointerException();
-		
+
 		int x = this.x;
 		int y = this.y;
 		int z = this.z;
@@ -65,7 +65,7 @@ public class Vector3D {
 		if (v1 == null || v2 == null) {
 			throw new NullPointerException();
 		}
-		
+
 		int x = v1.y * v2.z - v1.z * v2.y;
 		int y = v1.z * v2.x - v1.x * v2.z;
 		int z = v1.x * v2.y - v1.y * v2.x;
@@ -76,11 +76,11 @@ public class Vector3D {
 		if (v1 == null || v2 == null) {
 			throw new NullPointerException();
 		}
-		
+
 		int x = v1.y * v2.z - v1.z * v2.y;
 		int y = v1.z * v2.x - v1.x * v2.z;
 		int z = v1.x * v2.y - v1.y * v2.x;
-		
+
 		result.x = x;
 		result.y = y;
 		result.z = z;
@@ -94,7 +94,7 @@ public class Vector3D {
 
 	public final void set(Vector3D v) {
 		if (v == null) throw new NullPointerException();
-		
+
 		x = v.x;
 		y = v.y;
 		z = v.z;
@@ -117,7 +117,7 @@ public class Vector3D {
 		int y = this.y;
 		int z = this.z;
 		int shift = numberOfLeadingZeros(Math.abs(x) | Math.abs(y) | Math.abs(z)) - 17;
-		
+
 		if (shift > 0) {
 			x <<= shift;
 			y <<= shift;
@@ -128,7 +128,7 @@ public class Vector3D {
 			y >>= shift;
 			z >>= shift;
 		}
-		
+
 		int i = Util3D.sqrt(x * x + y * y + z * z);
 		if (i != 0) {
 			this.x = (x << 12) / i;
@@ -140,7 +140,7 @@ public class Vector3D {
 			this.z = 4096;
 		}
 	}
-	
+
 	private static final int numberOfLeadingZeros(int i) {
 		if (i == 0) return 32;
 		int n = 1;
@@ -151,4 +151,41 @@ public class Vector3D {
 		n -= i >>> 31;
 		return n;
 	}
+
+	// DoJa opt.ui.j3d methods
+	public void cross(Vector3D v)
+	{
+        int newX = this.y * v.z - this.z * v.y;
+        int newY = this.z * v.x - this.x * v.z;
+        int newZ = this.x * v.y - this.y * v.x;
+
+        this.x = newX;
+        this.y = newY;
+        this.z = newZ;
+    }
+
+    public static Vector3D cross(Vector3D u, Vector3D v) {
+        int newX = u.y * v.z - u.z * v.y;
+        int newY = u.z * v.x - u.x * v.z;
+        int newZ = u.x * v.y - u.y * v.x;
+
+        return new Vector3D(newX, newY, newZ);
+    }
+
+    public int dot(Vector3D v) {
+        return (int) (this.x * v.x + this.y * v.y + this.z * v.z);
+    }
+
+    public static int dot(Vector3D v1, Vector3D v2) {
+        return (int) (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z);
+    }
+
+    public void normalize() {
+        int length = (int) Math.sqrt(x * x + y * y + z * z);
+        if (length != 0) {
+            x /= length;
+            y /= length;
+            z /= length;
+        }
+    }
 }

@@ -14,9 +14,13 @@
 	You should have received a copy of the GNU General Public License
 	along with FreeJ2ME.  If not, see http://www.gnu.org/licenses/
 */
-package com.nttdocomo.opt.ui.j3d;
+package com.vodafone.v10.graphics.j3d;
 
-public class Primitive 
+import java.io.IOException;
+
+public class ActionTable extends com.mascotcapsule.micro3d.v3.ActionTable
 {
-    
+	public ActionTable(byte[] data) { super(data); }
+
+	public ActionTable(String name) throws IOException { super(name); }
 }

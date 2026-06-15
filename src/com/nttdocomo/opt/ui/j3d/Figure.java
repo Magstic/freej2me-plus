@@ -16,7 +16,68 @@
 */
 package com.nttdocomo.opt.ui.j3d;
 
-public class Figure 
-{
+import java.io.IOException;
+import java.io.InputStream;
 
+public class Figure
+{
+	protected com.mascotcapsule.micro3d.v3.Figure figure;
+
+	public Figure(byte[] b)
+	{
+		figure = new com.mascotcapsule.micro3d.v3.Figure(b);
+	}
+
+	public Figure(String name) throws IOException
+	{
+		figure = new com.mascotcapsule.micro3d.v3.Figure(name);
+	}
+
+	// DoJa constructor
+	public Figure(InputStream is) throws IOException
+	{
+		byte[] tmpStream = new byte[is.available()];
+		is.read(tmpStream, 0, is.available());
+
+		figure = new com.mascotcapsule.micro3d.v3.Figure(tmpStream);
+	}
+
+	public final void dispose()
+	{
+		figure.dispose();
+		figure = null;
+	}
+
+	public final void setPosture(ActionTable act, int action, int frame)
+	{
+		figure.setPosture((com.mascotcapsule.micro3d.v3.ActionTable) act, action, frame);
+	}
+
+
+	public final Texture getTexture()
+	{
+		return (Texture) figure.getTexture();
+	}
+
+	public final void setTexture(Texture t) { figure.setTexture((com.mascotcapsule.micro3d.v3.Texture) t); }
+
+	public final void setTexture(Texture[] t)
+	{
+		com.mascotcapsule.micro3d.v3.Texture[] texs = new com.mascotcapsule.micro3d.v3.Texture[t.length];
+
+		for(int i = 0; i < t.length; i++)
+			texs[i] = (com.mascotcapsule.micro3d.v3.Texture) t[i];
+
+		figure.setTexture(texs);
+	}
+
+	public final int getNumTextures() { return figure.getNumTextures(); }
+
+	public final void selectTexture(int idx) { figure.selectTexture(idx); }
+
+	public final int getNumPattern() { return figure.getNumPattern(); }
+
+	public final void setPattern(int idx) { figure.setPattern(idx); }
+
+	public final com.mascotcapsule.micro3d.v3.Figure getFigure() { return figure; }
 }

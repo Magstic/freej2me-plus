@@ -67,7 +67,7 @@ public class FreeJ2ME
 	private static BufferedReader extEventReader;
 
 	// Add all expected key inputs
-	static 
+	static
 	{
 		extEventsMap.put("k0", 0);
 		extEventsMap.put("k1", 0);
@@ -94,8 +94,8 @@ public class FreeJ2ME
 		extEventsMap.put("pa", 0);
 	}
 
-	public static final Color freeJ2MEBGColor = new Color(0,0,64);
-	public static final Color freeJ2MEDragColor = new Color(55, 55, 125);
+	public static final Color freeJ2MEBGColor = new Color(0,0,64, 255);
+	public static final Color freeJ2MEDragColor = new Color(55, 55, 125, 255);
 
 	public static boolean isFullscreen = false;
 
@@ -103,7 +103,7 @@ public class FreeJ2ME
 
 	private int xborder;
 	private int yborder;
-	
+
 	// AWT GUI
 	private AWTGUI awtGUI;
 
@@ -123,11 +123,11 @@ public class FreeJ2ME
 		File extFile = new File("/str/"+extInputFilePath);
 
 		// If File doesn't exist on that dir, we're running standalone. (TODO: Using a pipe for this would be better on standalone)
-		if(!extFile.exists()) 
-		{ 
+		if(!extFile.exists())
+		{
 			return;
-			//extFile = new File("freej2me_system/"+extInputFilePath); 
-			//extFile.createNewFile(); 
+			//extFile = new File("freej2me_system/"+extInputFilePath);
+			//extFile.createNewFile();
 		}
 
 		final String filePath = extFile.getPath();
@@ -139,7 +139,7 @@ public class FreeJ2ME
 			{
 				while (true)
 				{
-					readFile(filePath); 
+					readFile(filePath);
 					try { Thread.sleep(4); } // External inputs poll at a 250fps rate, more than fast enough for just about everything
 					catch (InterruptedException e) { }
 				}
@@ -160,18 +160,18 @@ public class FreeJ2ME
 				{
                     String key = parts[0].trim();
 					int value = Integer.parseInt(parts[1].trim());
-                    if(value != extEventsMap.get(key)) 
-					{ 
+                    if(value != extEventsMap.get(key))
+					{
 						extEventsMap.replace(key, value);
 						processExternalKey(key, value);
 					}
-                } 
+                }
             }
 			extEventReader.close();
         } catch (IOException e) { e.printStackTrace(); }
     }
 
-	private static void processExternalKey(String strkey, int value) 
+	private static void processExternalKey(String strkey, int value)
 	{
 		int key = 0; // k0
 		if(strkey.equals("k1"))      { key = 1; }
@@ -322,8 +322,8 @@ public class FreeJ2ME
 	{
 		// Setup Device //
 		boolean fullscreenAtStartup = false;
-		if(args.length>=1) 
-		{ 
+		if(args.length>=1)
+		{
 			try { MobilePlatform.fileName = getFormattedLocation(URLDecoder.decode(args[0], Mobile.textEncoding)); }
 			catch(Exception e) { }
 		}
@@ -374,7 +374,7 @@ public class FreeJ2ME
 
 			public void mousePressed(MouseEvent e)
 			{
-				if(awtGUI.hasLoadedFile()) 
+				if(awtGUI.hasLoadedFile())
 				{
 					int x = (int)((e.getX()-lcd.cx) * lcd.scalex);
 					int y = (int)((e.getY()-lcd.cy) * lcd.scaley);
@@ -402,7 +402,7 @@ public class FreeJ2ME
 
 			public void mouseReleased(MouseEvent e)
 			{
-				if(awtGUI.hasLoadedFile()) 
+				if(awtGUI.hasLoadedFile())
 				{
 					int x = (int)((e.getX()-lcd.cx) * lcd.scalex);
 					int y = (int)((e.getY()-lcd.cy) * lcd.scaley);
@@ -433,11 +433,11 @@ public class FreeJ2ME
 
 		});
 
-		lcd.addMouseMotionListener(new MouseMotionAdapter() 
+		lcd.addMouseMotionListener(new MouseMotionAdapter()
 		{
 			public void mouseDragged(MouseEvent e)
 			{
-				if(awtGUI.hasLoadedFile()) 
+				if(awtGUI.hasLoadedFile())
 				{
 					int x = (int)((e.getX()-lcd.cx) * lcd.scalex);
 					int y = (int)((e.getY()-lcd.cy) * lcd.scaley);
@@ -457,7 +457,7 @@ public class FreeJ2ME
 						x = (int)((lcd.ch - (e.getY() - lcd.cy)) * lcd.scaley);
 						y = (int)((e.getX() - lcd.cx) * lcd.scalex);
 					}
-					
+
 					MobilePlatform.pointerDragged(x, y);
 				}
 			}
@@ -476,7 +476,7 @@ public class FreeJ2ME
 				/* Whenever AWT GUI notifies that its menu options were changed, update settings */
 				if(awtGUI.hasChanged()) { settingsChanged(); awtGUI.clearChanged(); }
 
-				lcd.repaint();				
+				lcd.repaint();
 			}
 		});
 
@@ -506,12 +506,13 @@ public class FreeJ2ME
 				if(Integer.parseInt(args[5]) == 2)  { Mobile.config.settings.put("phone",  "Motorola"); }
 				if(Integer.parseInt(args[5]) == 3)  { Mobile.config.settings.put("phone",  "MotoTriplets"); }
 				if(Integer.parseInt(args[5]) == 4)  { Mobile.config.settings.put("phone",  "MotoV8"); }
-				if(Integer.parseInt(args[5]) == 5)  { Mobile.config.settings.put("phone",  "NokiaKeyboard"); }
-				if(Integer.parseInt(args[5]) == 6)  { Mobile.config.settings.put("phone",  "Sagem"); }
-				if(Integer.parseInt(args[5]) == 7)  { Mobile.config.settings.put("phone",  "Siemens"); }
-				if(Integer.parseInt(args[5]) == 8)  { Mobile.config.settings.put("phone",  "Sharp"); }
-				if(Integer.parseInt(args[5]) == 9)  { Mobile.config.settings.put("phone",  "SKT"); }
-				if(Integer.parseInt(args[5]) == 10) { Mobile.config.settings.put("phone",  "KDDI"); }
+				if(Integer.parseInt(args[5]) == 5)  { Mobile.config.settings.put("phone",  "MotoA1000"); }
+				if(Integer.parseInt(args[5]) == 6)  { Mobile.config.settings.put("phone",  "NokiaKeyboard"); }
+				if(Integer.parseInt(args[5]) == 7)  { Mobile.config.settings.put("phone",  "Sagem"); }
+				if(Integer.parseInt(args[5]) == 8)  { Mobile.config.settings.put("phone",  "Siemens"); }
+				if(Integer.parseInt(args[5]) == 9)  { Mobile.config.settings.put("phone",  "Sharp"); }
+				if(Integer.parseInt(args[5]) == 10) { Mobile.config.settings.put("phone",  "SKT"); }
+				if(Integer.parseInt(args[5]) == 11) { Mobile.config.settings.put("phone",  "KDDI"); }
 			}
 
 			if(args.length>=7)
@@ -654,7 +655,7 @@ public class FreeJ2ME
 		boolean hasRotated = Mobile.updateSettings();
 
 		// Create a standard size LCD if not rotated, else invert window's width and height.
-		if(Mobile.lcdWidth != lcdWidth || Mobile.lcdHeight != lcdHeight || hasRotated) 
+		if(Mobile.lcdWidth != lcdWidth || Mobile.lcdHeight != lcdHeight || hasRotated)
 		{
 			Mobile.getPlatform().resizeLCD(Mobile.lcdWidth, Mobile.lcdHeight);
 
@@ -663,7 +664,7 @@ public class FreeJ2ME
 				lcdWidth = Mobile.lcdWidth;
 				lcdHeight = Mobile.lcdHeight;
 			}
-			else 
+			else
 			{
 				lcdWidth = Mobile.lcdHeight;
 				lcdHeight = Mobile.lcdWidth;
@@ -672,13 +673,13 @@ public class FreeJ2ME
 			if(!isFullscreen) { main.setSize(lcdWidth*scaleFactor+xborder , lcdHeight*scaleFactor+yborder); }
 			lcd.clearScreen();
 		}
-		
+
 		awtGUI.updateOptions();
 	}
 
 	private int getMobileKey(int keycode)
 	{
-		for(int i = 0; i < awtGUI.inputKeycodes.length; i++) 
+		for(int i = 0; i < awtGUI.inputKeycodes.length; i++)
 		{
 			if(keycode == awtGUI.inputKeycodes[i]) { return Mobile.convertAWTKeycode(i);}
 		}
@@ -708,7 +709,7 @@ public class FreeJ2ME
 		lcd.updateScale((int)nw, (int)nh);
 	}
 
-	public void toggleFullscreen() 
+	public void toggleFullscreen()
 	{
         isFullscreen = !isFullscreen;
 		main.dispose();
@@ -720,23 +721,23 @@ public class FreeJ2ME
 	{
 		main = new Frame("FreeJ2ME-Plus");
 
-		if (isFullscreen) 
+		if (isFullscreen)
 		{
             main.setUndecorated(true);
             main.setSize(Toolkit.getDefaultToolkit().getScreenSize());
-        } 
-		else 
+        }
+		else
 		{
             main.setSize(350, 450);
-            main.setMinimumSize(new Dimension(240, 240));
+            main.setMinimumSize(new Dimension(192, 64));
 			main.setLocationRelativeTo(null); // Center window on screen
         }
 
 		main.setBackground(Color.BLACK);
-		
+
 		try
 		{
-			main.setIconImage(ImageIO.read(main.getClass().getResourceAsStream("/org/recompile/icon.png")));	
+			main.setIconImage(ImageIO.read(main.getClass().getResourceAsStream("/org/recompile/icon.png")));
 		}
 		catch (Exception e) { }
 
@@ -756,7 +757,7 @@ public class FreeJ2ME
 		if(!isFullscreen) { main.setMenuBar(awtGUI.getMenuBar()); }
 	}
 
-	private void displayGUI() 
+	private void displayGUI()
 	{
 		main.addComponentListener(new ComponentAdapter()
 		{
@@ -782,8 +783,8 @@ public class FreeJ2ME
 		public double scalex=1;
 		public double scaley=1;
 
-		public LCD() 
-		{ 
+		public LCD()
+		{
 			setDropTarget();
 			setBackground(Color.WHITE);
 		}
@@ -802,7 +803,7 @@ public class FreeJ2ME
         public void update(Graphics g) { paint(g); }
 
 		// Used to clear the entire framebuffer when rotated in fullscreen to remove garbage pixels
-		public void clearScreen() 
+		public void clearScreen()
 		{
 			((Graphics2D) this.getGraphics()).clearRect(0, 0, getWidth(), getHeight());
 		}
@@ -812,8 +813,49 @@ public class FreeJ2ME
 			/* Only update mem dialog's stats and console window if they are visible */
 			if(awtGUI.awtDialogs[2].isVisible()) { awtGUI.updateDialogs(); }
 
-			if(!showDragMessage) 
+			if(!showDragMessage)
 			{
+				if(!awtGUI.hasLoadedFile())
+				{
+					// Draw FreeJ2ME-Plus' intro screen
+					g.setColor(Color.BLACK);
+					g.fillRect(0, 0, getWidth(), getHeight());
+
+					g.drawImage(main.getIconImage(),
+						getWidth()/2 - main.getIconImage().getWidth(null)/2,
+						getHeight()/2 - main.getIconImage().getHeight(null)/2,
+						Math.min(getWidth(), main.getIconImage().getWidth(null)),
+						Math.min(getHeight(), main.getIconImage().getHeight(null)),
+						null);
+
+					g.setColor(new Color(55, 55, 125, 238));
+					g.fillRect(0, 0, getWidth(), getHeight());
+
+					g.setColor(Color.ORANGE);
+					g.setFont(new Font("Dialog", Font.BOLD | Font.ITALIC, 24));
+					String text = "FreeJ2ME-Plus V1.53";
+					FontMetrics metrics = g.getFontMetrics();
+					g.drawString(text, (getWidth() - metrics.stringWidth(text)) / 2,
+						(getHeight() / 2) - metrics.getHeight());
+
+					g.setFont(new Font("Dialog", Font.BOLD, 16));
+					text = "Please use the 'File' menu";
+					metrics = g.getFontMetrics();
+					g.drawString(text, (getWidth() - metrics.stringWidth(text)) / 2,
+						(getHeight() / 2));
+
+					text = "or drop a valid J2ME app";
+					metrics = g.getFontMetrics();
+					g.drawString(text, (getWidth() - metrics.stringWidth(text)) / 2,
+						(getHeight() / 2) + metrics.getHeight());
+
+					text = "inside this window.";
+					metrics = g.getFontMetrics();
+					g.drawString(text, (getWidth() - metrics.stringWidth(text)) / 2,
+						(getHeight() / 2) + metrics.getHeight() * 2);
+
+					return;
+				}
 				// Draw Pause or Fast-Forward indicators before showing the frame on screen
 				if(Mobile.isPaused)
 				{
@@ -824,27 +866,27 @@ public class FreeJ2ME
 					((PlatformGraphics)Mobile.getPlatform().getLcdFrontbufferGraphics()).drawFastForwardIndicator();
 				}
 
-				if (Mobile.rotateDisplay == 0) { g.drawImage(Mobile.getPlatform().getLcdFrontbuffer().getCanvas(), cx, cy, cw, ch, null); } 
-				else 
+				if (Mobile.rotateDisplay == 0) { g.drawImage(Mobile.getPlatform().getLcdFrontbuffer().getCanvas(), cx, cy, cw, ch, null); }
+				else
 				{
-					if(Mobile.rotateDisplay == 90) 
+					if(Mobile.rotateDisplay == 90)
 					{
 						((Graphics2D) g).rotate(Math.toRadians(90), cw/2, cw/2);
 						g.drawImage(Mobile.getPlatform().getLcdFrontbuffer().getCanvas(), 0, cx, ch, cw, null);
 					}
-					else if(Mobile.rotateDisplay == 180) 
+					else if(Mobile.rotateDisplay == 180)
 					{
 						((Graphics2D) g).rotate(Math.toRadians(180), cw/2, ch/2);
         				g.drawImage(Mobile.getPlatform().getLcdFrontbuffer().getCanvas(), -cx, cy, cw, ch, null);
 					}
-					else if(Mobile.rotateDisplay == 270) 
+					else if(Mobile.rotateDisplay == 270)
 					{
 						((Graphics2D) g).rotate(Math.toRadians(270), ch/2, ch/2);
 						g.drawImage(Mobile.getPlatform().getLcdFrontbuffer().getCanvas(), 0, cx, ch, cw, null);
 					}
 				}
 			}
-			else 
+			else
 			{
 				g.setColor(freeJ2MEDragColor);
 				g.fillRect(cx, cy, cw, ch);
@@ -858,13 +900,13 @@ public class FreeJ2ME
 			}
 		}
 
-		private void setDropTarget() 
+		private void setDropTarget()
 		{
-			new DropTarget(this, new DropTargetListener() 
+			new DropTarget(this, new DropTargetListener()
 			{
 				@Override
 				@SuppressWarnings("unchecked")
-				public void dragEnter(DropTargetDragEvent dtde) 
+				public void dragEnter(DropTargetDragEvent dtde)
 				{
 					try
 					{
@@ -883,10 +925,10 @@ public class FreeJ2ME
 									fileSupported = true;
 									break;
 								}
-								else 
-								{ 
+								else
+								{
 									dtde.rejectDrag();
-									fileSupported = false; 
+									fileSupported = false;
 								}
 							}
 						}
@@ -896,29 +938,29 @@ public class FreeJ2ME
 					showDragMessage = true;
 					repaint();
 				}
-	
+
 				@Override
 				public void dragOver(DropTargetDragEvent dtde) { }
-	
+
 				@Override
 				public void dropActionChanged(DropTargetDragEvent dtde) { }
-	
+
 				@Override
-				public void dragExit(DropTargetEvent dte) 
+				public void dragExit(DropTargetEvent dte)
 				{
 					showDragMessage = false;
 					repaint();
 				}
-	
+
 				@Override
 				@SuppressWarnings("unchecked")
-				public void drop(DropTargetDropEvent dtde) 
+				public void drop(DropTargetDropEvent dtde)
 				{
-					try 
+					try
 					{
 						dtde.acceptDrop(DnDConstants.ACTION_COPY);
 						Transferable transferable = dtde.getTransferable();
-						if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) 
+						if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor))
 						{
 							java.util.List<File> files = (java.util.List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
 							if (!files.isEmpty() && fileSupported)
@@ -932,9 +974,9 @@ public class FreeJ2ME
 								}
 							}
 						}
-					} 
-					catch (Exception e) { System.out.println("Exception caught in Drag and Drop:" + e.getMessage()); } 
-					finally 
+					}
+					catch (Exception e) { System.out.println("Exception caught in Drag and Drop:" + e.getMessage()); }
+					finally
 					{
 						dtde.dropComplete(true);
 						showDragMessage = false;
@@ -944,7 +986,7 @@ public class FreeJ2ME
 			});
 		}
 
-		private boolean isSupportedFile(String fileName) 
+		private boolean isSupportedFile(String fileName)
 		{
 			// Check for supported extensions with drag and drop
 			return fileName.toLowerCase().endsWith(".jar") ||

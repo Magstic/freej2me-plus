@@ -16,7 +16,14 @@
 */
 package com.nttdocomo.opt.ui.j3d;
 
-public class Vector3D 
+public class Vector3D extends com.mascotcapsule.micro3d.v3.Vector3D
 {
+	public Vector3D() {}
 
+	public Vector3D(int x, int y, int z) { super(x,y,z); }
+
+	public Vector3D(Vector3D v)
+	{
+		super((com.mascotcapsule.micro3d.v3.Vector3D) v);
+	}
 }

@@ -21,23 +21,32 @@ public class ActionTable {
 
 	public ActionTable(String name) throws IOException {
 		if (name == null) throw new NullPointerException();
-		
+
 		InputStream is = Mobile.getMIDletResourceAsStream(name);
 		if (is == null) throw new IOException("Resource not found: " + name);
-		
+
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		byte[] buf = new byte[Math.max(1024, is.available())];
-		
+
 		int len;
 		while ((len = is.read(buf)) != -1) {
 			baos.write(buf, 0, len);
 		}
-		
+
 		is.close();
-		
+
 		loadMtraData(baos.toByteArray());
 	}
-	
+
+	// DoJa constructor
+	public ActionTable(InputStream is) throws IOException
+	{
+		byte[] tmpStream = new byte[is.available()];
+		is.read(tmpStream, 0, is.available());
+
+		loadMtraData(tmpStream);
+	}
+
 	private final void loadMtraData(byte[] bytes) {
 		Loader loader = new Loader(bytes);
 
@@ -52,9 +61,9 @@ public class ActionTable {
 
 		int numActions = loader.readUShort();
 		int numBones = loader.readUShort();
-		
+
 		actions = new Action[numActions];
-		
+
 		//Number of bones by transform types
 		int[] transTypeCounts = new int[8];
 		for (int i = 0; i < 8; i++) {
@@ -72,28 +81,28 @@ public class ActionTable {
 			for (int bone = 0; bone < numBones; bone++) {
 				act.boneAnims[bone] = readBoneAnim(loader);
 			}
-			
+
 			if (version < 5) continue;
-			
+
 			//Dynamic polygons chunk
 			int count = loader.readUShort();
 			int[] dynamicPolys = new int[count * 2];
 			actions[action].dynamicPolys = dynamicPolys;
-			
+
 			for (int j = 0; j < count; j++) {
 				int frame = loader.readUShort();
 				int pattern = loader.readInt();
-				
+
 				dynamicPolys[j * 2] = frame;
 				dynamicPolys[j * 2 + 1] = pattern;
 			}
 		}
 	}
-	
+
 	private final BoneAnim readBoneAnim(Loader loader) {
 		int type = loader.readUByte();
 		BoneAnim boneAnim = new BoneAnim(type);
-		
+
 		switch (type) {
 			case 0:
 				int[] tmpTrans = new int[12];
@@ -134,14 +143,14 @@ public class ActionTable {
 			default:
 				throw new RuntimeException("Invalid animation type: " + type);
 		}
-		
+
 		return boneAnim;
 	}
-	
+
 	private final short[] readFrames3D(Loader loader) {
 		int count = loader.readUShort();
 		short[] frames = new short[count * 4];
-		
+
 		//Keyframe, X, Y, Z
 		for (int j = 0; j < count * 4; j += 4) {
 			frames[j] = loader.readShort();
@@ -149,27 +158,27 @@ public class ActionTable {
 			frames[j + 2] = loader.readShort();
 			frames[j + 3] = loader.readShort();
 		}
-		
+
 		return frames;
 	}
-	
+
 	private final short[] readFrames3DConst(Loader loader) {
 		return new short[] {loader.readShort(), loader.readShort(), loader.readShort()};
 	}
-	
+
 	private final short[] readFrames1D(Loader loader) {
 		int count = loader.readUShort();
 		short[] frames = new short[count * 2];
-		
+
 		//Keyframe, X
 		for (int j = 0; j < count * 2; j += 2) {
 			frames[j] = loader.readShort();
 			frames[j + 1] = loader.readShort();
 		}
-		
+
 		return frames;
 	}
-	
+
 	private final short[] readFrames1DConst(Loader loader) {
 		return new short[] {loader.readShort()};
 	}
@@ -194,27 +203,30 @@ public class ActionTable {
 		if (idx < 0 || idx >= actions.length) {
 			throw new IllegalArgumentException();
 		}
-		
+
 		return actions[idx].keyFrames << 16;
 	}
+
+	// DoJa method, basically getNumFrames(int)
+	public int getMaxFrame(int idx) { return getNumFrames(idx); }
 
 	static class Action {
 		int keyFrames;
 		BoneAnim[] boneAnims;
 		int[] dynamicPolys;
-		
-		Action(int keyFrames, int bones) { 
-			this.keyFrames = keyFrames; 
+
+		Action(int keyFrames, int bones) {
+			this.keyFrames = keyFrames;
 			boneAnims = new BoneAnim[bones];
 		}
-		
+
 		final void updateBoneAnim(int boneIdx, int frame, AffineTrans localTrans, AffineTrans resultTrans) {
 			if (boneIdx >= boneAnims.length) return;
-			
+
 			frame >>= 4; //Reduce precision to fp12 to avoid overflow
 			boneAnims[boneIdx].setFrame(frame, localTrans, resultTrans);
 		}
-	
+
 		final int getPattern(int frame, int defValue) {
 			int[] dynamic = dynamicPolys;
 			if (dynamic == null) return defValue;
@@ -231,19 +243,19 @@ public class ActionTable {
 	static class BoneAnim {
 		static Vector3D tmp = new Vector3D();
 		static AffineTrans tmpTrans = new AffineTrans();
-		
+
 		int type;
 		AffineTrans transform;
 		short[] translate, scale, rotate, roll;
-		
+
 		BoneAnim(int type) { this.type = type; }
-		
+
 		final void interp3D(int keyframe, short[] buffer, Vector3D v) {
 			int keyframInt = keyframe >> 12;
 			int keysCount = buffer.length >> 2;
-			
+
 			int max = keysCount - 1;
-			
+
 			if (keyframInt >= (buffer[max << 2] & 0xffff)) {
 				max <<= 2;
 				v.x = buffer[max + 1];
@@ -251,60 +263,60 @@ public class ActionTable {
 				v.z = buffer[max + 3];
 				return;
 			}
-			
+
 			for (int i = (max << 2) - 4; i >= 0; i -= 4) {
 				final int prevKey = buffer[i] & 0xffff;
 				if (prevKey > keyframInt) continue;
-				
+
 				if (prevKey == keyframInt) {
 					v.x = buffer[i + 1];
 					v.y = buffer[i + 2];
 					v.z = buffer[i + 3];
 					return;
 				}
-				
+
 				int nextKey = buffer[i + 4] & 0xffff;
 				int delta = (keyframe - (prevKey << 12)) / (nextKey - prevKey);
-				
+
 				v.x = buffer[i + 1] + (((buffer[i + 5] - buffer[i + 1]) * delta) >> 12);
 				v.y = buffer[i + 2] + (((buffer[i + 6] - buffer[i + 2]) * delta) >> 12);
 				v.z = buffer[i + 3] + (((buffer[i + 7] - buffer[i + 3]) * delta) >> 12);
 				return;
 			}
 		}
-		
+
 		final int interp1D(int keyframe, short[] buffer) {
 			int keyframInt = keyframe >> 12;
 			int keysCount = buffer.length >> 1;
-			
+
 			final int max = keysCount - 1;
-			
+
 			if (keyframInt >= (buffer[max << 1] & 0xffff)) {
 				return buffer[(max << 1) + 1];
 			}
-			
+
 			for (int i = (max << 1) - 2; i >= 0; i -= 2) {
 				final int prevKey = buffer[i] & 0xffff;
 				if (prevKey > keyframInt) continue;
-				
+
 				if (prevKey == keyframInt) {
 					return buffer[i + 1];
 				}
-				
+
 				int nextKey = buffer[i + 2] & 0xffff;
 				int delta = (keyframe - (prevKey << 12)) / (nextKey - prevKey);
-				
+
 				return buffer[i + 1] + (((buffer[i + 3] - buffer[i + 1]) * delta) >> 12);
 			}
-		
+
 			return 0;
 		}
-		
+
 		final void setFrame(int frame, AffineTrans localTrans, AffineTrans resultTrans) {
 			Vector3D tmp = BoneAnim.tmp;
 			AffineTrans tmpTrans = BoneAnim.tmpTrans;
 			if (localTrans == null) tmpTrans = resultTrans;
-			
+
 			switch (type) {
 				case 0: {
 					if (localTrans != null) resultTrans.mul(localTrans, transform);
@@ -352,7 +364,7 @@ public class ActionTable {
 				case 4: {
 					//Translate
 					tmpTrans.m03 = tmpTrans.m13 = tmpTrans.m23 = 0;
-					
+
 					//Rotate
 					interp3D(frame, rotate, tmp);
 					rotate(tmpTrans, tmp);
@@ -364,7 +376,7 @@ public class ActionTable {
 				case 5: {
 					//Translate
 					tmpTrans.m03 = tmpTrans.m13 = tmpTrans.m23 = 0;
-					
+
 					//Rotate
 					interp3D(frame, rotate, tmp);
 					rotate(tmpTrans, tmp);
@@ -386,7 +398,7 @@ public class ActionTable {
 					break;
 				}
 			}
-			
+
 			if (localTrans != null) resultTrans.mul(localTrans, tmpTrans);
 		}
 
@@ -397,11 +409,11 @@ public class ActionTable {
 
 			int xx = (x * x + 2048) >> 12;
 			int yy = (y * y + 2048) >> 12;
-			
+
 			if (xx > 0 || yy > 0) {
 				int a = ((4096 - z) << 12) / (yy + xx);
 				int b = (a * -((x * y + 2048) >> 12)) >> 12;
-				
+
 				trans.m00 = z + ((yy * a + 2048) >> 12);
 				trans.m01 = b;
 				trans.m02 = x;
@@ -420,7 +432,7 @@ public class ActionTable {
 				trans.m20 = 0;
 				trans.m21 = 0;
 			}
-			
+
 			trans.m22 = z;
 		}
 

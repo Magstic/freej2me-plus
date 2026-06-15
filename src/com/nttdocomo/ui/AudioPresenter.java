@@ -26,7 +26,7 @@ import javax.microedition.media.Player;
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformPlayer;
 
-public class AudioPresenter implements MediaPresenter 
+public class AudioPresenter implements MediaPresenter
 {
     public static final int AUDIO_PLAYING = 1;
     public static final int AUDIO_STOPPED = 2;
@@ -35,7 +35,7 @@ public class AudioPresenter implements MediaPresenter
     public static final int AUDIO_PAUSED = 5;
     public static final int AUDIO_RESTARTED = 6;
     public static final int AUDIO_LOOPED = 7;
-    
+
     public static final int ATTR_SYNC_OFF = 0;
     public static final int ATTR_SYNC_ON = 1;
 
@@ -44,7 +44,7 @@ public class AudioPresenter implements MediaPresenter
     public static final int SET_VOLUME = 4;
     public static final int CHANGE_TEMPO = 5;
     public static final int LOOP_COUNT = 6;
-    
+
     public static final int PRIORITY = 1;
     public static final int NORM_PRIORITY = 5;
     public static final int MIN_PRIORITY = 1;
@@ -58,7 +58,7 @@ public class AudioPresenter implements MediaPresenter
 
     protected static final int MIN_VENDOR_AUDIO_EVENT = 64;
     protected static final int MAX_VENDOR_AUDIO_EVENT = 127;
-    
+
     private MediaData mediaData = null;
     private MediaSoundImpl mediaSound = null;
     private MediaListener listener = null;
@@ -71,8 +71,8 @@ public class AudioPresenter implements MediaPresenter
 
     protected AudioPresenter() { }
 
-    public static AudioPresenter getAudioPresenter() 
-    { 
+    public static AudioPresenter getAudioPresenter()
+    {
         if(Mobile.DoJaVersion < 30) { return getAudioPresenter(0); } // DoJa < 3.0 only plays a single source here
         else if(Mobile.DoJaVersion < 35) { return getAudioPresenter(-1); } // DoJa < 3.5, sources without a port are mutually exclusive, but don't override other used ports.
         else // DoJa >= 3.5 can assign sounds to a new port, and only recycle a port if they're all in use
@@ -82,23 +82,23 @@ public class AudioPresenter implements MediaPresenter
         }
     }
 
-    public static AudioPresenter getAudioPresenter(int port) 
+    public static AudioPresenter getAudioPresenter(int port)
     {
         /* DoJa < 4.0 only supports up to 2 simultaneous sources, while DoJa 4.0 specifies
          * that up to 4 simultaneous sources can play at any given time. I'm not sure if 5.0,
          * 5.1 or Star allow for more than that, so 4 ports will be the max for now. */
-        if((Mobile.DoJaVersion <= 35 && port >= 2) || (Mobile.DoJaVersion >= 40 && port >= 4)) 
+        if((Mobile.DoJaVersion <= 35 && port >= 2) || (Mobile.DoJaVersion >= 40 && port >= 4))
         { throw new UIException(UIException.NO_RESOURCES, "This port is not available"); }
 
         // If the port is already in use, we override its currently placed AudioPresenter.
         usedPorts.put(port, new AudioPresenter());
-        
+
         return usedPorts.get(port);
     }
 
     public static AudioTrackPresenter getAudioTrackPresenter() { return new AudioTrackPresenter(); }
 
-    public MediaResource getMediaResource() 
+    public MediaResource getMediaResource()
     {
         if(mediaSound != null) { return mediaSound; }
         else if(mediaData != null) { return mediaData; }
@@ -106,7 +106,7 @@ public class AudioPresenter implements MediaPresenter
         return null;
     }
 
-    public Audio3D getAudio3D() 
+    public Audio3D getAudio3D()
     {
         Mobile.log(Mobile.LOG_WARNING, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "getAudio3D (not implemented)");
         return new Audio3D();
@@ -114,7 +114,7 @@ public class AudioPresenter implements MediaPresenter
 
     public void play() { play(0); }
 
-    public void play(int time) 
+    public void play(int time)
     {
         if((mediaSound == null && mediaData == null) ||
             (mediaSound != null && mediaSound.getPlayer().getState() < Player.REALIZED) // ||
@@ -123,18 +123,21 @@ public class AudioPresenter implements MediaPresenter
         { throw new UIException(UIException.ILLEGAL_STATE, "Player is in an invalid state"); }
         if(time < 0) { throw new IllegalArgumentException("Invalid value received for time");}
 
-        if(mediaSound.getPlayer().getState() >= Player.REALIZED) { mediaSound.getPlayer().setMediaTime(time); }
+        // If media is playing, it must be stopped first
+        if(mediaSound.getPlayer().getState() >= Player.STARTED) { mediaSound.getPlayer().stop(); }
+
+        if(mediaSound.getPlayer().getState() >= Player.REALIZED) { mediaSound.getPlayer().setMediaTime(time * 1000); }
         if(mediaSound.getPlayer().getState() >= Player.REALIZED && mediaSound.getPlayer().getState() < Player.STARTED) { mediaSound.getPlayer().setLoopCount(loopCount); }
         ((PlatformPlayer)mediaSound.getPlayer()).setDoJaListener(listener, this);
-        if(mediaSound.getPlayer().getState() >= Player.REALIZED) 
-        { 
+        if(mediaSound.getPlayer().getState() >= Player.REALIZED)
+        {
             ((PlatformPlayer.volumeControl)mediaSound.getPlayer().getControl("VolumeControl")).setLevel(volume);
             ((PlatformPlayer.tempoControl)mediaSound.getPlayer().getControl("TempoControl")).setRate(tempo*1000); // javax' tempoControl operates in the thousands for rate
         }
         mediaSound.getPlayer().start();
     }
 
-    public void stop() 
+    public void stop()
     {
         if((mediaSound == null && mediaData == null) ||
             (mediaSound != null && mediaSound.getPlayer().getState() < Player.REALIZED) // ||
@@ -147,7 +150,7 @@ public class AudioPresenter implements MediaPresenter
     }
 
     // Despite the name, this is actually a resume call
-    public void restart() 
+    public void restart()
     {
         if((mediaSound == null && mediaData == null) ||
             (mediaSound != null && mediaSound.getPlayer().getState() < Player.REALIZED) // ||
@@ -156,43 +159,43 @@ public class AudioPresenter implements MediaPresenter
         { throw new UIException(UIException.ILLEGAL_STATE, "Player is in an invalid state"); }
 
         ((PlatformPlayer)mediaSound.getPlayer()).setDoJaListener(listener, this);
-        if(mediaSound.getPlayer().getState() >= Player.REALIZED) 
-        { 
+        if(mediaSound.getPlayer().getState() >= Player.REALIZED)
+        {
             ((PlatformPlayer.volumeControl)mediaSound.getPlayer().getControl("VolumeControl")).setLevel(volume);
             ((PlatformPlayer.tempoControl)mediaSound.getPlayer().getControl("TempoControl")).setRate(tempo*1000); // javax' tempoControl operates in the thousands for rate
         }
         mediaSound.getPlayer().start();
     }
 
-    public void pause() 
-    { 
+    public void pause()
+    {
         if((mediaSound == null && mediaData == null) ||
             (mediaSound != null && mediaSound.getPlayer().getState() < Player.REALIZED) // ||
             /* (mediaData != null && mediaSound.getPlayer.getState() < Player.REALIZED)  TODO*/
         )
         { throw new UIException(UIException.ILLEGAL_STATE, "Player is in an invalid state"); }
 
-        mediaSound.getPlayer().stop(); 
+        mediaSound.getPlayer().stop();
     }
 
     public int getCurrentTime() { return mediaSound.getPlayer() == null || mediaSound.getPlayer().getState() == Player.CLOSED ? 0 : (int) (mediaSound.getPlayer().getMediaTime() / 1000); }
 
     public int getTotalTime() { return mediaSound.getPlayer() == null || mediaSound.getPlayer().getState() == Player.CLOSED ? 0 : (int) (mediaSound.getPlayer().getDuration() / 1000); }
 
-    public void setData(MediaData data) 
-    { 
-        Mobile.log(Mobile.LOG_WARNING, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "setData called (not implemented)");
-        this.mediaData = data; 
-    }
-
-    public void setSound(MediaSound sound) 
-    { 
-        this.mediaSound = (MediaSoundImpl) sound; 
-    }
-
-    public void setAttribute(int attribute, int value) 
+    public void setData(MediaData data)
     {
-        switch (attribute) 
+        Mobile.log(Mobile.LOG_WARNING, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "setData called (not implemented)");
+        this.mediaData = data;
+    }
+
+    public void setSound(MediaSound sound)
+    {
+        this.mediaSound = (MediaSoundImpl) sound;
+    }
+
+    public void setAttribute(int attribute, int value)
+    {
+        switch (attribute)
         {
             case PRIORITY:
                 if(Mobile.DoJaVersion < 20) { throw new IllegalArgumentException("PRIORITY attribute doesn't exist on DoJa < 2.0"); }
@@ -228,8 +231,8 @@ public class AudioPresenter implements MediaPresenter
 
     public void setMediaListener(MediaListener listener) { this.listener = listener; }
 
-    public void setSyncEvent(int channel, int key) 
-    { 
+    public void setSyncEvent(int channel, int key)
+    {
         Mobile.log(Mobile.LOG_WARNING, AudioPresenter.class.getPackage().getName() + "." + AudioPresenter.class.getSimpleName() + ": " + "setSyncEvent not implemented. channel: " + channel + " key:" + key);
     }
 }

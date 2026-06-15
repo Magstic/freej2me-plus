@@ -67,13 +67,13 @@ public class Graphics3D {
 	//Internal flags
 	private static final int PROJ_PARALLEL = 0;
 	private static final int PROJ_PERSPECTIVE = 1;
-	
+
 	private static final int PATTR_BLEND_MASK = PATTR_BLEND_SUB;
-	
+
 	private static final int PDATA_NORMAL_MASK = 0x0300;
 	private static final int PDATA_SPRITE_PARAMS_MASK = 0x3000;
 	private static final int PDATA_COLOR_MASK = 0x0C00;
-	
+
 	private static final int PDATA_NORMAL_INVALID = 0x0100;
 	private static final int PDATA_COLOR_INVALID = 0x0C00;
 
@@ -83,21 +83,21 @@ public class Graphics3D {
 	private static final int PRIM_TYPE_SPRITE = 0x02;
 	private static final int PRIM_TYPE_MASK = 0x03;
 	private static final int PRIM_MAT_TOON = Figure.MAT_DOUBLE_FACE; //Reusing double face material flag
-	
+
 	//Instance fields
-	private Graphics boundGraphics;
+	private PlatformGraphics boundGraphics;
 	private int[] frameBuffer;
 	private int fbWidth, fbHeight;
 	private int clipX, clipY, clipW, clipH;
 	private int fbDrawCounter;
 	//private DummyCanvas dummyCanvas;
-	
+
 	private long prevStatsCheck;
 	private int framesCount, fps, frameTime;
 	private int bindAccum, figureAccum, primCmdAccum, flushAccum, releaseAccum;
 	private int bindTime, figureTime, primCmdTime, flushTime, releaseTime;
 	private int heapUsage;
-	
+
 	private boolean disposed;
 
 	//Active projection parameters
@@ -105,19 +105,19 @@ public class Graphics3D {
 	private int projNear, projFar;
 	private int projScaleX, projScaleY;
 	private int drawCenterX, drawCenterY;
-	
+
 	//Active effect parameters
 	private int efxToonThreshold, efxToonLow, efxToonHigh;
 	private boolean efxToon, efxTransparency;
 	private Light efxLight;
 	private Texture efxSphereTex;
-	
+
 	private Light g3dLight;
 	private Texture g3dSphereTex;
 
 	//Primitive data for sorting and rendering
 	//[0] - Sort Z
-	
+
 	//For polygons:
 	//[1] - Envmap id (12 bits), Texture id (12 bits), Bottom 8 bits: material flags + poly flag + toon shading
 	//[2-7] - Vtx data X1, Y1, X2, Y2, X3, Y3
@@ -128,7 +128,7 @@ public class Graphics3D {
 	//Optional - Shade level for vtx 3, 2, 1 (fp 5.5 precision)
 	//Optional - Vtx 1 envmap U, V, Vtx 2 envmap U (fp 6.4)
 	//Optional - Vtx 2 envmap V, Vtx 3 envmap U, V (fp 6.4)
-	
+
 	//For primitives:
 	//[1] - Primitive color (24 bits) (or 12 bit angle + 12 bit tex id), 8 bit primitive attributes (blend mode, color key, primitive type)
 	//For points: [2-3] - X1, Y1
@@ -139,14 +139,16 @@ public class Graphics3D {
 	//For sprites - [6] - tex u0, v0, u1, v1 (8 bit precision)
 	private int[] primData;
 	private int primDataUsed;
-	
+	private int primDataReserved;
+
 	//Offsets into primitive data array for each primitive
 	private int[] sortPrimIdx;
 	private int sortPrimCount;
-	
+	private int sortPrimReserved;
+
 	private Texture[] textures;
 	private int bindTextures;
-	
+
 	//Temporary buffers for T&L
 	//[Tx, Ty], [Px, Py, Z], [Shade level (12 bits)], [Env U, Env V] (fp 6.4 precision)
 	private int[] tranVtx, projVtx;
@@ -154,13 +156,13 @@ public class Graphics3D {
 
 	private AffineTrans[] boneTransforms;
 	private Vector3D tmpVec;
-	
+
 	//Clipping
 	static final int NEAR_CLIP = 1, FAR_CLIP = 2, TOON_SPLIT = 4;
-	
+
 	private int allowedClippingStages;
 	private int activeClippingStages;
-	
+
 	private boolean clipPolyHasUVs, clipPolyFlatNorm;
 	private boolean clipPolyHasLight, clipPolyEnvmap;
 	private int clipAttsCount;
@@ -176,21 +178,21 @@ public class Graphics3D {
 	public Graphics3D() {
 		//Prealloc temp buffers
 		//dummyCanvas = new DummyCanvas();
-		
+
 		efxLight = g3dLight = new Light();
-	
+
 		final int polyCount = 512;
 		primData = new int[polyCount * 8];
 		sortPrimIdx = new int[polyCount];
-		
+
 		final int vtxCount = 256;
 		tranVtx = new int[vtxCount * 2];
 		projVtx = new int[vtxCount * 3];
 		lightVtx = new short[vtxCount];
 		envUVs = new short[vtxCount * 2];
-		
+
 		textures = new Texture[32];
-		
+
 		final int boneCount = 10;
 		boneTransforms = new AffineTrans[boneCount];
 		tmpVec = new Vector3D();
@@ -198,7 +200,7 @@ public class Graphics3D {
 		for (int i = 0; i < boneCount; i++) {
 			boneTransforms[i] = new AffineTrans();
 		}
-		
+
 		//Clipping buffers
 		clipBuffers = new int[][] {
 			new int[(3 + 2 + 1 + 2) * 3], //Clipping input
@@ -212,28 +214,28 @@ public class Graphics3D {
 		tmpClipLightVtx = new short[12];
 		tmpClipEnvUVs = new short[12 * 2];
 	}
-	
+
 	public final void dispose() {
 		disposed = true;
 		boundGraphics = null;
 		frameBuffer = null;
 		//dummyCanvas = null;
-		
+
 		efxLight = g3dLight = null;
 		efxSphereTex = g3dSphereTex = null;
-		
+
 		primData = null;
 		sortPrimIdx = null;
-		
+
 		tranVtx = null;
 		projVtx = null;
 		lightVtx = envUVs = null;
-		
+
 		textures = null;
-		
+
 		boneTransforms = null;
 		tmpVec = null;
-		
+
 		//Clipping buffers
 		clipBuffers = null;
 
@@ -251,33 +253,38 @@ public class Graphics3D {
 			}
 		}
 	}
-	
-	private final void preallocPrimBuffers(int primCount, int primDataSize) {
+
+	private final void reservePrimBuffers(int primCount, int primDataSize) {
 		primDataSize *= primCount;
-		
-		if (primData.length < primDataUsed + primDataSize) {
+
+		if (primData.length < primDataReserved + primDataSize) {
 			int newSize = Math.max(
-					primDataUsed + primDataSize, 
+					primDataReserved + primDataSize,
 					primData.length * 3 / 2
 			);
-			
+
 			int[] newBuf = new int[newSize];
-			System.arraycopy(primData, 0, newBuf, 0, primDataUsed);
+			System.arraycopy(primData, 0, newBuf, 0, primDataReserved);
 			primData = newBuf;
 		}
-		
-		if (sortPrimIdx.length < sortPrimCount + primCount) {
+
+		if (sortPrimIdx.length < sortPrimReserved + primCount) {
 			int newSize = Math.max(
-					sortPrimCount + primCount, 
+					sortPrimCount + primCount,
 					sortPrimIdx.length * 3 / 2
 			);
-			
+
 			int[] newBuf = new int[newSize];
-			System.arraycopy(sortPrimIdx, 0, newBuf, 0, sortPrimCount);
+			System.arraycopy(sortPrimIdx, 0, newBuf, 0, sortPrimReserved);
 			sortPrimIdx = newBuf;
 		}
 	}
-	
+
+	private final void flushPrimBufferReserved() {
+		primDataReserved = primDataUsed;
+		sortPrimReserved = sortPrimCount;
+	}
+
 	private final void preallocVtxBuffers(int vertsCount) {
 		if (tranVtx.length < vertsCount * 2) {
 			int newSize = Math.max(vertsCount, tranVtx.length / 2 * 3 / 2);
@@ -285,13 +292,13 @@ public class Graphics3D {
 			projVtx = new int[newSize * 3];
 		}
 	}
-	
+
 	private final void preallocLightBuffers(int vertsCount, boolean envMapping) {
 		if (lightVtx.length < vertsCount) {
 			int newSize = Math.max(vertsCount, lightVtx.length * 3 / 2);
 			lightVtx = new short[newSize];
 		}
-		
+
 		if (envMapping && envUVs.length < vertsCount * 2) {
 			int newSize = Math.max(vertsCount, envUVs.length / 2 * 3 / 2);
 			envUVs = new short[newSize * 2];
@@ -302,11 +309,11 @@ public class Graphics3D {
 		if (disposed) return;
 		if (graphics == null) throw new NullPointerException();
 		if (boundGraphics != null) throw new IllegalStateException();
-		
+
 		long startTime = System.currentTimeMillis();
 
 		boundGraphics = graphics;
-		
+
 		// Get framebuffer resolution
 		int clipX = graphics.getClipX();
 		int clipY = graphics.getClipY();
@@ -315,32 +322,75 @@ public class Graphics3D {
 
 		fbWidth = ((PlatformGraphics)graphics).getCanvas().getWidth();
 		fbHeight = ((PlatformGraphics)graphics).getCanvas().getHeight();
-		
+
 		frameBuffer = ((PlatformGraphics)graphics).getFrameBuffer();
-		
+
 		if (Mobile.halfResMCV3Raster) fbHeight /= 2;
-		
+
 		setClip(clipX, clipY, clipW, clipH);
-		
-		allowedClippingStages = 
+
+		allowedClippingStages =
 				(/*Mobile.MCV3NoNearClipping ? 0 :*/ NEAR_CLIP) |
 				(/*Mobile.MCV3NoFarClipping ? 0 :*/ FAR_CLIP) |
 				(/*Mobile.MCV3NoToonSplitting ? 0 :*/ TOON_SPLIT);
-		
+
 		fbDrawCounter = 0;
-		
+
 		//if (!MascotME.doNotClear) {
 		//	int color = MascotME.fbClearColor;
 		//	if (color == MascotME.CLEAR_WITH_LAST_USED_COLOR) {
 		//		color = graphics.getColor() & 0xffffff;
 		//	}
-		//	
+		//
 		//	clearFB(color);
 		//}
-		
+
 		bindAccum += (int) (System.currentTimeMillis() - startTime);
 	}
-	
+
+	public final void bind(PlatformGraphics graphics) {
+		if (disposed) return;
+		if (graphics == null) throw new NullPointerException();
+		if (boundGraphics != null) throw new IllegalStateException();
+
+		long startTime = System.currentTimeMillis();
+
+		boundGraphics = graphics;
+
+		// Get framebuffer resolution
+		int clipX = graphics.getClipX();
+		int clipY = graphics.getClipY();
+		int clipW = graphics.getClipWidth();
+		int clipH = graphics.getClipHeight();
+
+		fbWidth = (graphics).getCanvas().getWidth();
+		fbHeight = (graphics).getCanvas().getHeight();
+
+		frameBuffer = (graphics).getFrameBuffer();
+
+		if (Mobile.halfResMCV3Raster) fbHeight /= 2;
+
+		setClip(clipX, clipY, clipW, clipH);
+
+		allowedClippingStages =
+				(/*Mobile.MCV3NoNearClipping ? 0 :*/ NEAR_CLIP) |
+				(/*Mobile.MCV3NoFarClipping ? 0 :*/ FAR_CLIP) |
+				(/*Mobile.MCV3NoToonSplitting ? 0 :*/ TOON_SPLIT);
+
+		fbDrawCounter = 0;
+
+		//if (!MascotME.doNotClear) {
+		//	int color = MascotME.fbClearColor;
+		//	if (color == MascotME.CLEAR_WITH_LAST_USED_COLOR) {
+		//		color = graphics.getColor() & 0xffffff;
+		//	}
+		//
+		//	clearFB(color);
+		//}
+
+		bindAccum += (int) (System.currentTimeMillis() - startTime);
+	}
+
 	//private final void clearFB(int color) {
 	//	int[] fb = frameBuffer;
 	//	final int fbLen = fbWidth * fbHeight;
@@ -371,7 +421,7 @@ public class Graphics3D {
 	//	for (; i < cleared; i++) {
 	//		fb[i] = color;
 	//	}
-		
+
 	//	while (cleared < fbLen) {
 	//		int cleared2 = cleared << 1;
 	//		if (cleared2 > fbLen) cleared2 = fbLen;
@@ -379,7 +429,7 @@ public class Graphics3D {
 	//		cleared = cleared2;
 	//	}
 	//}
-	
+
 	//private final void clearFBAlpha(int clipX, int clipY, int clipW, int clipH) {
 	//	int[] fb = frameBuffer;
 	//	int fbWidth = this.fbWidth;
@@ -387,7 +437,7 @@ public class Graphics3D {
 	//	for (int y = clipY + clipH - 1; y >= clipY; y--) {
 	//		int x1 = clipX + y * fbWidth;
 	//		int x2 = x1 + clipW;
-			
+
 	//		while (x2 - x1 >= 16) {
 	//			fb[x1] &= 0xffffff;
 	//			fb[x1 + 1] &= 0xffffff;
@@ -413,36 +463,36 @@ public class Graphics3D {
 	//		}
 	//	}
 	//}
-	
+
 	//private final void drawFB(int clipX, int clipY, int clipW, int clipH) {
 	//	boolean alphaBlending = MascotME.overwrite2D ? (fbDrawCounter > 0) : true;
-		
+
 	//	if (MascotME.halfResRender) {
 	//		int[] fb = frameBuffer;
 	//		int fbWidth = this.fbWidth, fbHeight = this.fbHeight;
-			
+
 	//		int y1 = clipY;
 	//		int y2 = clipY + clipH;
 	//		if (y2 > fbHeight * 2) y2 = fbHeight * 2;
-			
+
 	//		for (int y = y2 - 1; y >= y1; y--) {
 	//			System.arraycopy(fb, fbWidth * (y >> 1) + clipX, fb, fbWidth * y + clipX, clipW);
 	//		}
-			
+
 	//		boundGraphics.drawRGB(frameBuffer, 0, fbWidth, 0, 0, fbWidth, fbHeight * 2, alphaBlending);
 	//	} else {
 	//		boundGraphics.drawRGB(frameBuffer, 0, fbWidth, 0, 0, fbWidth, fbHeight, alphaBlending);
 	//	}
-		
+
 	//	fbDrawCounter++;
 	//}
 
 	public final void flush() {
 		if (disposed) return;
 		if (boundGraphics == null) throw new IllegalStateException();
-		
+
 		long startTime = System.currentTimeMillis();
-		
+
 		if (sortPrimCount > 0) {
 			//Clear fb alpha when necessary
 			//if (!MascotME.no2DInbetween && fbDrawCounter > 0) {
@@ -452,13 +502,14 @@ public class Graphics3D {
 			//		clearFBAlpha(clipX, clipY / 2, clipW, clipH / 2);
 			//	}
 			//}
-			
+
 			//Render all primitives
 			if (sortPrimCount > 1) quickSort(0, sortPrimCount - 1);
 			flushPrimitives();
 			primDataUsed = 0;
 			sortPrimCount = 0;
-			
+			flushPrimBufferReserved();
+
 			//Draw fb on screen (FreeJ2ME+ skips this, isn't needed since we have Graphics FB access)
 			//if (!MascotME.no2DInbetween) {
 			//	int prevClipX = boundGraphics.getClipX();
@@ -466,18 +517,18 @@ public class Graphics3D {
 			//	int prevClipW = boundGraphics.getClipWidth();
 			//	int prevClipH = boundGraphics.getClipHeight();
 			//	boundGraphics.setClip(clipX, clipY, clipW, clipH);
-				
+
 			//	int prevTx = boundGraphics.getTranslateX();
 			//	int prevTy = boundGraphics.getTranslateY();
 			//	boundGraphics.translate(-prevTx, -prevTy);
-				
+
 			//	drawFB(clipX, clipY, clipW, clipH);
-				
+
 			//	boundGraphics.setClip(prevClipX, prevClipY, prevClipW, prevClipH);
 			//	boundGraphics.translate(prevTx, prevTy);
 			//}
 		}
-		
+
 		//Unbind all used textures
 		for (int i = 0; i < bindTextures; i++) {
 			textures[i].g3dBindIdx = -1;
@@ -486,72 +537,151 @@ public class Graphics3D {
 
 		bindTextures = 0;
 		g3dSphereTex = efxSphereTex = null;
-		
+
 		flushAccum += (int) (System.currentTimeMillis() - startTime);
 	}
 
-	public final void release(Graphics graphics) {
+	// Used by DoJa in PlatformGraphics
+	public final void release()
+	{
 		if (disposed) return;
-		if (graphics == null) throw new NullPointerException();
-		if (graphics != boundGraphics) throw new IllegalArgumentException();
-		
+		if (boundGraphics == null) throw new NullPointerException();
+
 		boolean showSomeStats = /* Mobile.MCV3ShowFPS | */ Mobile.MCV3ShowTimeMetrics | Mobile.MCV3ShowHeapUsage;
-		
+
 		if (/* !MascotME.no2DInbetween && */ !showSomeStats) {
 			boundGraphics = null;
 			return;
 		}
-		
+
 		long startTime = System.currentTimeMillis();
-		
-		int prevClipX = graphics.getClipX();
-		int prevClipY = graphics.getClipY();
-		int prevClipW = graphics.getClipWidth();
-		int prevClipH = graphics.getClipHeight();
-		graphics.setClip(0, 0, fbWidth, Mobile.halfResMCV3Raster ? fbHeight * 2 : fbHeight);
-				
-		int prevTx = graphics.getTranslateX();
-		int prevTy = graphics.getTranslateY();
-		graphics.translate(-prevTx, -prevTy);
-		
+
+		int prevClipX = boundGraphics.getClipX();
+		int prevClipY = boundGraphics.getClipY();
+		int prevClipW = boundGraphics.getClipWidth();
+		int prevClipH = boundGraphics.getClipHeight();
+		boundGraphics.setClip(0, 0, fbWidth, Mobile.halfResMCV3Raster ? fbHeight * 2 : fbHeight);
+
+		int prevTx = boundGraphics.getTranslateX();
+		int prevTy = boundGraphics.getTranslateY();
+		boundGraphics.translate(-prevTx, -prevTy);
+
 		//if (MascotME.no2DInbetween) {
 		//	drawFB(0, 0, fbWidth, MascotME.halfResRender ? fbHeight * 2 : fbHeight);
 		//}
-		
+
 		if (showSomeStats) {
 			long time = System.currentTimeMillis();
-			
+
 			framesCount++;
 			if (time - prevStatsCheck >= 1000) {
 				//if (Mobile.MCV3ShowFPS) {
 				//	fps = framesCount * 1000 / (int) (time - prevStatsCheck);
 				//	frameTime = (int) (time - prevStatsCheck) * 10 / framesCount;
 				//}
-				
+
 				if (Mobile.MCV3ShowTimeMetrics) {
 					bindTime = bindAccum / framesCount;
 					figureTime = figureAccum / framesCount;
 					primCmdTime = primCmdAccum / framesCount;
 					flushTime = flushAccum / framesCount;
 					releaseTime = releaseAccum / framesCount;
-					
+
 					bindAccum = figureAccum = 0;
 					primCmdAccum = flushAccum = releaseAccum = 0;
 				}
-				
+
 				if (Mobile.MCV3ShowHeapUsage) {
 					Runtime runtime = Runtime.getRuntime();
 					heapUsage = (int) ((runtime.totalMemory() - runtime.freeMemory()) >> 10);
 				}
-				
+
 				prevStatsCheck = time;
 				framesCount = 0;
 			}
-			
+
+			int prevColor = boundGraphics.getColor();
+			int fontH = boundGraphics.getFont().getHeight();
+			int drawY = 0;
+
+			//if (Mobile.MCV3ShowFPS) {
+			//	drawStatsText("FPS: " + fps + " / " + frameTime, 0, drawY, boundGraphics);
+			//	drawY += fontH;
+			//}
+
+			boundGraphics.setColor(prevColor);
+		}
+
+		boundGraphics.setClip(prevClipX, prevClipY, prevClipW, prevClipH);
+		boundGraphics.translate(prevTx, prevTy);
+
+		boundGraphics = null;
+
+		releaseAccum += (int) (System.currentTimeMillis() - startTime);
+	}
+
+	public final void release(Graphics graphics) {
+		if (disposed) return;
+		if (graphics == null) throw new NullPointerException();
+		if (graphics != boundGraphics) throw new IllegalArgumentException();
+
+		boolean showSomeStats = /* Mobile.MCV3ShowFPS | */ Mobile.MCV3ShowTimeMetrics | Mobile.MCV3ShowHeapUsage;
+
+		if (/* !MascotME.no2DInbetween && */ !showSomeStats) {
+			boundGraphics = null;
+			return;
+		}
+
+		long startTime = System.currentTimeMillis();
+
+		int prevClipX = graphics.getClipX();
+		int prevClipY = graphics.getClipY();
+		int prevClipW = graphics.getClipWidth();
+		int prevClipH = graphics.getClipHeight();
+		graphics.setClip(0, 0, fbWidth, Mobile.halfResMCV3Raster ? fbHeight * 2 : fbHeight);
+
+		int prevTx = graphics.getTranslateX();
+		int prevTy = graphics.getTranslateY();
+		graphics.translate(-prevTx, -prevTy);
+
+		//if (MascotME.no2DInbetween) {
+		//	drawFB(0, 0, fbWidth, MascotME.halfResRender ? fbHeight * 2 : fbHeight);
+		//}
+
+		if (showSomeStats) {
+			long time = System.currentTimeMillis();
+
+			framesCount++;
+			if (time - prevStatsCheck >= 1000) {
+				//if (Mobile.MCV3ShowFPS) {
+				//	fps = framesCount * 1000 / (int) (time - prevStatsCheck);
+				//	frameTime = (int) (time - prevStatsCheck) * 10 / framesCount;
+				//}
+
+				if (Mobile.MCV3ShowTimeMetrics) {
+					bindTime = bindAccum / framesCount;
+					figureTime = figureAccum / framesCount;
+					primCmdTime = primCmdAccum / framesCount;
+					flushTime = flushAccum / framesCount;
+					releaseTime = releaseAccum / framesCount;
+
+					bindAccum = figureAccum = 0;
+					primCmdAccum = flushAccum = releaseAccum = 0;
+				}
+
+				if (Mobile.MCV3ShowHeapUsage) {
+					Runtime runtime = Runtime.getRuntime();
+					heapUsage = (int) ((runtime.totalMemory() - runtime.freeMemory()) >> 10);
+				}
+
+				prevStatsCheck = time;
+				framesCount = 0;
+			}
+
 			int prevColor = graphics.getColor();
 			int fontH = graphics.getFont().getHeight();
 			int drawY = 0;
-			
+
 			if (Mobile.MCV3ShowTimeMetrics) {
 				drawStatsText("Bind: " + bindTime, 0, drawY, graphics);
 				drawY += fontH;
@@ -564,41 +694,41 @@ public class Graphics3D {
 				drawStatsText("Release: " + releaseTime, 0, drawY, graphics);
 				drawY += fontH;
 			}
-			
+
 			if (Mobile.MCV3ShowHeapUsage) {
 				drawStatsText("Heap: " + heapUsage + " kb", 0, drawY, graphics);
 				drawY += fontH;
 			}
-			
+
 			//if (Mobile.MCV3ShowFPS) {
 			//	drawStatsText("FPS: " + fps + " / " + frameTime, 0, drawY, graphics);
 			//	drawY += fontH;
 			//}
-			
+
 			graphics.setColor(prevColor);
 		}
-		
+
 		graphics.setClip(prevClipX, prevClipY, prevClipW, prevClipH);
 		graphics.translate(prevTx, prevTy);
-		
+
 		boundGraphics = null;
-		
+
 		releaseAccum += (int) (System.currentTimeMillis() - startTime);
 	}
-	
+
 	private final void drawStatsText(String str, int x, int y, Graphics g) {
 		g.setColor(0);
 		g.drawString(str, x + 1, y + 1, 0);
 		g.setColor(0xffffff);
 		g.drawString(str, x, y, 0);
 	}
-	
+
 	private final void quickSort(int low, int high) {
 		if (high - low <= 25) {
 			insertionSort(low, high);
 			return;
 		}
-		
+
 		int[] sortPrimIdx = this.sortPrimIdx;
 		int[] primData = this.primData;
 
@@ -608,12 +738,12 @@ public class Graphics3D {
 		while (i <= j) {
 			while (primData[sortPrimIdx[i]] > pivot) i++;
 			while (primData[sortPrimIdx[j]] < pivot) j--;
-			
+
 			if (i <= j) {
-				int tp = sortPrimIdx[i]; 
-				sortPrimIdx[i] = sortPrimIdx[j]; 
+				int tp = sortPrimIdx[i];
+				sortPrimIdx[i] = sortPrimIdx[j];
 				sortPrimIdx[j] = tp;
-				
+
 				i++; j--;
 			}
 		}
@@ -625,17 +755,17 @@ public class Graphics3D {
 	private final void insertionSort(int low, int high) {
 		int[] sortPrimIdx = this.sortPrimIdx;
 		int[] primData = this.primData;
-		
+
 		for (int i = low + 1; i <= high; i++) {
 			int tp = sortPrimIdx[i];
 			int tz = primData[sortPrimIdx[i]];
 			int j = i - 1;
-			
+
 			while (j >= low && primData[sortPrimIdx[j]] < tz) {
 				sortPrimIdx[j + 1] = sortPrimIdx[j];
 				j--;
 			}
-			
+
 			sortPrimIdx[j + 1] = tp;
 		}
 	}
@@ -645,23 +775,23 @@ public class Graphics3D {
 		int[] sortPrimIdx = this.sortPrimIdx;
 		int sortPrimCount = this.sortPrimCount;
 		Texture[] textures = this.textures;
-		
+
 		int[] frameBuffer = this.frameBuffer;
 		int fbWidth = this.fbWidth, fbHeight = this.fbHeight;
 		int clipX1 = clipX, clipY1 = clipY;
 		int clipX2 = clipX1 + clipW, clipY2 = clipY1 + clipH;
-		
+
 		if (Mobile.halfResMCV3Raster) {
 			clipY1 >>= 1;
 			clipY2 >>= 1;
 		}
-		
+
 		for (int p = 0; p < sortPrimCount; p++) {
 			int sortEntry = sortPrimIdx[p];
 			sortEntry++; //Skip sort z
-			
+
 			int header = primData[sortEntry++];
-			
+
 			if ((header & PRIM_TYPE_POLY_FLAG) != 0) {
 				flushPolygon(
 						header, primData, sortEntry,
@@ -700,16 +830,16 @@ public class Graphics3D {
 						int color = 0xff000000 | (header >>> 8);
 
 						Rasterizer.drawLine(
-								frameBuffer, fbWidth, 
+								frameBuffer, fbWidth,
 								clipX1, clipY1, clipX2, clipY2,
-								x1, y1, x2, y2, 
+								x1, y1, x2, y2,
 								color, blendMode
 						);
 						break;
 					}
 					case PRIM_TYPE_SPRITE: {
 						//if (blendMode != 0 && Mobile.MCV3NoBlending) continue;
-						
+
 						int angle = header >>> 20;
 						int texId = (header >> 8) & 4095;
 						Texture tex = textures[texId];
@@ -725,10 +855,10 @@ public class Graphics3D {
 
 						data = primData[sortEntry + 4];
 						//sortEntry += 5;
-						
+
 						int u0 = data >>> 24, v0 = (data >> 16) & 0xff;
 						int u1 = (data >> 8) & 0xff, v1 = data & 0xff;
-						
+
 						u0 <<= Rasterizer.fp;
 						v0 <<= Rasterizer.fp;
 						u1 <<= Rasterizer.fp;
@@ -748,7 +878,7 @@ public class Graphics3D {
 
 						int x4 = x - (cos * sprWX >> 13) - (sin * sprHX >> 13);
 						int y4 = y + (cos * sprHY >> 13) - (sin * sprWY >> 13);
-						
+
 						int shade = (tex.palette.length == 256) ? 0 : (31 << Rasterizer.fp);
 
 						Rasterizer.fillTriangleAffineT(
@@ -773,7 +903,7 @@ public class Graphics3D {
 			}
 		}
 	}
-	
+
 	private final void flushPolygon(
 			int header, int[] polyData, int sortEntry,
 			int clipX1, int clipY1, int clipX2, int clipY2
@@ -783,7 +913,7 @@ public class Graphics3D {
 
 		boolean lighting = (header & Figure.MAT_LIGHTING) != 0;
 		boolean envMapping = lighting && (header & Figure.MAT_SPECULAR) != 0;
-		
+
 		int texCol = (header >>> 8) & 4095;
 		boolean isColorPoly = texCol == 4095;
 
@@ -796,10 +926,10 @@ public class Graphics3D {
 
 		boolean flatLighting = false;
 		int as = 31 << Rasterizer.fp, bs = 31 << Rasterizer.fp, cs = 31 << Rasterizer.fp;
-		
+
 		Texture sphereTex = null;
 		int aeu = 0, aev = 0, beu = 0, bev = 0, ceu = 0, cev = 0;
-		
+
 		if (lighting) {
 			boolean toon = (header & PRIM_MAT_TOON) != 0;
 			flatLighting = (header & Figure.MAT_FLAT_NORMAL) != 0;
@@ -853,7 +983,7 @@ public class Graphics3D {
 							x0, y0, x1, y1, x2, y2,
 							texCol,
 							as,
-							aeu, aev, beu, bev, ceu, cev, 
+							aeu, aev, beu, bev, ceu, cev,
 							sphereTex,
 							blendMode
 					);
@@ -875,7 +1005,7 @@ public class Graphics3D {
 							x0, y0, x1, y1, x2, y2,
 							texCol,
 							as, bs, cs,
-							aeu, aev, beu, bev, ceu, cev, 
+							aeu, aev, beu, bev, ceu, cev,
 							sphereTex,
 							blendMode
 					);
@@ -923,7 +1053,7 @@ public class Graphics3D {
 							au, av, bu, bv, cu, cv,
 							tex, useColorKey,
 							as,
-							aeu, aev, beu, bev, ceu, cev, 
+							aeu, aev, beu, bev, ceu, cev,
 							sphereTex,
 							blendMode
 					);
@@ -947,7 +1077,7 @@ public class Graphics3D {
 							au, av, bu, bv, cu, cv,
 							tex, useColorKey,
 							as, bs, cs,
-							aeu, aev, beu, bev, ceu, cev, 
+							aeu, aev, beu, bev, ceu, cev,
 							sphereTex,
 							blendMode
 					);
@@ -955,7 +1085,7 @@ public class Graphics3D {
 			}
 		}
 	}
-	
+
 	private final void setCenter(FigureLayout layout, int x, int y) {
 		if (layout != null) {
 			drawCenterX = layout.centerX + x;
@@ -964,7 +1094,7 @@ public class Graphics3D {
 			drawCenterX = x;
 			drawCenterY = y;
 		}
-		
+
 		if (Mobile.halfResMCV3Raster) drawCenterY /= 2;
 	}
 
@@ -981,14 +1111,14 @@ public class Graphics3D {
 			setPerspectiveWH(layout.near, layout.far, layout.perspectiveWidth, layout.perspectiveHeight);
 		}
 	}
-	
+
 	private final void setOrthographicScale(int scaleX, int scaleY) {
 		projectionMode = PROJ_PARALLEL;
 		projScaleX = scaleX;
 		projScaleY = scaleY;
 		if (Mobile.halfResMCV3Raster) projScaleY /= 2;
 	}
-	
+
 	private final void setOrthographicWH(int w, int h) {
 		if (w <= 0 || h <= 0) return;
 
@@ -996,27 +1126,29 @@ public class Graphics3D {
 		projScaleX = (fbWidth << 12) / w;
 		projScaleY = (fbHeight << 12) / h;
 	}
-	
+
 	private final void setPerspectiveFov(int near, int far, int angle) {
 		if (near >= far || near < 1 || far > 32767 || angle < 1 || angle > 2047) return;
-		
+
 		projectionMode = PROJ_PERSPECTIVE;
 
 		projNear = near;
 		projFar = far;
 
 		float scale = 0.5f / (float) Math.tan(angle / 4096.0f * Math.PI);
-		
+
 		if (!Mobile.compatMCV3HorizontalFovFix) {
 			projScaleX = (int) (fbWidth * scale);
 		} else {
+			int tmpHeight = fbHeight;
+			if (Mobile.halfResMCV3Raster) tmpHeight *= 2;
 			projScaleX = (int) (fbWidth * scale / 320 * 240 / fbWidth * fbHeight);
 		}
-		
+
 		projScaleY = projScaleX;
 		if (Mobile.halfResMCV3Raster) projScaleY /= 2;
 	}
-	
+
 	private final void setPerspectiveWH(int near, int far, int w, int h) {
 		if(near >= far || near < 1 || far > 32767 || w <= 0 || h <= 0) return;
 
@@ -1028,7 +1160,7 @@ public class Graphics3D {
 		projScaleX = (fbWidth << 12) * projNear / w;
 		projScaleY = (fbHeight << 12) * projNear / h;
 	}
-	
+
 	private final void setEffect(Effect3D effect) {
 		if (effect.light != null /*&& !Mobile.MCV3NoLighting*/) {
 			efxLight = g3dLight;
@@ -1038,55 +1170,55 @@ public class Graphics3D {
 		} else {
 			efxLight = null;
 		}
-		
+
 		efxToon = effect.shadingType == Effect3D.TOON_SHADING;
 		efxTransparency = effect.transparency;
-		
+
 		if (/*!Mobile.MCV3NoEnvMapping*/ true) {
 			efxSphereTex = g3dSphereTex = effect.sphereTexture;
 		//} else {
 		//	efxSphereTex = g3dSphereTex = null;
 		}
-		
+
 		efxToonThreshold = effect.toonThreshold;
 		efxToonLow = effect.toonLow;
 		efxToonHigh = effect.toonHigh;
 	}
-	
+
 	private final void setClip(int x, int y, int w, int h) {
 		int fbWidth = this.fbWidth;
 		int fbHeight = Mobile.halfResMCV3Raster ? this.fbHeight * 2 : this.fbHeight;
-		
+
 		int x2 = x + w, y2 = y + h;
-		
+
 		if (x < 0) x = 0;
 		else if (x > fbWidth) x = fbWidth;
-		
+
 		if (y < 0) y = 0;
 		else if (y > fbHeight) y = fbHeight;
-		
+
 		if (x2 < 0) x2 = 0;
 		else if (x2 > fbWidth) x2 = fbWidth;
-		
+
 		if (y2 < 0) y2 = 0;
 		else if (y2 > fbHeight) y2 = fbHeight;
-		
+
 		clipX = x;
 		clipY = y;
 		clipW = x2 - x;
 		clipH = y2 - y;
 	}
-	
+
 	private final void bindTexture(Texture tex) {
 		if (tex.g3dBindIdx == -1) {
 			if (bindTextures == 4095) throw new IndexOutOfBoundsException("Too many textures are bind");
-			
+
 			if (bindTextures == textures.length) {
 				Texture[] newTexs = new Texture[textures.length * 3 / 2];
 				System.arraycopy(textures, 0, newTexs, 0, bindTextures);
 				textures = newTexs;
 			}
-			
+
 			tex.g3dBindIdx = bindTextures;
 			textures[bindTextures] = tex;
 			bindTextures++;
@@ -1110,36 +1242,36 @@ public class Graphics3D {
 		if (figure == null || layout == null || effect == null) {
 			throw new NullPointerException();
 		}
-		
+
 		long startTime = System.currentTimeMillis();
 
 		AffineTrans viewTrans = layout.getAffineTrans();
 		setCenter(layout, x, y);
 		setProjection(layout);
 		setEffect(effect);
-		
+
 		boolean useBlending = efxTransparency && ((figure.allMatsOr & Figure.MAT_BLEND_MASK) != 0);
 
-		boolean useLighting = 
-				efxLight != null && 
-				figure.normals != null && 
+		boolean useLighting =
+				efxLight != null &&
+				figure.normals != null &&
 				((figure.allMatsOr & Figure.MAT_LIGHTING) != 0);
-		
-		boolean useEnvMap = 
+
+		boolean useEnvMap =
 				useLighting &&
 				efxSphereTex != null &&
 				((figure.allMatsOr & Figure.MAT_SPECULAR) != 0);
-		
+
 		processFigureVertices(
 				figure, viewTrans,
 				useLighting, useEnvMap
 		);
 
 		submitFigurePolygons(figure, effect.sphereTexture, useBlending, useLighting, useEnvMap);
-		
+
 		figureAccum += (int) (System.currentTimeMillis() - startTime);
 	}
-	
+
 	private final void processFigureVertices(
 			Figure figure, AffineTrans viewTrans,
 			boolean useLighting, boolean useEnvMap
@@ -1147,7 +1279,7 @@ public class Graphics3D {
 		short[] verts = figure.vertices;
 		short[] normals = figure.normals;
 		int numVerts = figure.numVertices;
-		
+
 		preallocVtxBuffers(numVerts);
 		if (useLighting) preallocLightBuffers(numVerts, useEnvMap);
 
@@ -1158,12 +1290,12 @@ public class Graphics3D {
 			Figure.Bone bone = bones[bIdx];
 			int vtxStart = bone.startVertex;
 			int vtxCount = bone.numVertices;
-			
+
 			figure.updateBoneTrans(bIdx, viewTrans, boneTransforms);
 			AffineTrans trans = boneTransforms[bIdx];
-			
+
 			processVertices(verts, null, vtxStart * 3, vtxStart, vtxCount, trans);
-			
+
 			if (!useLighting) continue;
 			processLighting(normals, null, vtxStart * 3, vtxStart, vtxCount, trans, useEnvMap);
 		}
@@ -1178,46 +1310,46 @@ public class Graphics3D {
 			bindTexture(envMap);
 			envmapTexId = envMap.g3dBindIdx;
 		}
-		
+
 		int materialMaskAnd = Figure.MAT_MASK;
 		if (!useBlending) materialMaskAnd &= ~Figure.MAT_BLEND_MASK;
 		if (!useLighting) materialMaskAnd &= ~Figure.MAT_LIGHTING;
 		if (!useEnvMap) materialMaskAnd &= ~Figure.MAT_SPECULAR;
-		
+
 		boolean flatNormals = (figure.allMatsAnd & Figure.MAT_FLAT_NORMAL) != 0;
-		
+
 		int polyTexStride = calcPolygonStride(true, flatNormals, useLighting, useEnvMap);
-		preallocPrimBuffers(figure.numPolyT3 + figure.numPolyT4 * 2, polyTexStride);
-		
+		reservePrimBuffers(figure.numPolyT3 + figure.numPolyT4 * 2, polyTexStride);
+
 		int polyColStride = calcPolygonStride(false, flatNormals, useLighting, useEnvMap);
-		preallocPrimBuffers(figure.numPolyC3 + figure.numPolyC4 * 2, polyColStride);
-		
+		reservePrimBuffers(figure.numPolyC3 + figure.numPolyC4 * 2, polyColStride);
+
 		Texture[] texs = figure.textures;
 		int selectedTex = figure.textureIndex;
-		
+
 		if (texs != null) {
 			for (int i = 0; i < texs.length; i++) {
 				bindTexture(texs[i]);
 			}
 		}
-		
+
 		int[][][] patterns = figure.patterns;
 		int selectedPattern = figure.selectedPattern;
-		
+
 		for (int p = 0; p < patterns.length; p++) {
 			//Looks like there's a bug in original mcv3 implementation pattern parsing
 			int pattern = p == 0 ? 0 : 1 << p;
 			//int pattern = p == 0 ? 0 : 1 << (p - 1);
 			if ((pattern & selectedPattern) != pattern) continue;
-			
+
 			int[][] patTexs = patterns[p];
-			
+
 			for (int t = 0; t < patTexs.length; t++) {
 				int[] texData = patTexs[t];
-				
+
 				if (t > 0) {
 					if (texs == null) break;
-					
+
 					int texId = t - 1;
 					if (selectedTex != -1) {
 						if (texId != 0) continue;
@@ -1225,9 +1357,9 @@ public class Graphics3D {
 					} else {
 						if (texId >= texs.length) continue;
 					}
-					
+
 					int g3dTexId = texs[texId].g3dBindIdx;
-					
+
 					submitFigureTris(figure, materialMaskAnd, envmapTexId, g3dTexId, texData[0], texData[2]);
 					submitFigureQuads(figure, materialMaskAnd, envmapTexId, g3dTexId, texData[1], texData[3]);
 				} else {
@@ -1237,25 +1369,27 @@ public class Graphics3D {
 				}
 			}
 		}
+
+		flushPrimBufferReserved();
 	}
-	
+
 	private final void submitFigureTris(
-			Figure figure, int materialMaskAnd, 
+			Figure figure, int materialMaskAnd,
 			int envmapTexId, int texId,
 			int startIdx, int polyCount
 	) {
 		short[] tris = texId < 0 ? figure.polyC3 : figure.polyT3;
 		int[] colors = figure.colors;
 		int[] projVtx = this.projVtx;
-		
+
 		int stride = texId < 0 ? Figure.TRI_C_STRIDE : Figure.TRI_T_STRIDE;
 		int offset = startIdx * stride;
 		int end = offset + polyCount * stride;
-		
+
 		for (; offset < end; offset += stride) {
 			int readOffset = offset;
 			int mat = tris[readOffset] & materialMaskAnd;
-			
+
 			int texCol = texId;
 			if (texCol < 0) {
 				texCol = colors[tris[readOffset + 1] & 0xff];
@@ -1299,29 +1433,29 @@ public class Graphics3D {
 					if (z1 > sortZ) sortZ = z1;
 					if (z2 > sortZ) sortZ = z2;
 				}
-					
+
 				endTriangle(sortZ);
 			}
 		}
 	}
-	
+
 	private final void submitFigureQuads(
-			Figure figure, int materialMaskAnd, 
+			Figure figure, int materialMaskAnd,
 			int envmapTexId, int texId,
 			int startIdx, int polyCount
 	) {
 		short[] quads = texId < 0 ? figure.polyC4 : figure.polyT4;
 		int[] colors = figure.colors;
 		int[] projVtx = this.projVtx;
-		
+
 		int stride = texId < 0 ? Figure.QUAD_C_STRIDE : Figure.QUAD_T_STRIDE;
 		int offset = startIdx * stride;
 		int end = offset + polyCount * stride;
-		
+
 		for (; offset < end; offset += stride) {
 			int readOffset = offset;
 			int mat = quads[readOffset] & materialMaskAnd;
-			
+
 			int texCol = texId;
 			if (texCol < 0) {
 				texCol = colors[quads[readOffset + 1] & 0xff];
@@ -1352,12 +1486,12 @@ public class Graphics3D {
 
 					setTriangleUVs(au, av, bu, bv, cu, cv);
 				}
-				
+
 				int z0 = projVtx[v0 * 3 + 2];
 				int z1 = projVtx[v1 * 3 + 2];
 				int z2 = projVtx[v2 * 3 + 2];
 				int z3 = projVtx[v3 * 3 + 2];
-				
+
 				if ((mat & Figure.MAT_ZSORT_MASK) == 0) {
 					sortZ = (z0 + z1 + z2 + z3) >> 2;
 				} else if ((mat & Figure.MAT_ZSORT_NEAR) != 0) {
@@ -1371,7 +1505,7 @@ public class Graphics3D {
 					if (z2 > sortZ) sortZ = z2;
 					if (z3 > sortZ) sortZ = z3;
 				}
-			
+
 				endTriangle(sortZ);
 			}
 
@@ -1392,13 +1526,13 @@ public class Graphics3D {
 
 					setTriangleUVs(cu, cv, bu, bv, du, dv);
 				}
-				
+
 				if (sortZ == Integer.MIN_VALUE) {
 					int z0 = projVtx[v0 * 3 + 2];
 					int z1 = projVtx[v1 * 3 + 2];
 					int z2 = projVtx[v2 * 3 + 2];
 					int z3 = projVtx[v3 * 3 + 2];
-				
+
 					if ((mat & Figure.MAT_ZSORT_MASK) == 0) {
 						sortZ = (z0 + z1 + z2 + z3) >> 2;
 					} else if ((mat & Figure.MAT_ZSORT_NEAR) != 0) {
@@ -1413,7 +1547,7 @@ public class Graphics3D {
 						if (z3 > sortZ) sortZ = z3;
 					}
 				}
-					
+
 				endTriangle(sortZ);
 			}
 		}
@@ -1428,11 +1562,11 @@ public class Graphics3D {
 	) {
 		if (disposed) return;
 		if (
-			layout == null || effect == null || 
-			vertexCoords == null || normals == null || 
+			layout == null || effect == null ||
+			vertexCoords == null || normals == null ||
 			textureCoords == null || colors == null
 		) {
-			throw new NullPointerException();
+			throw new NullPointerException(layout + " " + effect + " " + vertexCoords + " " + normals + " " + textureCoords + " " + colors);
 		}
 		if (numPrimitives <= 0 || numPrimitives > 255) {
 			throw new IllegalArgumentException();
@@ -1441,7 +1575,7 @@ public class Graphics3D {
 			throw new IllegalArgumentException();
 		}
 		if (boundGraphics == null) throw new IllegalStateException();
-		
+
 		long startTime = System.currentTimeMillis();
 
 		AffineTrans trans = layout.getAffineTrans();
@@ -1461,7 +1595,7 @@ public class Graphics3D {
 			case PRIMITVE_TRIANGLES:
 				submitPrimitivePolygons(
 						texture, trans,
-						command, numPrimitives, false, 
+						command, numPrimitives, false,
 						vertexCoords, 0, normals, 0,
 						textureCoords, 0, colors, 0
 				);
@@ -1469,7 +1603,7 @@ public class Graphics3D {
 			case PRIMITVE_QUADS:
 				submitPrimitivePolygons(
 						texture, trans,
-						command, numPrimitives, true, 
+						command, numPrimitives, true,
 						vertexCoords, 0, normals, 0,
 						textureCoords, 0, colors, 0
 				);
@@ -1480,7 +1614,7 @@ public class Graphics3D {
 			default:
 				throw new IllegalArgumentException();
 		}
-		
+
 		primCmdAccum += (int) (System.currentTimeMillis() - startTime);
 	}
 
@@ -1491,10 +1625,10 @@ public class Graphics3D {
 	) {
 		if (disposed) return;
 		long startTime = System.currentTimeMillis();
-		
+
 		Texture tex = (textures != null && textures.length > 0) ? textures[0] : null;
 		drawCommandList(textures, tex, x, y, layout, effect, commandList);
-		
+
 		primCmdAccum += (int) (System.currentTimeMillis() - startTime);
 	}
 
@@ -1508,9 +1642,9 @@ public class Graphics3D {
 		drawCommandList(null, texture, x, y, layout, effect, commandList);
 		primCmdAccum += (int) (System.currentTimeMillis() - startTime);
 	}
-	
+
 	private final void drawCommandList(
-			Texture[] textures, Texture currentTex, 
+			Texture[] textures, Texture currentTex,
 			int x, int y,
 			FigureLayout layout, Effect3D effect,
 			int[] commandList
@@ -1535,7 +1669,7 @@ public class Graphics3D {
 		while (idx < commandList.length) {
 			int cmd = commandList[idx++];
 			int cmdHigh = cmd & 0xFF000000;
-			
+
 			switch (cmdHigh) {
 				case COMMAND_END:
 					return;
@@ -1556,31 +1690,31 @@ public class Graphics3D {
 				}
 				case COMMAND_AFFINE_INDEX: {
 					int transIdx = cmd & 0xFFFFFF;
-					
+
 					AffineTrans[] transList = layout.affineArray;
 					if (transList != null && transIdx < transList.length) trans = transList[transIdx];
 					else trans = null;
 					break;
 				}
-				case COMMAND_PARALLEL_SCALE: 
+				case COMMAND_PARALLEL_SCALE:
 					setOrthographicScale(commandList[idx++], commandList[idx++]);
 					break;
-				case COMMAND_PARALLEL_SIZE: 
+				case COMMAND_PARALLEL_SIZE:
 					setOrthographicWH(commandList[idx++], commandList[idx++]);
 					break;
-				case COMMAND_PERSPECTIVE_FOV: 
+				case COMMAND_PERSPECTIVE_FOV:
 					setPerspectiveFov(commandList[idx++], commandList[idx++], commandList[idx++]);
 					break;
-				case COMMAND_PERSPECTIVE_WH: 
+				case COMMAND_PERSPECTIVE_WH:
 					setPerspectiveWH(commandList[idx++], commandList[idx++], commandList[idx++], commandList[idx++]);
 					break;
 				case COMMAND_ATTRIBUTE: {
-					boolean lighting = (cmd & ENV_ATTR_LIGHTING) != 0 && !Mobile.MCV3NoLighting; 
+					boolean lighting = (cmd & ENV_ATTR_LIGHTING) != 0 && !Mobile.MCV3NoLighting;
 					efxLight = lighting ? g3dLight : null;
 					efxTransparency = (cmd & ENV_ATTR_SEMI_TRANSPARENT) != 0;
 					efxSphereTex = (cmd & ENV_ATTR_SPHERE_MAP) != 0 ? g3dSphereTex : null;
 					efxToon = (cmd & ENV_ATTR_TOON_SHADING) != 0;
-					
+
 					break;
 				}
 				case COMMAND_CLIP:
@@ -1607,64 +1741,64 @@ public class Graphics3D {
 				case PRIMITVE_POINT_SPRITES: {
 					int numPrims = (cmd >> 16) & 0xff;
 					int numVtx = numPrims;
-					
+
 					if (cmdHigh == PRIMITVE_LINES) numVtx *= 2;
 					else if (cmdHigh == PRIMITVE_TRIANGLES) numVtx *= 3;
 					else if (cmdHigh == PRIMITVE_QUADS) numVtx *= 4;
-					
+
 					int vtxOffset = idx++;
 					int vtxSize = numVtx * 3;
-					
+
 					int normalOffset = vtxOffset + vtxSize;
 					int normalSize = 0;
 					int normalType = cmd & PDATA_NORMAL_MASK;
 					if (normalType == PDATA_NORMAL_PER_FACE) normalSize = numPrims * 3;
 					else if (normalType == PDATA_NORMAL_PER_VERTEX) normalSize = numVtx * 3;
-					
+
 					int texCoordOffset = normalOffset + normalSize;
 					int texCoordSize = 0;
-					
+
 					if (cmdHigh != PRIMITVE_POINT_SPRITES) {
 						if ((cmd & PDATA_TEXURE_COORD) != 0) texCoordSize = numVtx * 2;
 					} else {
 						int pdataSprParams = cmd & PDATA_SPRITE_PARAMS_MASK;
-						
+
 						if (pdataSprParams == PDATA_POINT_SPRITE_PARAMS_PER_CMD) texCoordSize = 8;
 						else texCoordSize = numPrims * 8;
 					}
-					
+
 					int colorsOffset = texCoordOffset + texCoordSize;
 					int colorsSize = 0;
 					int colorsType = cmd & PDATA_COLOR_MASK;
 					if (colorsType == PDATA_COLOR_PER_COMMAND) colorsSize = 1;
 					else if (colorsType == PDATA_COLOR_PER_FACE) colorsSize = numPrims;
-					
+
 					idx = colorsOffset + colorsSize;
-					
+
 					switch (cmdHigh) {
-						case PRIMITVE_POINTS: 
+						case PRIMITVE_POINTS:
 							submitPoints(trans, cmd, numPrims, commandList, vtxOffset, commandList, colorsOffset);
 							break;
-						case PRIMITVE_LINES: 
+						case PRIMITVE_LINES:
 							submitLines(trans, cmd, numPrims, commandList, vtxOffset, commandList, colorsOffset);
 							break;
-						case PRIMITVE_TRIANGLES: 
+						case PRIMITVE_TRIANGLES:
 							submitPrimitivePolygons(
 									currentTex, trans,
-									cmd, numPrims, false, 
-									commandList, vtxOffset, 
+									cmd, numPrims, false,
+									commandList, vtxOffset,
 									commandList, normalOffset,
-									commandList, texCoordOffset, 
+									commandList, texCoordOffset,
 									commandList, colorsOffset
 							);
 							break;
-						case PRIMITVE_QUADS: 
+						case PRIMITVE_QUADS:
 							submitPrimitivePolygons(
 									currentTex, trans,
-									cmd, numPrims, true, 
-									commandList, vtxOffset, 
+									cmd, numPrims, true,
+									commandList, vtxOffset,
 									commandList, normalOffset,
-									commandList, texCoordOffset, 
+									commandList, texCoordOffset,
 									commandList, colorsOffset
 							);
 							break;
@@ -1672,7 +1806,7 @@ public class Graphics3D {
 							submitSprites(currentTex, trans, cmd, numPrims, commandList, vtxOffset, commandList, texCoordOffset);
 							break;
 					}
-					
+
 					break;
 				}
 				default:
@@ -1680,13 +1814,13 @@ public class Graphics3D {
 			}
 		}
 	}
-	
+
 	private final int clamp(int v, int min, int max) {
 		if (v <= min) return min;
 		else if (v >= max) return max;
 		else return v;
 	}
-	
+
 	private final void submitPrimitivePolygons(
 			Texture tex, AffineTrans trans,
 			int command, int numPrims, boolean isQuad,
@@ -1696,21 +1830,21 @@ public class Graphics3D {
 		boolean hasUVs = (command & PDATA_TEXURE_COORD) != 0;
 		int colorType = command & PDATA_COLOR_MASK;
 		int normalType = command & PDATA_NORMAL_MASK;
-		
+
 		if (hasUVs) {
 			if (tex == null) return;
 			//Texture takes priority over color
 			if (colorType != 0) colorType = 0;
 		} else if (colorType == 0) return;
-		
+
 		if (colorType == PDATA_COLOR_INVALID) throw new IllegalArgumentException("Invalid pdata color type");
 		if (normalType == PDATA_NORMAL_INVALID) throw new IllegalArgumentException("Invalid pdata normal type");
-		
+
 		boolean flatNormals = normalType == PDATA_NORMAL_PER_FACE;
 		boolean lighting = normalType != 0 && efxLight != null && (command & PATTR_LIGHTING) != 0;
 		boolean envMapping = lighting && efxSphereTex != null && (command & PATTR_SPHERE_MAP) != 0;
 		int envmapTexId = 0;
-		
+
 		int material = Figure.MAT_DOUBLE_FACE;
 		material |= (command & PATTR_COLORKEY) >> 4;
 		if (efxTransparency) material |= ((command & PATTR_BLEND_MASK) >> 5) << 1;
@@ -1721,21 +1855,21 @@ public class Graphics3D {
 			envmapTexId = efxSphereTex.g3dBindIdx;
 		}
 		if (flatNormals) material |= Figure.MAT_FLAT_NORMAL;
-		
+
 		int polyStride = calcPolygonStride(hasUVs, flatNormals, lighting, envMapping);
-		preallocPrimBuffers((isQuad ? 2 : 1) * numPrims, polyStride);
-		
+		reservePrimBuffers((isQuad ? 2 : 1) * numPrims, polyStride);
+
 		int vtxPerPrim = isQuad ? 4 : 3;
 		preallocVtxBuffers(numPrims * vtxPerPrim);
 		processVertices(null, verts, vtxOffset, 0, numPrims * vtxPerPrim, trans);
-		
+
 		if (lighting) {
 			int numNormals = numPrims;
 			if (normalType == PDATA_NORMAL_PER_VERTEX) numNormals *= vtxPerPrim;
 			preallocLightBuffers(numNormals, envMapping);
 			processLighting(null, normals, normOffset, 0, numNormals, trans, envMapping);
 		}
-		
+
 		int texCol = 0;
 		if (hasUVs) {
 			bindTexture(tex);
@@ -1743,31 +1877,31 @@ public class Graphics3D {
 		} else if (colorType == PDATA_COLOR_PER_COMMAND) {
 			 texCol = 0xff000000 | colors[colOffset];
 		}
-		
+
 		int[] projVtx = this.projVtx;
-		
+
 		if(!isQuad) {
 			for (int i = 0; i < numPrims; i++) {
 				if (colorType == PDATA_COLOR_PER_FACE) {
 					texCol = 0xff000000 | colors[colOffset + i];
 				}
-				
+
 				if (startTriangle(material, texCol, envmapTexId, i * 3, i * 3 + 1, i * 3 + 2, i, true)) {
 					if (hasUVs) {
 						int offset = uvOffset + i * 6;
-						
+
 						setTriangleUVs(
 								uvs[offset] << 8, uvs[offset + 1] << 8,
 								uvs[offset + 2] << 8, uvs[offset + 3] << 8,
 								uvs[offset + 4] << 8, uvs[offset + 5] << 8
 						);
 					}
-					
+
 					int sortZ = projVtx[(i * 3	) * 3 + 2];
 					sortZ += projVtx[(i * 3 + 1) * 3 + 2];
 					sortZ += projVtx[(i * 3 + 2) * 3 + 2];
 					sortZ /= 3;
-				
+
 					endTriangle(sortZ);
 				}
 			}
@@ -1776,42 +1910,42 @@ public class Graphics3D {
 				if (colorType == PDATA_COLOR_PER_FACE) {
 					texCol = 0xff000000 | colors[colOffset + i];
 				}
-				
+
 				int sortZ = Integer.MIN_VALUE;
-				
+
 				//abd
 				if (startTriangle(material, texCol, envmapTexId, i * 4, i * 4 + 1, i * 4 + 3, i, true)) {
 					if (hasUVs) {
 						int offset = uvOffset + i * 8;
-						
+
 						setTriangleUVs(
 								uvs[offset] << 8, uvs[offset + 1] << 8,
 								uvs[offset + 2] << 8, uvs[offset + 3] << 8,
 								uvs[offset + 6] << 8, uvs[offset + 7] << 8
 						);
 					}
-				
+
 					sortZ = projVtx[(i * 4	) * 3 + 2];
 					sortZ += projVtx[(i * 4 + 1) * 3 + 2];
 					sortZ += projVtx[(i * 4 + 2) * 3 + 2];
 					sortZ += projVtx[(i * 4 + 3) * 3 + 2];
 					sortZ >>= 2;
-					
+
 					endTriangle(sortZ);
 				}
-				
+
 				//bcd
 				if (startTriangle(material, texCol, envmapTexId, i * 4 + 1, i * 4 + 2, i * 4 + 3, i, true)) {
 					if (hasUVs) {
 						int offset = uvOffset + i * 8;
-						
+
 						setTriangleUVs(
 								uvs[offset + 2] << 8, uvs[offset + 3] << 8,
 								uvs[offset + 4] << 8, uvs[offset + 5] << 8,
 								uvs[offset + 6] << 8, uvs[offset + 7] << 8
 						);
 					}
-				
+
 					if (sortZ == Integer.MIN_VALUE) {
 						sortZ = projVtx[(i * 4	) * 3 + 2];
 						sortZ += projVtx[(i * 4 + 1) * 3 + 2];
@@ -1819,41 +1953,43 @@ public class Graphics3D {
 						sortZ += projVtx[(i * 4 + 3) * 3 + 2];
 						sortZ >>= 2;
 					}
-					
+
 					endTriangle(sortZ);
 				}
 			}
 		}
+
+		flushPrimBufferReserved();
 	}
-	
+
 	private final void submitPoints(
-			AffineTrans trans, int command, int numPrims, 
+			AffineTrans trans, int command, int numPrims,
 			int[] verts, int vtxOffset, int[] colors, int colOffset
 	) {
 		int colorType = command & PDATA_COLOR_MASK;
 		if (colorType == PDATA_COLOR_INVALID) throw new IllegalArgumentException("Invalid pdata color type");
 		else if(colorType == 0) return;
 
-		preallocPrimBuffers(numPrims, 4);
+		reservePrimBuffers(numPrims, 4);
 
 		int primDataUsed = this.primDataUsed;
 		int[] primData = this.primData;
-		
+
 		int sortPrimCount = this.sortPrimCount;
 		int[] sortPrimIdx = this.sortPrimIdx;
-		
+
 		int scaleX = projScaleX, scaleY = projScaleY;
 		int centerX = drawCenterX, centerY = drawCenterY;
 		int fbWidth = this.fbWidth, fbHeight = this.fbHeight;
-		
+
 		int projectionMode = this.projectionMode;
 		int perspectiveNear = this.projNear;
 		int perspectiveFar = this.projFar;
-		
+
 		int m00, m01, m02, m03;
 		int m10, m11, m12, m13;
 		int m20, m21, m22, m23;
-		
+
 		if (trans != null) {
 			m00 = trans.m00; m01 = trans.m01; m02 = trans.m02; m03 = trans.m03;
 			m10 = trans.m10; m11 = trans.m11; m12 = trans.m12; m13 = trans.m13;
@@ -1863,20 +1999,20 @@ public class Graphics3D {
 			m10 = m11 = m12 = m13 = 0;
 			m20 = m21 = m22 = m23 = 0;
 		}
-		
+
 		int primHeader = PRIM_TYPE_POINT;
 		if (efxTransparency) primHeader |= command & PATTR_BLEND_MASK;
-		
+
 		int color = 0;
 		if (colorType == PDATA_COLOR_PER_COMMAND) {
 			 color = colors[colOffset];
 		}
-		
+
 		for (int i = 0; i < numPrims; i++) {
 			int vx = verts[vtxOffset + i * 3	];
 			int vy = verts[vtxOffset + i * 3 + 1];
 			int vz = verts[vtxOffset + i * 3 + 2];
-			
+
 			int tx, ty, tz;
 			if (trans != null) {
 				tx = ((m00 * vx + m01 * vy + m02 * vz + 2048) >> 12) + m03;
@@ -1885,65 +2021,67 @@ public class Graphics3D {
 			} else {
 				tx = vx; ty = vy; tz = vz;
 			}
-			
+
 			if (projectionMode == PROJ_PERSPECTIVE) {
 				if (tz < perspectiveNear) continue;
 				else if (tz > perspectiveFar) continue;
-				
+
 				tx = ((tx * scaleX) / tz) + centerX;
 				ty = ((ty * scaleY) / tz) + centerY;
 			} else {
 				tx = ((tx * scaleX) >> 12) + centerX;
 				ty = ((ty * scaleY) >> 12) + centerY;
 			}
-			
+
 			if (tx < 0 || tx >= fbWidth) continue;
 			if (ty < 0 || ty >= fbHeight) continue;
-			
+
 			if (colorType == PDATA_COLOR_PER_FACE) {
 				color = colors[colOffset + i];
 			}
 
 			sortPrimIdx[sortPrimCount++] = primDataUsed;
-			
+
 			primData[primDataUsed++] = tz;
 			primData[primDataUsed++] = (color << 8) | primHeader;
 			primData[primDataUsed++] = tx;
 			primData[primDataUsed++] = ty;
 		}
-		
+
 		this.sortPrimCount = sortPrimCount;
 		this.primDataUsed = primDataUsed;
+
+		flushPrimBufferReserved();
 	}
-	
+
 	private final void submitLines(
-			AffineTrans trans, int command, int numPrims, 
+			AffineTrans trans, int command, int numPrims,
 			int[] verts, int vtxOffset, int[] colors, int colOffset
 	) {
 		int colorType = command & PDATA_COLOR_MASK;
 		if (colorType == PDATA_COLOR_INVALID) throw new IllegalArgumentException("Invalid pdata color type");
 		else if(colorType == 0) return;
 
-		preallocPrimBuffers(numPrims, 6);
+		reservePrimBuffers(numPrims, 6);
 
 		int primDataUsed = this.primDataUsed;
 		int[] primData = this.primData;
-		
+
 		int sortPrimCount = this.sortPrimCount;
 		int[] sortPrimIdx = this.sortPrimIdx;
-		
+
 		int scaleX = projScaleX, scaleY = projScaleY;
 		int centerX = drawCenterX, centerY = drawCenterY;
 		int fbWidth = this.fbWidth, fbHeight = this.fbHeight;
-		
+
 		int projectionMode = this.projectionMode;
 		int perspectiveNear = this.projNear;
 		int perspectiveFar = this.projFar;
-		
+
 		int m00, m01, m02, m03;
 		int m10, m11, m12, m13;
 		int m20, m21, m22, m23;
-		
+
 		if (trans != null) {
 			m00 = trans.m00; m01 = trans.m01; m02 = trans.m02; m03 = trans.m03;
 			m10 = trans.m10; m11 = trans.m11; m12 = trans.m12; m13 = trans.m13;
@@ -1953,15 +2091,15 @@ public class Graphics3D {
 			m10 = m11 = m12 = m13 = 0;
 			m20 = m21 = m22 = m23 = 0;
 		}
-		
+
 		int primHeader = PRIM_TYPE_LINE;
 		if (efxTransparency) primHeader |= command & PATTR_BLEND_MASK;
-		
+
 		int color = 0;
 		if (colorType == PDATA_COLOR_PER_COMMAND) {
 			 color = colors[colOffset];
 		}
-		
+
 		for (int i = 0; i < numPrims; i++) {
 			int vx1 = verts[vtxOffset + i * 6	];
 			int vy1 = verts[vtxOffset + i * 6 + 1];
@@ -1969,13 +2107,13 @@ public class Graphics3D {
 			int vx2 = verts[vtxOffset + i * 6 + 3];
 			int vy2 = verts[vtxOffset + i * 6 + 4];
 			int vz2 = verts[vtxOffset + i * 6 + 5];
-			
+
 			int x1, y1, z1, x2, y2, z2;
 			if (trans != null) {
 				x1 = ((m00 * vx1 + m01 * vy1 + m02 * vz1 + 2048) >> 12) + m03;
 				y1 = ((m10 * vx1 + m11 * vy1 + m12 * vz1 + 2048) >> 12) + m13;
 				z1 = ((m20 * vx1 + m21 * vy1 + m22 * vz1 + 2048) >> 12) + m23;
-				
+
 				x2 = ((m00 * vx2 + m01 * vy2 + m02 * vz2 + 2048) >> 12) + m03;
 				y2 = ((m10 * vx2 + m11 * vy2 + m12 * vz2 + 2048) >> 12) + m13;
 				z2 = ((m20 * vx2 + m21 * vy2 + m22 * vz2 + 2048) >> 12) + m23;
@@ -1983,11 +2121,11 @@ public class Graphics3D {
 				x1 = vx1; y1 = vy1; z1 = vz1;
 				x2 = vx2; y2 = vy2; z2 = vz2;
 			}
-			
+
 			if (projectionMode == PROJ_PERSPECTIVE) {
 				if (z1 < perspectiveNear && z2 < perspectiveNear) continue;
 				if (z1 > perspectiveFar && z2 > perspectiveFar) continue;
-				
+
 				if (z1 < perspectiveNear) {
 					int tmpZ = (perspectiveNear - z1) * 4096 / (z2 - z1);
 					x1 = ((x2 - x1) * tmpZ >> 12) + x1;
@@ -1999,7 +2137,7 @@ public class Graphics3D {
 					y2 = ((y2 - y1) * tmpZ >> 12) + y1;
 					z2 = perspectiveNear;
 				}
-				
+
 				if (z1 > perspectiveFar) {
 					int tmpZ = (perspectiveFar - z1) * 4096 / (z2 - z1);
 					x1 = ((x2 - x1) * tmpZ >> 12) + x1;
@@ -2011,7 +2149,7 @@ public class Graphics3D {
 					y2 = ((y2 - y1) * tmpZ >> 12) + y1;
 					z2 = perspectiveFar;
 				}
-				
+
 				x1 = ((x1 * scaleX) / z1) + centerX;
 				x2 = ((x2 * scaleX) / z2) + centerX;
 				y1 = ((y1 * scaleY) / z1) + centerY;
@@ -2022,18 +2160,18 @@ public class Graphics3D {
 				y1 = ((y1 * scaleY) >> 12) + centerY;
 				y2 = ((y2 * scaleY) >> 12) + centerY;
 			}
-			
+
 			if (x1 < 0 && x2 < 0) continue;
 			if (x1 >= fbWidth && x2 >= fbWidth) continue;
 			if (y1 < 0 && y2 < 0) continue;
 			if (y1 >= fbHeight && y2 >= fbHeight) continue;
-			
+
 			if (colorType == PDATA_COLOR_PER_FACE) {
 				color = colors[colOffset + i];
 			}
 
 			sortPrimIdx[sortPrimCount++] = primDataUsed;
-			
+
 			primData[primDataUsed++] = (z1 + z2) / 2;
 			primData[primDataUsed++] = (color << 8) | primHeader;
 			primData[primDataUsed++] = x1;
@@ -2041,9 +2179,11 @@ public class Graphics3D {
 			primData[primDataUsed++] = x2;
 			primData[primDataUsed++] = y2;
 		}
-		
+
 		this.sortPrimCount = sortPrimCount;
 		this.primDataUsed = primDataUsed;
+
+		flushPrimBufferReserved();
 	}
 
 	private final void submitSprites(
@@ -2055,14 +2195,14 @@ public class Graphics3D {
 
 		int mode = command & PDATA_SPRITE_PARAMS_MASK;
 		if (mode == 0) return;
-		
+
 		bindTexture(tex);
 
-		preallocPrimBuffers(numPrims, 7);
+		reservePrimBuffers(numPrims, 7);
 
 		int primDataUsed = this.primDataUsed;
 		int[] primData = this.primData;
-		
+
 		int sortPrimCount = this.sortPrimCount;
 		int[] sortPrimIdx = this.sortPrimIdx;
 
@@ -2070,15 +2210,15 @@ public class Graphics3D {
 		int centerX = drawCenterX, centerY = drawCenterY;
 		int fbWidth = this.fbWidth, fbHeight = this.fbHeight;
 		int pxHScale = Mobile.halfResMCV3Raster ? 1 : 0;
-		
+
 		int projectionMode = this.projectionMode;
 		int perspectiveNear = this.projNear;
 		int perspectiveFar = this.projFar;
-		
+
 		int m00, m01, m02, m03;
 		int m10, m11, m12, m13;
 		int m20, m21, m22, m23;
-		
+
 		if (trans != null) {
 			m00 = trans.m00; m01 = trans.m01; m02 = trans.m02; m03 = trans.m03;
 			m10 = trans.m10; m11 = trans.m11; m12 = trans.m12; m13 = trans.m13;
@@ -2092,7 +2232,7 @@ public class Graphics3D {
 		int sprW = 0, sprH = 0, sprAngle = 0;
 		int sprTexX1 = 0, sprTexY1 = 0, sprTexX2 = 0, sprTexY2 = 0;
 		int sprFlags = 0;
-		
+
 		if (mode == PDATA_POINT_SPRITE_PARAMS_PER_CMD) {
 			sprW	 = sprParams[paramOffset	];
 			sprH	 = sprParams[paramOffset + 1];
@@ -2103,7 +2243,7 @@ public class Graphics3D {
 			sprTexY2 = sprParams[paramOffset + 6];
 			sprFlags = sprParams[paramOffset + 7];
 		}
-		
+
 		int primHeader = (command & PATTR_COLORKEY) | PRIM_TYPE_SPRITE;
 		if (efxTransparency) primHeader |= command & PATTR_BLEND_MASK;
 		primHeader |= tex.g3dBindIdx << 8;
@@ -2126,7 +2266,7 @@ public class Graphics3D {
 
 			if (mode != PDATA_POINT_SPRITE_PARAMS_PER_CMD) {
 				int offset = paramOffset + i * 8;
-				
+
 				sprW	 = sprParams[offset	   ];
 				sprH	 = sprParams[offset + 1];
 				sprAngle = sprParams[offset + 2];
@@ -2193,7 +2333,7 @@ public class Graphics3D {
 					projHY = (sprH * scaleY) >> 12;
 				}
 			}
-			
+
 			if (projWX <= 0 || projHX <= 0 || projWY <= 0 || projHY <= 0) continue;
 
 			//Calculate screen bounds (centered on screenX, screenY)
@@ -2209,39 +2349,41 @@ public class Graphics3D {
 			if (drawY1 >= fbHeight && drawY2 >= fbHeight) continue;
 
 			sortPrimIdx[sortPrimCount++] = primDataUsed;
-			
+
 			primData[primDataUsed++] = tz;
 			primData[primDataUsed++] = (sprAngle << 20) | primHeader;
 			primData[primDataUsed++] = screenX;
 			primData[primDataUsed++] = screenY;
 			primData[primDataUsed++] = (projWX << 16) | projHX;
 			primData[primDataUsed++] = (projWY << 16) | projHY;
-			primData[primDataUsed++] = 
+			primData[primDataUsed++] =
 					((sprTexX1 & 0xff) << 24) | ((sprTexY1 & 0xff) << 16) |
 					((sprTexX2 & 0xff) << 8) | (sprTexY2 & 0xff);
 		}
-		
+
 		this.sortPrimCount = sortPrimCount;
 		this.primDataUsed = primDataUsed;
+
+		flushPrimBufferReserved();
 	}
-	
+
 	private final void processVertices(
-			short[] vtxShort, int[] vtxInt, 
-			int readIdx, int writeIdx, int vtxCount, 
+			short[] vtxShort, int[] vtxInt,
+			int readIdx, int writeIdx, int vtxCount,
 			AffineTrans trans
 	) {
 		int[] tranVtx = this.tranVtx;
 		int[] projVtx = this.projVtx;
-		
+
 		int scaleX = projScaleX, scaleY = projScaleY;
 		int centerX = drawCenterX, centerY = drawCenterY;
 		int projectionMode = this.projectionMode;
 		int perspectiveNear = this.projNear;
-		
+
 		int m00, m01, m02, m03;
 		int m10, m11, m12, m13;
 		int m20, m21, m22, m23;
-		
+
 		if (trans != null) {
 			m00 = trans.m00; m01 = trans.m01; m02 = trans.m02; m03 = trans.m03;
 			m10 = trans.m10; m11 = trans.m11; m12 = trans.m12; m13 = trans.m13;
@@ -2251,12 +2393,12 @@ public class Graphics3D {
 			m10 = m11 = m12 = m13 = 0;
 			m20 = m21 = m22 = m23 = 0;
 		}
-		
+
 		int writeIdx3 = writeIdx * 3, writeIdx2 = writeIdx * 2;
-		
+
 		for (int i = 0; i < vtxCount; i++, readIdx += 3, writeIdx3 += 3, writeIdx2 += 2) {
 			int vx, vy, vz;
-			
+
 			if (vtxShort != null) {
 				vx = vtxShort[readIdx    ];
 				vy = vtxShort[readIdx + 1];
@@ -2304,10 +2446,10 @@ public class Graphics3D {
 			projVtx[writeIdx3 + 2] = tz;
 		}
 	}
-	
+
 	private final void processLighting(
-			short[] normShort, int[] normInt, 
-			int readPos, int writeIdx, int vtxCount, 
+			short[] normShort, int[] normInt,
+			int readPos, int writeIdx, int vtxCount,
 			AffineTrans trans, boolean useEnvMap
 	) {
 		short[] lightVtx = this.lightVtx;
@@ -2315,10 +2457,10 @@ public class Graphics3D {
 
 		int dirIntensity = efxLight.dirIntensity;
 		int ambIntensity = efxLight.ambIntensity;
-		
+
 		Vector3D lightDir = efxLight.direction;
 		Vector3D tmpVec = this.tmpVec;
-		
+
 		tmpVec.set(lightDir);
 		if (trans != null) trans.rotate(tmpVec);
 		tmpVec.unit();
@@ -2337,7 +2479,7 @@ public class Graphics3D {
 			} else {
 				tmpVec.set(4096, 0, 0);
 			}
-			
+
 			envUx = tmpVec.x;
 			envUy = tmpVec.y;
 			envUz = tmpVec.z;
@@ -2348,7 +2490,7 @@ public class Graphics3D {
 			} else {
 				tmpVec.set(0, 4096, 0);
 			}
-			
+
 			envVx = tmpVec.x;
 			envVy = tmpVec.y;
 			envVz = tmpVec.z;
@@ -2356,7 +2498,7 @@ public class Graphics3D {
 
 		for(int i = 0; i < vtxCount; i++, readPos += 3, writeIdx++) {
 			int nx, ny, nz;
-			
+
 			if (normShort != null) {
 				nx = normShort[readPos];
 				ny = normShort[readPos + 1];
@@ -2381,7 +2523,7 @@ public class Graphics3D {
 				dotU = (dotU + 4096) >> 1;
 				if(dotU > 4095) dotU = 4095;
 				else if(dotU < 0) dotU = 0;
-				
+
 				//Only 64x envmaps are supported by mcv3, 65 is also more closer to reference impl
 				dotU = (dotU * 65) >> 8;
 				envUVs[writeIdx * 2] = (short) dotU;
@@ -2391,15 +2533,15 @@ public class Graphics3D {
 				dotV = (dotV + 4096) >> 1;
 				if(dotV > 4095) dotV = 4095;
 				else if(dotV < 0) dotV = 0;
-				
+
 				dotV = (dotV * 65) >> 8;
 				envUVs[writeIdx * 2 + 1] = (short) dotV;
 			}
 		}
 	}
-	
+
 	private final int calcPolygonStride(boolean texturing, boolean flatNormals, boolean lighting, boolean envMapping) {
-		return 
+		return
 				1 + //Z sort
 				1 + //Textures + material flags
 				6 + //Vertices xy * 3
@@ -2408,52 +2550,52 @@ public class Graphics3D {
 				(texturing ? 3: 1)//Uvs or color;
 				;
 	}
-	
+
 	//Todo simplify this somehow...
 	private final boolean startTriangle(
 			int mat, int texCol, int envMapTexId,
-			int v0, int v1, int v2, 
+			int v0, int v1, int v2,
 			int normalId, boolean clipping
 	) {
 		int[] projVtx = this.projVtx;
-		
+
 		int v03 = v0 * 3, v13 = v1 * 3, v23 = v2 * 3;
-		
+
 		int x0 = projVtx[v03];
 		int x1 = projVtx[v13];
 		int x2 = projVtx[v23];
-		
+
 		int y0 = projVtx[v03 + 1];
 		int y1 = projVtx[v13 + 1];
 		int y2 = projVtx[v23 + 1];
-		
+
 		int clippingStages = 0;
-		
+
 		if (clipping) {
 			//Actually culling should only be performed after clipping, but clipping is too costly, so..
 			if (x0 < 0 && x1 < 0 && x2 < 0) return false;
 			if (y0 < 0 && y1 < 0 && y2 < 0) return false;
-			
+
 			int fbW = fbWidth, fbH = fbHeight;
 			if (x0 >= fbW && x1 >= fbW && x2 >= fbW) return false;
-			if (y0 >= fbH && y1 >= fbH && y2 >= fbH) return false; 
-			
+			if (y0 >= fbH && y1 >= fbH && y2 >= fbH) return false;
+
 			if (projectionMode == PROJ_PERSPECTIVE) {
 				int z0 = projVtx[v03 + 2];
 				int z1 = projVtx[v13 + 2];
 				int z2 = projVtx[v23 + 2];
-			
+
 				int perspectiveNear = this.projNear;
 				boolean nearCull = z0 < perspectiveNear && z1 < perspectiveNear && z2 < perspectiveNear;
 				if (nearCull) return false;
-				
+
 				int perspectiveFar = this.projFar;
 				boolean farCull = z0 > perspectiveFar && z1 > perspectiveFar && z2 > perspectiveFar;
 				if (farCull) return false;
-				
+
 				nearCull = z0 < perspectiveNear || z1 < perspectiveNear || z2 < perspectiveNear;
 				if (nearCull) clippingStages |= NEAR_CLIP;
-				
+
 				farCull = z0 > perspectiveFar || z1 > perspectiveFar || z2 > perspectiveFar;
 				if (farCull) clippingStages |= FAR_CLIP;
 			}
@@ -2463,11 +2605,11 @@ public class Graphics3D {
 			long cross = (long)(x1 - x0) * (y2 - y1) - (long)(y1 - y0) * (x2 - x1);
 			if (cross <= 0) return false;
 		}
-		
+
 		boolean lighting = (mat & Figure.MAT_LIGHTING) != 0;
 		boolean flat = (mat & Figure.MAT_FLAT_NORMAL) != 0;
 		boolean toon = lighting && efxToon;
-		
+
 		boolean toonLow = false, toonHigh = true;
 		if (toon) {
 			if (flat) {
@@ -2478,48 +2620,48 @@ public class Graphics3D {
 				int sa = lightVtx[v0] >> 4;
 				int sb = lightVtx[v1] >> 4;
 				int sc = lightVtx[v2] >> 4;
-				
+
 				toonLow = (sa <= threshold) && (sb <= threshold) && (sc <= threshold);
 				toonHigh = (sa >= threshold) && (sb >= threshold) && (sc >= threshold);
 			}
 		}
-			
+
 		if (clipping) {
 			if (!toonHigh && !toonLow) clippingStages |= TOON_SPLIT;
-			
+
 			clippingStages &= allowedClippingStages;
-			
+
 			if (clippingStages != 0) {
 				this.activeClippingStages = clippingStages;
 				startTriangleClip(
-						mat, texCol, envMapTexId, 
+						mat, texCol, envMapTexId,
 						v0, v1, v2, normalId
 				);
-				
+
 				return true;
 			}
 		}
-		
+
 		boolean hasTex = texCol >= 0;
 		boolean envMapping = (mat & Figure.MAT_SPECULAR) != 0;
-		
+
 		int primDataUsed = this.primDataUsed;
 		int[] primData = this.primData;
-		
+
 		sortPrimIdx[sortPrimCount++] = primDataUsed;
-		
+
 		primDataUsed++;
-		
+
 		mat &= 0xE7; //Keep only necessary masks
 		mat |= PRIM_TYPE_POLY_FLAG;
 		if (toon) mat |= PRIM_MAT_TOON;
-		
+
 		if (hasTex) {
 			primData[primDataUsed] = (envMapTexId << 20) | (texCol << 8) | mat;
 		} else {
 			primData[primDataUsed] = (envMapTexId << 20) | (4095 << 8) | mat;
 		}
-		
+
 		primData[primDataUsed + 1] = x0;
 		primData[primDataUsed + 2] = y0;
 		primData[primDataUsed + 3] = x1;
@@ -2527,12 +2669,12 @@ public class Graphics3D {
 		primData[primDataUsed + 5] = x2;
 		primData[primDataUsed + 6] = y2;
 		primDataUsed += 7;
-		
+
 		if (!hasTex) primData[primDataUsed++] = texCol;
-		
+
 		if (lighting) {
 			int lightData;
-			
+
 			if (!toon) {
 				if (flat) {
 					lightData = lightVtx[normalId] >> 2;
@@ -2545,9 +2687,9 @@ public class Graphics3D {
 			} else {
 				lightData = (toonLow ? efxToonLow : efxToonHigh) << 2;
 			}
-			
+
 			primData[primDataUsed++] = lightData;
-			
+
 			if (envMapping) {
 				short[] envUVs = this.envUVs;
 				if (flat) {
@@ -2558,12 +2700,12 @@ public class Graphics3D {
 					v0 <<= 1;
 					v1 <<= 1;
 					v2 <<= 1;
-					
+
 					int envData = envUVs[v0] << 20;
 					envData |= envUVs[v0 + 1] << 10;
 					envData |= envUVs[v1];
 					primData[primDataUsed] = envData;
-					
+
 					envData = envUVs[v1 + 1] << 20;
 					envData |= envUVs[v2] << 10;
 					envData |= envUVs[v2 + 1];
@@ -2572,32 +2714,32 @@ public class Graphics3D {
 				}
 			}
 		}
-		
+
 		this.primDataUsed = primDataUsed;
 		return true;
 	}
-	
+
 	private final void setTriangleUVs(int au, int av, int bu, int bv, int cu, int cv) {
 		if (activeClippingStages == 0) {
 			int[] primData = this.primData;
 			int primDataUsed = this.primDataUsed;
-			
+
 			primData[primDataUsed    ] = (au << 16) | av;
 			primData[primDataUsed + 1] = (bu << 16) | bv;
 			primData[primDataUsed + 2] = (cu << 16) | cv;
-			
+
 			this.primDataUsed += 3;
 		} else {
 			setTriangleUVsClip(au, av, bu, bv, cu, cv);
 		}
 	}
-	
+
 	private final void endTriangle(int sortZ) {
 		if (activeClippingStages == 0) {
 			primData[sortPrimIdx[sortPrimCount - 1]] = sortZ;
 			return;
 		}
-		
+
 		endTriangleClip(sortZ);
 	}
 
@@ -2780,7 +2922,7 @@ public class Graphics3D {
 	private final int clipTriangleVerts(int[] vertices, int vtxCount, int clipAttrib, int clipThreshold, int[] outVerts, boolean larger) {
 		int vtxCountRes = 0;
 		int attsCount = this.clipAttsCount;
-		
+
 		int sign = larger ? -1 : 1;
 
 		for(int i = 0; i < vtxCount; i++) {
@@ -2898,7 +3040,7 @@ public class Graphics3D {
 		boolean tmpLight = (clipPolyMat & Figure.MAT_LIGHTING) != 0;
 		boolean tmpEnv = tmpLight && ((clipPolyMat & Figure.MAT_SPECULAR) != 0);
 		int polyStride = calcPolygonStride(clipPolyHasUVs, clipPolyFlatNorm, tmpLight, tmpEnv);
-		preallocPrimBuffers(vertsCount - 1, polyStride);
+		reservePrimBuffers(vertsCount - 1, polyStride);
 
 		for (int i = 1; i < vertsCount - 1; i++) {
 			int v0 = 0, v1 = i, v2 = i + 1;

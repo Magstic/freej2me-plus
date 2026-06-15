@@ -11,7 +11,7 @@ public class FigureLayout {
 
 	int projectionMode;
 	int centerX, centerY;
-	
+
 	//Parallel projection params
 	int scaleX, scaleY;
 	int parallelWidth, parallelHeight;
@@ -62,7 +62,7 @@ public class FigureLayout {
 		if (affineArray == null || idx < 0 || idx >= affineArray.length) {
 			throw new IllegalArgumentException();
 		}
-		
+
 		affine = affineArray[idx];
 	}
 
@@ -70,22 +70,22 @@ public class FigureLayout {
 		if (trans == null) {
 			trans = new AffineTrans(4096, 0, 0, 0, 0, 4096, 0, 0, 0, 0, 4096, 0);
 		}
-		
+
 		if (affineArray == null) {
 			affineArray = new AffineTrans[1];
 			affineArray[0] = trans;
 		}
-		
+
 		affine = trans;
 	}
 
 	public final void setAffineTrans(AffineTrans[] trans) {
 		if (trans == null) throw new NullPointerException();
-		
+
 		for (int i = 0; i < trans.length; i++) {
 			if (trans[i] == null) throw new NullPointerException();
 		}
-		
+
 		affineArray = trans;
 	}
 
@@ -99,10 +99,6 @@ public class FigureLayout {
 	}
 
 	public final void setParallelSize(int w, int h) {
-		if (w < 0 || h < 0) {
-			throw new IllegalArgumentException();
-		}
-		
 		parallelWidth = w;
 		parallelHeight = h;
 		projectionMode = Graphics3D.COMMAND_PARALLEL_SIZE;
@@ -112,7 +108,7 @@ public class FigureLayout {
 		if (zNear >= zFar || zNear < 1 || zFar > 32767 || angle < 1 || angle > 2047) {
 			throw new IllegalArgumentException();
 		}
-		
+
 		near = zNear;
 		far = zFar;
 		this.angle = angle;
@@ -123,7 +119,7 @@ public class FigureLayout {
 		if (zNear >= zFar || zNear < 1 || zFar > 32767 || width < 0 || height < 0) {
 			throw new IllegalArgumentException();
 		}
-		
+
 		near = zNear;
 		far = zFar;
 		perspectiveWidth = width;

@@ -99,7 +99,7 @@
 ----
 # :memo: How to use the AWT frontend:
 
-Launching the AWT frontend (freej2me.jar) directly will bring up the standalone GUI, where you can load your application through the `File` menu, or by **dragging and dropping your JAR/JAD/KJX/MSD file onto it**. 
+Launching the AWT frontend (freej2me.jar) directly will bring up the standalone GUI, where you can load your application through the `File` menu, or by **dragging and dropping your JAR/JAD/KJX/MSD file onto it**.
 
 You can also configure many aspects of the runtime, including debug options:
 
@@ -116,22 +116,23 @@ Alternatively it can be launched from the command line with the following argume
 - `fullscreen` :arrow_right: `1 = yes, 0 = no`
 - `width` :arrow_right: `self explanatory, it's the virtual LCD's width`
 - `height` :arrow_right: `also self explanatory, it's the virtual LCD's height`
-- `scale` :arrow_right: `for windowed mode, dictates the scale that FreeJ2ME-Plus' window starts with.` 
+- `scale` :arrow_right: `for windowed mode, dictates the scale that FreeJ2ME-Plus' window starts with.`
   - '2' will make it 2X bigger than the original width and height size for example
   - **Note that using the '+' and '-' keys also let you scale the window by an integer factor of +-1**
 - `keyLayout` :arrow_right: `specifies which device key layout should be used when booting up.` These can be:
-  - `0 -> Default`
-  - `1 -> LG`
-  - `2 -> Motorola/Softbank`
-  - `3 -> Motorola Triplets`
-  - `4 -> Motorola V8`
-  - `5 -> Nokia Keyboard`
-  - `6 -> Sagem`
-  - `7 -> Siemens`
-  - `8 -> Sharp`
-  - `9 -> SKT`
-  - `10 -> KDDI`
-- `framerate` :arrow_right: `sets the maximum FPS applications are allowed to run at.` 
+  - `0  -> Default`
+  - `1  -> LG`
+  - `2  -> Motorola/Softbank`
+  - `3  -> Motorola Triplets`
+  - `4  -> Motorola V8`
+  - `5  -> Motorola A1000`
+  - `6  -> Nokia Keyboard`
+  - `7  -> Sagem`
+  - `8  -> Siemens`
+  - `9  -> Sharp`
+  - `10 -> SKT`
+  - `11 -> KDDI`
+- `framerate` :arrow_right: `sets the maximum FPS applications are allowed to run at.`
   - Can be any value, although '10' to '60' is the expected ballpark
 - `dojaversion` :arrow_right: `sets the DoJa/Star profile for the I-Appli to use.` These can be:
   - `10 -> Default`

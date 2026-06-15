@@ -16,7 +16,102 @@
 */
 package com.nttdocomo.opt.ui.j3d;
 
-public class AffineTrans 
+public class AffineTrans
 {
+	protected com.mascotcapsule.micro3d.v3.AffineTrans afTrans;
 
+	public AffineTrans() { afTrans = new com.mascotcapsule.micro3d.v3.AffineTrans(); }
+
+	public AffineTrans(int[][] a)
+	{
+		afTrans = new com.mascotcapsule.micro3d.v3.AffineTrans(a);
+	}
+
+	public AffineTrans(int m00, int m01, int m02, int m03,
+			int m10, int m11, int m12, int m13,
+			int m20, int m21, int m22, int m23)
+	{
+		afTrans = new com.mascotcapsule.micro3d.v3.AffineTrans(m00, m01, m02, m03, m10, m11, m12, m13,
+			m20, m21, m22, m23);
+	}
+
+	AffineTrans(com.mascotcapsule.micro3d.v3.AffineTrans trans) { afTrans = trans; }
+
+	public final void get(int[] a) { afTrans.get(a, 0); }
+
+	public final void get(int[] a, int offset) { afTrans.get(a, offset); }
+
+	public final void lookAt(Vector3D pos, Vector3D look, Vector3D up)
+	{
+		afTrans.lookAt((com.mascotcapsule.micro3d.v3.Vector3D) pos,
+			(com.mascotcapsule.micro3d.v3.Vector3D) look,
+			(com.mascotcapsule.micro3d.v3.Vector3D)up);
+	}
+
+	public final void mul(AffineTrans a) { afTrans.mul(this.afTrans, a.afTrans); }
+
+	public final void mul(AffineTrans a1, AffineTrans a2) { afTrans.mul(a1.afTrans, a2.afTrans); }
+
+	public final void multiply(AffineTrans a) { afTrans.mul(this.afTrans, a.afTrans); }
+
+	public final void multiply(AffineTrans a1, AffineTrans a2) { afTrans.mul(a1.afTrans, a2.afTrans); }
+
+	public final void rotationV(Vector3D v, int r)
+	{
+		afTrans.setRotation((com.mascotcapsule.micro3d.v3.Vector3D) v, r);
+	}
+
+	public final void rotationX(int r) { afTrans.rotationX(r); }
+
+	public final void rotationY(int r) { afTrans.rotationY(r); }
+
+	public final void rotationZ(int r) { afTrans.rotationZ(r); }
+
+	public final void set(AffineTrans a) { afTrans.set(a.afTrans); }
+
+	public final void set(int[] a) { afTrans.set(a, 0); }
+
+	public final void set(int[][] a) { afTrans.set(a); }
+
+	public final void set(int[] a, int offset) { afTrans.set(a, offset); }
+
+	public final void set(
+			int m00, int m01, int m02, int m03,
+			int m10, int m11, int m12, int m13,
+			int m20, int m21, int m22, int m23)
+	{
+		afTrans.set(m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23);
+	}
+
+	public final void setIdentity() { afTrans.setIdentity(); }
+
+	public final void setRotation(Vector3D v, int r)
+	{
+		afTrans.setRotation((com.mascotcapsule.micro3d.v3.Vector3D) v, r);
+	}
+
+	public final void setRotateX(int r) { afTrans.setRotationX(r); }
+
+	public final void setRotateY(int r) { afTrans.setRotationY(r); }
+
+	public final void setRotateZ(int r) { afTrans.setRotationZ(r); }
+
+	public final void setViewTrans(Vector3D pos, Vector3D look, Vector3D up)
+	{
+		afTrans.lookAt((com.mascotcapsule.micro3d.v3.Vector3D) pos,
+			(com.mascotcapsule.micro3d.v3.Vector3D) look,
+			(com.mascotcapsule.micro3d.v3.Vector3D) up);
+	}
+
+	public final Vector3D transform(Vector3D v)
+	{
+		return (Vector3D) afTrans.transform((com.mascotcapsule.micro3d.v3.Vector3D) v);
+	}
+
+	public final Vector3D transPoint(Vector3D v)
+	{
+		return (Vector3D) afTrans.transPoint((com.mascotcapsule.micro3d.v3.Vector3D) v);
+	}
+
+	public final com.mascotcapsule.micro3d.v3.AffineTrans getTrans() { return afTrans; }
 }

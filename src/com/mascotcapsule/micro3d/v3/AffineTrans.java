@@ -5,12 +5,13 @@
 
 package com.mascotcapsule.micro3d.v3;
 
-public class AffineTrans {
-	private static final Vector3D tmp = new Vector3D();
-	
+public class AffineTrans
+{
 	public int m00, m01, m02, m03;
 	public int m10, m11, m12, m13;
 	public int m20, m21, m22, m23;
+
+	private static final Vector3D tmp = new Vector3D();
 
 	public AffineTrans() {}
 
@@ -49,7 +50,7 @@ public class AffineTrans {
 		if (offset < 0 || a.length - offset < 12) {
 			throw new IllegalArgumentException();
 		}
-		
+
 		a[offset++] = m00;
 		a[offset++] = m01;
 		a[offset++] = m02;
@@ -123,7 +124,7 @@ public class AffineTrans {
 	public final void rotationX(int r) {
 		int cos = Util3D.cos(r);
 		int sin = Util3D.sin(r);
-		
+
 		m00 = 4096; m01 =   0; m02 =	0;
 		m10 =	0; m11 = cos; m12 = -sin;
 		m20 =	0; m21 = sin; m22 =  cos;
@@ -132,7 +133,7 @@ public class AffineTrans {
 	public final void rotationY(int r) {
 		int cos = Util3D.cos(r);
 		int sin = Util3D.sin(r);
-		
+
 		m00 =  cos; m01 =	0; m02 = sin;
 		m10 =	0; m11 = 4096; m12 =   0;
 		m20 = -sin; m21 =	0; m22 = cos;
@@ -148,7 +149,7 @@ public class AffineTrans {
 
 	public final void set(AffineTrans a) {
 		if (a == null) throw new NullPointerException();
-		
+
 		m00 = a.m00; m01 = a.m01; m02 = a.m02; m03 = a.m03;
 		m10 = a.m10; m11 = a.m11; m12 = a.m12; m13 = a.m13;
 		m20 = a.m20; m21 = a.m21; m22 = a.m22; m23 = a.m23;
@@ -164,7 +165,7 @@ public class AffineTrans {
 		if (a[0].length < 4 || (a[1].length < 4) || (a[2].length < 4)) {
 			throw new IllegalArgumentException();
 		}
-		
+
 		m00 = a[0][0]; m01 = a[0][1]; m02 = a[0][2]; m03 = a[0][3];
 		m10 = a[1][0]; m11 = a[1][1]; m12 = a[1][2]; m13 = a[1][3];
 		m20 = a[2][0]; m21 = a[2][1]; m22 = a[2][2]; m23 = a[2][3];
@@ -175,7 +176,7 @@ public class AffineTrans {
 		if (offset < 0 || a.length - offset < 12) {
 			throw new IllegalArgumentException();
 		}
-		
+
 		m00 = a[offset++];
 		m01 = a[offset++];
 		m02 = a[offset++];
@@ -208,7 +209,7 @@ public class AffineTrans {
 
 	public final void setRotation(Vector3D v, int r) {
 		if (v == null) throw new NullPointerException();
-		
+
 		int x = v.x;
 		int y = v.y;
 		int z = v.z;
@@ -250,7 +251,7 @@ public class AffineTrans {
 
 	public final Vector3D transform(Vector3D v) {
 		if (v == null) throw new NullPointerException();
-		
+
 		int x = (v.x * m00 + v.y * m01 + v.z * m02 + 2048 >> 12) + m03;
 		int y = (v.x * m10 + v.y * m11 + v.z * m12 + 2048 >> 12) + m13;
 		int z = (v.x * m20 + v.y * m21 + v.z * m22 + 2048 >> 12) + m23;
@@ -263,23 +264,23 @@ public class AffineTrans {
 
 	final void rotate(Vector3D v) {
 		int x = v.x, y = v.y, z = v.z;
-		
+
 		v.x = (x * m00 + y * m10 + z * m20 + 2048 >> 12);
 		v.y = (x * m01 + y * m11 + z * m21 + 2048 >> 12);
 		v.z = (x * m02 + y * m12 + z * m22 + 2048 >> 12);
 	}
-	
+
 	final void scale(Vector3D v) {
 		int x = v.x, y = v.y, z = v.z;
-		
+
 		m00 = m00 * x + 2048 >> 12;
 		m01 = m01 * y + 2048 >> 12;
 		m02 = m02 * z + 2048 >> 12;
-		
+
 		m10 = m10 * x + 2048 >> 12;
 		m11 = m11 * y + 2048 >> 12;
 		m12 = m12 * z + 2048 >> 12;
-		
+
 		m20 = m20 * x + 2048 >> 12;
 		m21 = m21 * y + 2048 >> 12;
 		m22 = m22 * z + 2048 >> 12;
@@ -307,9 +308,9 @@ public class AffineTrans {
 		m22 =  l20 * r02 + l21 * r12 + l22 * r22 + 2048 >> 12;
 		m23 = (l20 * r03 + l21 * r13 + l22 * r23 + 2048 >> 12) + a1.m23;
 	}
-	
+
 	final boolean isIdentity() {
-		return 
+		return
 				m00 == 4096 && m01 == 0 && m02 == 0 && m03 == 0 &&
 				m10 == 0 && m11 == 4096 && m12 == 0 && m13 == 0 &&
 				m20 == 0 && m21 == 0 && m22 == 4096 && m23 == 0;

@@ -72,14 +72,14 @@ import javax.microedition.media.decoders.MLDDecoder;
 import javax.microedition.media.decoders.WAVTools;
 import javax.microedition.media.decoders.WAVImaADPCMDecoder;
 import javax.microedition.media.decoders.WAVLawDecoder;
-/* EMS iMelody support */
-import javax.microedition.media.decoders.EMSiMelodyDecoder;
+/* Ericsson Melody support */
+import javax.microedition.media.decoders.EMSMelodyDecoder;
 /* audio/mpeg support */
 import javazoom.jl.player.MPEGPlayer;
 
 public class PlatformPlayer implements Player
 {
-	
+
 	private static final audioplayer[] sequencePlayers = new audioplayer[64];
 
 	private final byte NUM_CONTROLS = 4;
@@ -125,19 +125,19 @@ public class PlatformPlayer implements Player
 			else if(contentType.toLowerCase().contains("mp"))  { player = new MP3Player(stream); } // MP1, MP2, MP3, MPEG, etc. No other J2ME format has those two letters in sequence.
 			else /* If the stream doesn't have an accompanying type or its a type we don't have an explicit player for, do everything we can to try and load it */
 			{
-				try 
+				try
 				{
 					final byte[] data = new byte[stream.available()];
 					stream.read(data, 0, stream.available());
 
-					if(data.length >= 4 && data[0] == 'M' && data[1] == 'T' && data[2] == 'h' && data[3] == 'd') 
+					if(data.length >= 4 && data[0] == 'M' && data[1] == 'T' && data[2] == 'h' && data[3] == 'd')
 					{
 						Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MIDI!");
 						contentType = "audio/midi";
 						player = new midiPlayer(new ByteArrayInputStream(data));
 					}
 
-					else if (data.length >= 15 && data[8] == 'Q' && data[9] == 'L' && data[10] == 'C' && data[11] == 'M' && data[12] == 'f' && data[13] == 'm' && data[14] == 't') 
+					else if (data.length >= 15 && data[8] == 'Q' && data[9] == 'L' && data[10] == 'C' && data[11] == 'M' && data[12] == 'f' && data[13] == 'm' && data[14] == 't')
 					{
 						// This is for Qualcomm's QCP format, it has to be checked before wav, because Qualcomm's PureVoice also has RIFF as its first bytes
 						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is Qualcomm PureVoice! (not supported yet)");
@@ -145,7 +145,7 @@ public class PlatformPlayer implements Player
 						player = new audioplayer();
 						disableControls = true;
 					}
-					else if(data.length >= 4 && data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[3] == 'F') 
+					else if(data.length >= 4 && data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[3] == 'F')
 					{
 						Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is WAV!");
 						contentType = "audio/wav";
@@ -164,14 +164,14 @@ public class PlatformPlayer implements Player
 						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is SMAF/MMF! (not fully supported yet)");
 						contentType = "audio/mmf";
 						SMAFDecoder.decodeSMAF(data);
-						if(SMAFDecoder.SequenceData != null || SMAFDecoder.pcmData != null) 
+						if(SMAFDecoder.SequenceData != null || SMAFDecoder.pcmData != null)
 						{
-							if(Mobile.dumpAudioStreams) 
-							{ 
+							if(Mobile.dumpAudioStreams)
+							{
 								if(SMAFDecoder.SequenceData != null) { SMAFDecoder.SequenceData = Manager.dumpAudioStream(SMAFDecoder.SequenceData, contentType); }
-								if(SMAFDecoder.pcmData != null) 
+								if(SMAFDecoder.pcmData != null)
 								{
-									for(int i = 0; i < SMAFDecoder.pcmData.size(); i++) 
+									for(int i = 0; i < SMAFDecoder.pcmData.size(); i++)
 									{
 										if(SMAFDecoder.pcmData.get(i) == null) { continue; }
 										SMAFDecoder.pcmData.set(i, Manager.dumpAudioStream(SMAFDecoder.pcmData.get(i), contentType));
@@ -181,37 +181,36 @@ public class PlatformPlayer implements Player
 							player = new SMAFPlayer(SMAFDecoder.SequenceData, SMAFDecoder.pcmData.toArray(new InputStream[0]), new HashMap<Integer, Integer>(SMAFDecoder.pcmDataPositions), new HashMap<Integer, Integer>(SMAFDecoder.pcmDataVelocities));
 						}
 						else { player = new audioplayer(); disableControls = true; } // Somehow the SMAF decoder failed, retrieve a stub player
-						
+
 					}
-					else if((data.length >= 4 && data[0] == 'm' && data[1] == 'e' && data[2] == 'l' && data[3] == 'o') 
+					else if((data.length >= 4 && data[0] == 'm' && data[1] == 'e' && data[2] == 'l' && data[3] == 'o')
 							|| (data.length >= 4 && data[0] == 'c' && data[1] == 'm' && data[2] == 'i' && data[3] == 'd'))
 					{
-						if(data.length >= 4 && data[0] == 'm' && data[1] == 'e' && data[2] == 'l' && data[3] == 'o') 
+						if(data.length >= 4 && data[0] == 'm' && data[1] == 'e' && data[2] == 'l' && data[3] == 'o')
 						{
 							Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is MLD/MFi! (not fully supported yet)");
-							contentType = "audio/x-mld"; 
+							contentType = "audio/x-mld";
 						}
-						else if (data.length >= 4 && data[0] == 'c' && data[1] == 'm' && data[2] == 'i' && data[3] == 'd') 
-						{ 
+						else if (data.length >= 4 && data[0] == 'c' && data[1] == 'm' && data[2] == 'i' && data[3] == 'd')
+						{
 							Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is CMF! (not fully supported yet)");
-							contentType = "audio/x-cmf"; 
+							contentType = "audio/x-cmf";
 						}
 						MLDDecoder.decodeMLD(data);
-						if(MLDDecoder.SequenceData != null || MLDDecoder.pcmData != null) 
+						if(MLDDecoder.SequenceData != null || MLDDecoder.pcmData != null)
 						{
-							if(Mobile.dumpAudioStreams) 
-							{ 
+							if(Mobile.dumpAudioStreams)
+							{
 								if(MLDDecoder.SequenceData != null) { MLDDecoder.SequenceData = Manager.dumpAudioStream(MLDDecoder.SequenceData, contentType); }
-								if(MLDDecoder.pcmData != null) 
+								if(MLDDecoder.pcmData != null)
 								{
-									for(int i = 0; i < MLDDecoder.pcmData.size(); i++) 
+									for(int i = 0; i < MLDDecoder.pcmData.size(); i++)
 									{
 										MLDDecoder.pcmData.set(i, Manager.dumpAudioStream(MLDDecoder.pcmData.get(i), contentType));
 									}
 								}
 							}
-							// Yes, we are reusing SMAF's player for MLD, they're quite similar
-							player = new SMAFPlayer(MLDDecoder.SequenceData, MLDDecoder.pcmData.toArray(new InputStream[0]), new HashMap<Integer, Integer>(MLDDecoder.pcmDataPositions), new HashMap<Integer, Integer>(MLDDecoder.pcmDataVelocities));
+							player = new MLDPlayer(MLDDecoder.SequenceData, MLDDecoder.pcmData.toArray(new InputStream[0]), new HashMap<Integer, Integer>(MLDDecoder.pcmDataPositions), new HashMap<Integer, Integer>(MLDDecoder.pcmDataVelocities));
 						}
 						else { player = new audioplayer(); disableControls = true; } // Somehow the MLD decoder failed, retrieve a stub player
 					}
@@ -219,16 +218,22 @@ public class PlatformPlayer implements Player
 					{
 						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is EMS iMelody! (not fully supported yet)");
 						contentType = "audio/x-imy";
-						player = new midiPlayer(EMSiMelodyDecoder.decodeiMelody(data));
+						player = new midiPlayer(EMSMelodyDecoder.decodeMelody(data));
 					}
-					else if(data.length >= 6 && data[0] == '#' && data[1] == '!' && data[2] == 'A' && data[3] == 'M' && data[4] == 'R' && data[5] == '\n') 
+					else if(data.length >= 4 && data[0] == 'B' && data[1] == 'E' && data[2] == 'G' && data[3] == 'I' && data[4] == 'N' && data[5] == ':' && data[6] == 'E' && data[7] == 'M')
+					{
+						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is EMS eMelody! (not fully supported yet)");
+						contentType = "audio/x-emy";
+						player = new midiPlayer(EMSMelodyDecoder.decodeMelody(data));
+					}
+					else if(data.length >= 6 && data[0] == '#' && data[1] == '!' && data[2] == 'A' && data[3] == 'M' && data[4] == 'R' && data[5] == '\n')
 					{
 						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is AMR-NB! (not supported yet)");
 						contentType = "audio/amr (stub)";
 						player = new audioplayer();
 						disableControls = true;
-					} 
-					else if(data.length >= 9 && data[0] == '#' && data[1] == '!' && data[2] == 'A' && data[3] == 'M' && data[4] == 'R' && data[5] == '-' && data[6] == 'W' && data[7] == 'B' && data[8] == '\n') 
+					}
+					else if(data.length >= 9 && data[0] == '#' && data[1] == '!' && data[2] == 'A' && data[3] == 'M' && data[4] == 'R' && data[5] == '-' && data[6] == 'W' && data[7] == 'B' && data[8] == '\n')
 					{
 						Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Format is AMR-WB! (not supported yet)");
 						contentType = "audio/amr-wb (stub)";
@@ -269,7 +274,7 @@ public class PlatformPlayer implements Player
 
 	public PlatformPlayer(String locator)
 	{
-		if(locator.equals(Manager.TONE_DEVICE_LOCATOR) || locator.equals(Manager.MIDI_DEVICE_LOCATOR)) 
+		if(locator.equals(Manager.TONE_DEVICE_LOCATOR) || locator.equals(Manager.MIDI_DEVICE_LOCATOR))
 		{
 			Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + " Creating MIDI Player for locator: "+locator);
 			player = new midiPlayer();
@@ -279,8 +284,8 @@ public class PlatformPlayer implements Player
 			controls = new Control[NUM_CONTROLS];
 			controls[0] = new volumeControl(this.player); // Midi Player with Tones might not use this
 			controls[3] = new toneControl((midiPlayer) this.player);
-		} 
-		else 
+		}
+		else
 		{
 			Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "No player for locator: "+locator);
 			player = new audioplayer();
@@ -303,7 +308,7 @@ public class PlatformPlayer implements Player
 			controls = null;
 			player = null;
 			state = Player.CLOSED;
-			notifyListeners(PlayerListener.CLOSED, null);	
+			notifyListeners(PlayerListener.CLOSED, null);
 		}
 		catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not close player: " + e.getMessage()); e.printStackTrace(); }
 	}
@@ -313,7 +318,7 @@ public class PlatformPlayer implements Player
 	public void start()
 	{
 		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot call start() on a CLOSED player."); }
-		
+
 		if(getState() == Player.UNREALIZED) { realize(); }
 
 		if(getState() == Player.REALIZED) { prefetch(); }
@@ -324,9 +329,9 @@ public class PlatformPlayer implements Player
 	public void stop()
 	{
 		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot call stop() on a CLOSED player."); }
-		
-		if(getState() == Player.STARTED) 
-		{ 
+
+		if(getState() == Player.STARTED)
+		{
 			try { player.stop(); }
 			catch (Exception e) { }
 		}
@@ -358,7 +363,7 @@ public class PlatformPlayer implements Player
 	}
 
 	// Siemens listeners
-	public void addPlayerListener(com.siemens.mp.media.PlayerListener playerListener) 
+	public void addPlayerListener(com.siemens.mp.media.PlayerListener playerListener)
 	{
 		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot remove PlayerListener from a CLOSED player"); }
 		if(playerListener == null) { return; }
@@ -366,7 +371,7 @@ public class PlatformPlayer implements Player
 		siemensListeners.add(playerListener);
 	}
 
-	public void removePlayerListener(com.siemens.mp.media.PlayerListener playerListener) 
+	public void removePlayerListener(com.siemens.mp.media.PlayerListener playerListener)
 	{
 		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot remove PlayerListener from a CLOSED player"); }
 		if(playerListener == null) { return; }
@@ -377,7 +382,7 @@ public class PlatformPlayer implements Player
 	// KDDI listeners
 	public void addMediaPlayerBox(com.kddi.media.MediaPlayerBox box) { this.kddiPlayerBox = box; }
 
-	public void addPlayerListener(com.kddi.media.MediaEventListener playerListener) 
+	public void addPlayerListener(com.kddi.media.MediaEventListener playerListener)
 	{
 		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot remove PlayerListener from a CLOSED player"); }
 		if(playerListener == null) { return; }
@@ -385,7 +390,7 @@ public class PlatformPlayer implements Player
 		kddiListeners.add(playerListener);
 	}
 
-	public void removePlayerListener(com.kddi.media.MediaEventListener playerListener) 
+	public void removePlayerListener(com.kddi.media.MediaEventListener playerListener)
 	{
 		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot remove PlayerListener from a CLOSED player"); }
 		if(playerListener == null) { return; }
@@ -404,10 +409,10 @@ public class PlatformPlayer implements Player
 	}
 
 	// JBlend/Vodafone/KDDI, etc Phrase listeners
-	public void setPhraseListener(com.jblend.media.smaf.phrase.PhraseTrackListener listener) 
+	public void setPhraseListener(com.jblend.media.smaf.phrase.PhraseTrackListener listener)
 	{
 		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot add SoundListener to an UNINITIALIZED Sound"); }
-		
+
 		if(listener == null) { return; }
 
 		phraseListener = listener;
@@ -416,20 +421,20 @@ public class PlatformPlayer implements Player
 	public void notifyListeners(String event, Object eventData)
 	{
 		// Paused events will never happen for these three
-		
+
 		for(int i=0; i<listeners.size(); i++)
 		{
 			if(event == PlayerListener.LOOPED) { event = PlayerListener.END_OF_MEDIA; }
 			listeners.get(i).playerUpdate(this, event, eventData);
 		}
 
-		for(int i=0; i < siemensListeners.size(); i++) 
+		for(int i=0; i < siemensListeners.size(); i++)
 		{
 			if(event == PlayerListener.LOOPED) { event = PlayerListener.END_OF_MEDIA; }
 			siemensListeners.get(i).playerUpdate((com.siemens.mp.media.Player) this, event, eventData);
 		}
 
-		if(nokiaListener != null) 
+		if(nokiaListener != null)
 		{
 			if(event == PlayerListener.CLOSED) { nokiaListener.soundStateChanged(nokiaSound, Sound.SOUND_UNINITIALIZED); }
 			else if(event == PlayerListener.STARTED) { nokiaListener.soundStateChanged(nokiaSound, Sound.SOUND_PLAYING); }
@@ -438,7 +443,7 @@ public class PlatformPlayer implements Player
 
 		// These are more robust and have additional events
 
-		if(kddiListeners.size() > 0) 
+		if(kddiListeners.size() > 0)
 		{
 			int kddiEvent = 0;
 			int kddiData = getState() == Player.CLOSED ? 0 : (int) getMediaTime(); // This is an optional integer argument according to KDDI docs, but let's send the current media time nonetheless
@@ -447,14 +452,14 @@ public class PlatformPlayer implements Player
 			else if(event == PlayerListener.CLOSED) { kddiEvent = com.kddi.media.MediaPlayerBox.STOP; }
 			else if(event == PlayerListener.STOPPED) { kddiEvent = com.kddi.media.MediaPlayerBox.PAUSE; }
 			else if(event == PlayerListener.END_OF_MEDIA || event == PlayerListener.LOOPED) { kddiEvent = com.kddi.media.MediaPlayerBox.PAUSE; }
-			
-			for(int i=0; i < kddiListeners.size(); i++) 
+
+			for(int i=0; i < kddiListeners.size(); i++)
 			{
 				kddiListeners.get(i).stateChanged(this.kddiPlayerBox, kddiEvent, kddiData);
 			}
 		}
-		
-		if(doJaListener != null) 
+
+		if(doJaListener != null)
 		{
 			int doJaData = getState() == Player.CLOSED ? 0 : (int) getMediaTime();
 			if(event == PlayerListener.CLOSED) { doJaListener.mediaAction(doJaPresenter, com.nttdocomo.ui.AudioPresenter.AUDIO_STOPPED, doJaData); }
@@ -465,7 +470,7 @@ public class PlatformPlayer implements Player
 			else if(event == PlayerListener.LOOPED) { doJaListener.mediaAction(doJaPresenter, com.nttdocomo.ui.AudioPresenter.AUDIO_LOOPED, doJaData); }
 		}
 
-		if(phraseListener != null) 
+		if(phraseListener != null)
 		{
 			// Phrase listeners don't have events types for STOP and START, but they do have quite a few USER_* events though...
 			//if(event == PlayerListener.CLOSED) { phraseListener.mediaAction(com.nttdocomo.ui.AudioPresenter.AUDIO_STOPPED); }
@@ -479,43 +484,43 @@ public class PlatformPlayer implements Player
 	public void deallocate()
 	{
 		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot deallocate player, it is already CLOSED."); }
-		
+
 		if(getState() >= Player.REALIZED && isRunning()) { stop(); }
 		player.deallocate();
 
-		/* 
-		 * Only set state to REALIZED if we have effectively moved into REALIZED or higher (PREFETCHED, etc), 
+		/*
+		 * Only set state to REALIZED if we have effectively moved into REALIZED or higher (PREFETCHED, etc),
 		 * as deallocate can be called during the transition from UNREALIZED to REALIZED, and if that happens,
 		 * we can't actually set it as REALIZED, it must be kept as UNREALIZED.
 		 */
-		if(state > Player.UNREALIZED) 
+		if(state > Player.UNREALIZED)
 		{
 			player.realize();
-			state = Player.REALIZED; 
+			state = Player.REALIZED;
 		}
 	}
 
-	public String getContentType() 
+	public String getContentType()
 	{
 		if(getState() == Player.UNREALIZED || getState() == Player.CLOSED) { throw new IllegalStateException("Cannot get content type. Player is either CLOSED or UNREALIZED."); }
-		
-		return contentType; 
+
+		return contentType;
 	}
 
-	public long getDuration() 
-	{ 
+	public long getDuration()
+	{
 		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot call getDuration() on a CLOSED player."); }
 
 		if(getState() == Player.REALIZED || getState() == Player.UNREALIZED) { return Player.TIME_UNKNOWN; }
-		
+
 		return player.getDuration(); // Maybe not really needed? We should find a jar that actually uses this for something
 	}
 
-	public long getMediaTime() 
+	public long getMediaTime()
 	{
 		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot call getMediaTime on a CLOSED player."); }
-		
-		/* 
+
+		/*
 		 * If the player isn't at least prefetched, there's no way to get media time.
 		 * PlatformPlayer does in fact acquire everything needed to play the media on realize(),
 		 * however, J2ME docs state that the exclusive and scarce resources (such as an actual
@@ -524,36 +529,36 @@ public class PlatformPlayer implements Player
 		 */
 		if(getState() == Player.UNREALIZED || getState() == Player.REALIZED) { return Player.TIME_UNKNOWN; }
 
-		return player.getMediaTime(); 
+		return player.getMediaTime();
 	}
 
 	/* Both midi and wav players do little more than just set their state as PREFETCHED here. */
-	public void prefetch() 
+	public void prefetch()
 	{
 		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot prefetch player, as it is in the CLOSED state."); }
-		
+
 		if(getState() == Player.UNREALIZED) { realize(); }
-		
+
 		if(getState() == Player.REALIZED) { player.prefetch(); }
 	}
 
-	public void realize() 
+	public void realize()
 	{
 		if(getState() == Player.CLOSED) { throw new IllegalStateException("Cannot realize player, as it is in the CLOSED state"); }
-		
+
 		if(getState() == Player.UNREALIZED) { player.realize(); }
 	}
 
-	public void setLoopCount(int count) 
+	public void setLoopCount(int count)
 	{
 		/* A MIDlet setting 0 explicitly here is illegal */
 		if(count == 0) {throw new IllegalStateException("Jar tried to set loop count as 0.");}
 		if(getState() == Player.CLOSED || getState() == Player.STARTED) { throw new IllegalStateException("Jar tried to set loop count on a player in an invalid state."); }
 
-		player.setLoopCount(count); 
+		player.setLoopCount(count);
 	}
 
-	public long setMediaTime(long now) 
+	public long setMediaTime(long now)
 	{
 		if(getState() == Player.UNREALIZED || getState() == Player.CLOSED) { throw new IllegalStateException("Cannot set Media Time. Player is either UNREALIZED or CLOSED."); }
 
@@ -573,34 +578,34 @@ public class PlatformPlayer implements Player
 		if(controlType.contains("TempoControl"))  { return controls[1]; }
 		if(controlType.contains("MIDIControl"))   { return controls[2]; }
 		if(controlType.contains("ToneControl"))   { return controls[3]; }
-		
+
 		return null;
 	}
 
-	public Control[] getControls() 
+	public Control[] getControls()
 	{
 		if(disableControls) { return controls; }
 		if(getState() == Player.CLOSED || getState() == Player.UNREALIZED) { throw new IllegalStateException("Cannot call getControls(), as the player is either CLOSED or UNREALIZED."); }
 
-		return controls; 
+		return controls;
 	}
 
 	public static void addPlayerToStack(midiPlayer midplayer, wavPlayer wavplayer, MP3Player mpegPlayer, SMAFPlayer smafPlayer)
 	{
-		if(midplayer != null) 
+		if(midplayer != null)
 		{
-			for(int i = 0; i < sequencePlayers.length; i++) 
+			for(int i = 0; i < sequencePlayers.length; i++)
 			{
-				if(sequencePlayers[i] == null || sequencePlayers[i].getSequence() == null) 
+				if(sequencePlayers[i] == null || sequencePlayers[i].getSequence() == null)
 				{
 					sequencePlayers[i] = midplayer;
 					return;
 				}
 			}
 			// All players are occupied, find the first stopped one to be replaced
-			for(int i = 0; i < sequencePlayers.length; i++) 
+			for(int i = 0; i < sequencePlayers.length; i++)
 			{
-				if(sequencePlayers[i] != null && !sequencePlayers[i].isRunning()) 
+				if(sequencePlayers[i] != null && !sequencePlayers[i].isRunning())
 				{
 					sequencePlayers[i].deallocate();
 					sequencePlayers[i].close();
@@ -610,20 +615,20 @@ public class PlatformPlayer implements Player
 				}
 			}
 		}
-		else if(smafPlayer != null) 
+		else if(smafPlayer != null)
 		{
-			for(int i = 0; i < sequencePlayers.length; i++) 
+			for(int i = 0; i < sequencePlayers.length; i++)
 			{
-				if(sequencePlayers[i] == null || sequencePlayers[i].getSequence() == null) 
+				if(sequencePlayers[i] == null || sequencePlayers[i].getSequence() == null)
 				{
 					sequencePlayers[i] = smafPlayer;
 					return;
 				}
 			}
 			// All players are occupied, find the first stopped one to be replaced
-			for(int i = 0; i < sequencePlayers.length; i++) 
+			for(int i = 0; i < sequencePlayers.length; i++)
 			{
-				if(sequencePlayers[i] != null && !sequencePlayers[i].isRunning()) 
+				if(sequencePlayers[i] != null && !sequencePlayers[i].isRunning())
 				{
 					sequencePlayers[i].deallocate();
 					sequencePlayers[i].close();
@@ -1082,6 +1087,7 @@ public class PlatformPlayer implements Player
 		public Synthesizer synthesizer;
 		private int synthIdx = 0;
 		public Receiver rawReceiver;
+		private boolean synthReserved = false;
 		public Receiver receiver;
 		private Transmitter transmitter;
 		private int numLoops = 0;
@@ -1092,32 +1098,32 @@ public class PlatformPlayer implements Player
 			Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Midi Player [locator] untested");
 
 			// Create an empty sequence, which should be overriden with whatever setSequence() receives.
-			try 
-			{ 
+			try
+			{
 				midiSequence = new Sequence(Sequence.PPQ, 24);
 				PlatformPlayer.addPlayerToStack(this, null, null, null);
-			} 
+			}
 			catch (Exception e) {  Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load midi file:" + e.getMessage()); }
-			
-			
+
+
 		}
 
-		public midiPlayer(InputStream stream) 
+		public midiPlayer(InputStream stream)
 		{
 			byte[] midiData = null;
-			
-			try 
-			{ 
+
+			try
+			{
 				midiData = new byte[stream.available()];
 				stream.read(midiData, 0, stream.available());
-				
+
 				midiSequence = MidiSystem.getSequence(new ByteArrayInputStream(midiData));
 				PlatformPlayer.addPlayerToStack(this, null, null, null);
-			} 
-			catch (Exception e) 
+			}
+			catch (Exception e)
 			{
 				Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load MIDI file: " + e.getMessage() + ". Trying to patch running status bytes...");
-				try 
+				try
 				{
 					midiSequence = MidiSystem.getSequence(MIDIPatcher.patchMIDIFile(midiData));
 					Mobile.log(Mobile.LOG_INFO, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "MIDI patching succeeded!");
@@ -1128,53 +1134,48 @@ public class PlatformPlayer implements Player
 
 		public void realize() { state = Player.REALIZED; }
 
-		public void prefetch() 
-		{ 
-			try 
+		public void prefetch()
+		{
+			try
 			{
 				midi = MidiSystem.getSequencer(false);
 				transmitter = midi.getTransmitter();
 				midi.open();
-				midi.addMetaEventListener(new MetaEventListener() 
+				midi.addMetaEventListener(new MetaEventListener()
 				{
 					@Override
-					public void meta(MetaMessage meta) 
+					public void meta(MetaMessage meta)
 					{
 						if (meta.getType() == 0x2F) // 0x2F = END_OF_MEDIA in Sequencer
 						{
 							state = Player.PREFETCHED;
 							curTime = getMediaTime();
-							if(numLoops != 0) 
+							if(numLoops != 0)
 							{
 								notifyListeners(PlayerListener.LOOPED, getMediaTime());
 								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
 								setMediaTime(0);
-								if(!Manager.isUsingExternalMidiReceiver()) { Manager.synthIdxInUse[synthIdx] = false; } // It just stopped, so set synth usage to false or the start call will get a new one
 								start();
 							}
-							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); if(!Manager.isUsingExternalMidiReceiver()) { Manager.synthIdxInUse[synthIdx] = false; } }
+							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); }
 						}
 					}
 				});
 				prepareMidiSubsystem();
 				state = Player.PREFETCHED;
 			}
-			catch(Exception e) 
+			catch(Exception e)
 			{
 				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not prefetch midi stream:" + e.getMessage());
-				state = Player.REALIZED; 
+				state = Player.REALIZED;
 			}
 		}
 
 		public void start()
 		{
-			try 
+			try
 			{
-				if(!Manager.isUsingExternalMidiReceiver())
-				{
-					if(Manager.synthIdxInUse[synthIdx] == true) { prepareMidiSubsystem(); }
-					Manager.synthIdxInUse[synthIdx] = true;
-				}
+				if(!synthReserved || midi.getSequence() == null) { prepareMidiSubsystem(); }
 
 				if(curTime >= getDuration()) { setMediaTime(0); } // If mediaTime >= getDuration, we should start playing from the beginning
 				else { setMediaTime(curTime); } // Else, resume from where it stopped
@@ -1195,17 +1196,17 @@ public class PlatformPlayer implements Player
 		public void stop()
 		{
 			midi.stop();
-			if(!Manager.isUsingExternalMidiReceiver()) { Manager.synthIdxInUse[synthIdx] = false; }
 			getMediaTime();
 			state = Player.PREFETCHED;
 			notifyListeners(PlayerListener.STOPPED, getMediaTime());
 		}
 
-		public void deallocate() 
-		{ 
+		public void deallocate()
+		{
 			transmitter = null;
 			rawReceiver = null;
 			receiver = null;
+			if(synthReserved) { Manager.synthIdxInUse[synthIdx] = false; synthReserved = false; }
 			if(midi != null) { midi.close(); }
 		}
 
@@ -1213,7 +1214,7 @@ public class PlatformPlayer implements Player
 
 		public void setLoopCount(int count)
 		{
-			/* 
+			/*
 			 * Treat cases where an app wants this stream to loop continuously.
 			 * Here, count = 1 means it should loop one time, whereas in j2me
 			 * it appears that count = 1 means no loop at all, at least based
@@ -1225,25 +1226,25 @@ public class PlatformPlayer implements Player
 
 		public long setMediaTime(long now)
 		{
-			try 
+			try
 			{
 				if(now >= getDuration()) { midi.setMicrosecondPosition(getDuration()); }
 				else if(now < 0) { midi.setMicrosecondPosition(0); }
 				else { midi.setMicrosecondPosition(now);  }
 			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to set MIDI position:" + e.getMessage()); }
-			
-			/* 
+
+			/*
 			 * MicrosecondPosition doesn't guarantee perfect precision, so return the new
 			 * effective position according to the stream.
 			 */
 			return getMediaTime();
 		}
 
-		public long getMediaTime() 
-		{ 
-			curTime = midi.getMicrosecondPosition(); 
-			return midi.getMicrosecondPosition(); 
+		public long getMediaTime()
+		{
+			curTime = midi.getMicrosecondPosition();
+			return midi.getMicrosecondPosition();
 		}
 
 		public long getDuration() { return midi.getMicrosecondLength(); }
@@ -1252,15 +1253,15 @@ public class PlatformPlayer implements Player
 
 		public Sequence getSequence() { return midiSequence; }
 
-		public void setSequence(InputStream sequence) 
-		{ 
+		public void setSequence(InputStream sequence)
+		{
 			try { midiSequence = MidiSystem.getSequence(sequence); }
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to set MIDI sequence:" + e.getMessage());  }
 		}
 
 		private void prepareMidiSubsystem() throws MidiUnavailableException, InvalidMidiDataException
 		{
-			if(midi.getSequence() == null || Manager.synthIdxInUse[synthIdx] == true) 
+			if(midi.getSequence() == null || !synthReserved)
 			{
 				if(Manager.isUsingExternalMidiReceiver() && Manager.getExternalMidiReceiver() != null)
 				{
@@ -1271,12 +1272,14 @@ public class PlatformPlayer implements Player
 				else
 				{
 					this.synthIdx = Manager.retrieveAvailableSynthIndex();
+					Manager.synthIdxInUse[synthIdx] = true;
 					this.synthesizer = Manager.exclusiveSynths[synthIdx];
 					this.rawReceiver = this.synthesizer.getReceiver();
 				}
 
 				this.receiver = new VolumeFilteredReceiver(this.rawReceiver, (volumeControl) controls[0]);
 				transmitter.setReceiver(this.receiver);
+				synthReserved = true;
 				midi.setSequence(midiSequence);
 			}
 		}
@@ -1290,38 +1293,43 @@ public class PlatformPlayer implements Player
 		public Synthesizer synthesizer;
 		private int synthIdx = 0;
 		public Receiver rawReceiver;
+		private boolean synthReserved = false;
 		public Receiver receiver;
 		private Transmitter transmitter;
 		private int numLoops = 0;
 		private long curTime = 0;
+		private boolean sequencerLoopConfigured = false;
+		private boolean hasMidiPlaybackEvents = false;
 
 		// Meanwhile, sampled data will be treated like "additional" instruments
 		private boolean isPlaying = false;
 		private AudioInputStream[] wavStreams = null;
 		public Clip[] wavClips = null;
+		private final Object pcmClipLock = new Object();
 		private Map<Integer, Integer> pcmPositions, pcmVelocities;
 
 		public SMAFPlayer(InputStream midiStream, InputStream[] wavStreams, Map<Integer, Integer> pcmPositions, Map<Integer, Integer> pcmVelocities)
 		{
-			try 
+			try
 			{
 				midiSequence = MidiSystem.getSequence(midiStream);
-				if(wavStreams.length > 0) 
+				hasMidiPlaybackEvents = hasMidiPlaybackEvents(midiSequence);
+				if(wavStreams.length > 0)
 				{
 					this.wavStreams = new AudioInputStream[wavStreams.length];
 					this.pcmPositions = pcmPositions;
 					this.pcmVelocities = pcmVelocities;
 					wavClips = new Clip[wavStreams.length];
-					for(int i = 0; i < wavStreams.length; i++) 
+					for(int i = 0; i < wavStreams.length; i++)
 					{
 						if(wavStreams[i] == null) { continue; }
-						
+
 						this.wavStreams[i] = AudioSystem.getAudioInputStream(wavStreams[i]);
 					}
 				}
 				PlatformPlayer.addPlayerToStack(null, null, null, this);
-			} 
-			catch (Exception e) 
+			}
+			catch (Exception e)
 			{
 				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't load SMAF data: " + e.getMessage());
 			}
@@ -1329,49 +1337,64 @@ public class PlatformPlayer implements Player
 
 		public void realize() { state = Player.REALIZED; }
 
-		public void prefetch() 
-		{ 
-			try 
+		public void prefetch()
+		{
+			try
 			{
+				if(!hasMidiPlaybackEvents && !hasPcmStreams())
+				{
+					state = Player.PREFETCHED;
+					return;
+				}
 				midi = MidiSystem.getSequencer(false);
-				transmitter = midi.getTransmitter();
+				if(hasMidiPlaybackEvents) { transmitter = midi.getTransmitter(); }
 				midi.open();
-				midi.addMetaEventListener(new MetaEventListener() 
+				midi.addMetaEventListener(new MetaEventListener()
 				{
 					@Override
-					public void meta(MetaMessage meta) 
+					public void meta(MetaMessage meta)
 					{
+						handleSequenceMeta(meta);
 						if (meta.getType() == 0x2F) // 0x2F = END_OF_MEDIA in Sequencer
 						{
 							state = Player.PREFETCHED;
 							curTime = getMediaTime();
-							if(numLoops != 0) 
+							if(sequencerLoopConfigured)
+							{
+								notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime());
+								isPlaying = false;
+							}
+							else if(numLoops != 0)
 							{
 								notifyListeners(PlayerListener.LOOPED, getMediaTime());
 								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
 								setMediaTime(0);
-								if(!Manager.isUsingExternalMidiReceiver()) { Manager.synthIdxInUse[synthIdx] = false; }
 								start();
 							}
-							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); if(!Manager.isUsingExternalMidiReceiver()) { Manager.synthIdxInUse[synthIdx] = false; } isPlaying = false; }
+							else { notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime()); isPlaying = false; }
 						}
 					}
 				});
-				prepareMidiSubsystem();
-
-				if(wavStreams != null) 
+				if(hasMidiPlaybackEvents) { prepareMidiSubsystem(); }
+				else
 				{
-					for(int i = 0; i < wavStreams.length; i++) 
+					midi.setSequence(midiSequence);
+					configureSequencePlayback();
+				}
+
+				if(wavStreams != null)
+				{
+					for(int i = 0; i < wavStreams.length; i++)
 					{
 						if(wavStreams[i] == null) { continue; }
 
 						wavClips[i] = AudioSystem.getClip();
 						wavClips[i].open(wavStreams[i]);
-					} 
+					}
 				}
 				state = Player.PREFETCHED;
 			}
-			catch (Exception e) 
+			catch (Exception e)
 			{
 				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not prefetch SMAF stream:" + e.getMessage());
 				state = Player.UNREALIZED;
@@ -1381,14 +1404,15 @@ public class PlatformPlayer implements Player
 
 		public void start()
 		{
-			try 
+			try
 			{
-				if(!Manager.isUsingExternalMidiReceiver())
+				if(!hasMidiPlaybackEvents && !hasPcmClips())
 				{
-					// If the currently bound synth is already in use before starting, jump to another one
-					if(Manager.synthIdxInUse[synthIdx] == true) { prepareMidiSubsystem(); }
-					Manager.synthIdxInUse[synthIdx] = true;
+					state = Player.PREFETCHED;
+					notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime());
+					return;
 				}
+				if(hasMidiPlaybackEvents && (!synthReserved || midi.getSequence() == null)) { prepareMidiSubsystem(); }
 
 				if(curTime >= getDuration()) { setMediaTime(0); } // If mediaTime >= getDuration, we should start playing from the beginning
 				else { setMediaTime(curTime); } // Else, resume from where it stopped
@@ -1398,7 +1422,7 @@ public class PlatformPlayer implements Player
 				notifyListeners(PlayerListener.STARTED, getMediaTime());
 
 				// Start a separate thread to handle SMAF's sequence + PCM playback
-				new Thread(new Runnable() 
+				new Thread(new Runnable()
 				{
 					@Override
 					public void run() { handleSmafPlayback(); }
@@ -1407,8 +1431,8 @@ public class PlatformPlayer implements Player
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to clean MIDI sequencer and start playback:" + e.getMessage()); }
 		}
 
-		private void handleSmafPlayback() 
-		{	
+		private void handleSmafPlayback()
+		{
 			Set<Integer> playedPositions = new HashSet<Integer>();
 
 			// Assert volume before tick-0 messages to avoid start burst.
@@ -1416,44 +1440,45 @@ public class PlatformPlayer implements Player
 			try { if (receiver instanceof VolumeFilteredReceiver) { ((VolumeFilteredReceiver) receiver).resetPriming(); } } catch (Throwable ignore) { }
 			if (Manager.isUsingExternalMidiReceiver()) { LockSupport.parkNanos(20000000L); }
 			midi.start();
-			while (isPlaying && wavClips != null) 
+			while (isPlaying && wavClips != null)
 			{
 				int mediaTime = (int) (getMediaTime() / 1000);
-		
+
 				// Check for PCM files with playback positions lower than mediaTime
-				for (Integer position : pcmPositions.keySet()) 
+				for (Integer position : pcmPositions.keySet())
 				{
-					if (position < mediaTime && !playedPositions.contains(position)) 
+					if (position < mediaTime && !playedPositions.contains(position))
 					{
 						int pcmIndex = pcmPositions.get(position);
 						playPcmStream(pcmIndex, pcmVelocities.get(position));
 						playedPositions.add(position); // Mark this position as played, otherwise it'll repeat when it shouldn't
 					}
 				}
-		
+
 				// Sleep for a bit to not hammer the CPU too hard with constant checks (this can cause issues if the sequence has sub-5ms pcm requests, but that would be egregious)
 				try { Thread.sleep(5); }
 				catch (InterruptedException e) { }
 			}
 		}
 
-		private void playPcmStream(int pcmIndex, int velocity) 
+		private void playPcmStream(int pcmIndex, int velocity)
 		{
-			if (pcmIndex < wavClips.length && wavClips[pcmIndex] != null) 
+			synchronized(pcmClipLock)
 			{
-				for(int i = 0; i < wavClips.length; i++) 
-				{ 
+				if (wavClips == null || pcmIndex < 0 || pcmIndex >= wavClips.length || wavClips[pcmIndex] == null) { return; }
+				for(int i = 0; i < wavClips.length; i++)
+				{
 					if(wavClips[i] == null) { continue; }
-					wavClips[i].stop(); 
-					wavClips[i].flush(); 
+					wavClips[i].stop();
+					wavClips[i].flush();
 				}
 
 				// Set volume based on matched "velocity" value
 				FloatControl volumeControl = (FloatControl) wavClips[pcmIndex].getControl(FloatControl.Type.MASTER_GAIN);
-				
+
 				// Calculate volume based on velocity
 				float dB = -30.0f + ((velocity / 127.0f) * (30.0f));
-				
+
 				if(dB > 6.0f) { dB = 6.0f; }
 				// Set the volume
 				volumeControl.setValue(dB);
@@ -1466,59 +1491,54 @@ public class PlatformPlayer implements Player
 		public void stop()
 		{
 			midi.stop();
-			if(!Manager.isUsingExternalMidiReceiver()) { Manager.synthIdxInUse[synthIdx] = false; }
-			getMediaTime();
-			if(wavClips != null) 
-			{
-				for(int i = 0; i < wavClips.length; i++) 
-				{ 
-					if(wavClips[i] == null) { continue; }
-					wavClips[i].stop(); 
-				}
-			}
+			stopActivePcmClips();
 			isPlaying = false;
 			state = Player.PREFETCHED;
 			notifyListeners(PlayerListener.STOPPED, getMediaTime());
 		}
 
-		public void deallocate() 
+		public void deallocate()
 		{
 			transmitter = null;
 			rawReceiver = null;
 			receiver = null;
+			if(synthReserved) { Manager.synthIdxInUse[synthIdx] = false; synthReserved = false; }
 			if(midi != null) { midi.close(); }
 
-			if(wavClips != null) 
+			synchronized(pcmClipLock)
 			{
-				for(int i = 0; i < wavClips.length; i++) 
-				{ 
-					if(wavClips[i] == null) { continue; }
-					wavClips[i].stop(); 
-					wavClips[i].close(); 
+				if(wavClips != null)
+				{
+					for(int i = 0; i < wavClips.length; i++)
+					{
+						if(wavClips[i] == null) { continue; }
+						wavClips[i].stop();
+						wavClips[i].close();
+					}
 				}
 			}
 
 			isPlaying = false;
 		}
 
-		public void close() 
+		public void close()
 		{
 			midiSequence = null;
 
-			if(wavStreams != null) 
+			if(wavStreams != null)
 			{
-				for(int i = 0; i < wavStreams.length; i++) 
+				for(int i = 0; i < wavStreams.length; i++)
 				{
 					wavStreams[i] = null;
 				}
 			}
-			
+
 			isPlaying = false;
 		}
 
 		public void setLoopCount(int count)
 		{
-			/* 
+			/*
 			 * Treat cases where an app wants this stream to loop continuously.
 			 * Here, count = 1 means it should loop one time, whereas in j2me
 			 * it appears that count = 1 means no loop at all, at least based
@@ -1530,42 +1550,60 @@ public class PlatformPlayer implements Player
 
 		public long setMediaTime(long now)
 		{
-			try 
+			try
 			{
-				if(now >= getDuration()) { midi.setMicrosecondPosition(getDuration()); }
-				else if(now < 0) { midi.setMicrosecondPosition(0); }
-				else { midi.setMicrosecondPosition(now);  }
+				if(now >= getDuration()) { now = getDuration(); }
+				else if(now < 0) { now = 0; }
+
+				synchronized(pcmClipLock)
+				{
+					if(wavClips != null)
+					{
+						for(int i = 0; i < wavClips.length; i++)
+						{
+							if(wavClips[i] != null) { wavClips[i].setMicrosecondPosition(0); }
+						}
+					}
+				}
+
+				if (midi != null) { midi.setMicrosecondPosition(now); }
 			}
-			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to set MIDI position:" + e.getMessage()); }
-			
-			/* 
+			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to set SMAF/MLD position:" + e.getMessage()); }
+
+			/*
 			 * MicrosecondPosition doesn't guarantee perfect precision, so return the new
 			 * effective position according to the stream.
 			 */
 			return getMediaTime();
 		}
 
-		public long getMediaTime() 
-		{ 
+		public long getMediaTime()
+		{
+			if(midi == null) { return curTime; }
 			curTime = midi.getMicrosecondPosition();
-			return midi.getMicrosecondPosition(); 
+			return midi.getMicrosecondPosition();
 		}
 
-		public long getDuration() { return midi.getMicrosecondLength(); }
+		public long getDuration() { return midi == null ? 0 : midi.getMicrosecondLength(); }
 
 		public boolean isRunning() { return isPlaying; }
 
 		public Sequence getSequence() { return midiSequence; }
 
-		public void setSequence(InputStream sequence) 
-		{ 
-			try { midiSequence = MidiSystem.getSequence(sequence); }
+		public void setSequence(InputStream sequence)
+		{
+			try
+			{
+				midiSequence = MidiSystem.getSequence(sequence);
+				hasMidiPlaybackEvents = hasMidiPlaybackEvents(midiSequence);
+				sequencerLoopConfigured = false;
+			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to set MIDI sequence:" + e.getMessage());  }
 		}
 
 		private void prepareMidiSubsystem() throws MidiUnavailableException, InvalidMidiDataException
 		{
-			if(midi.getSequence() == null || (!Manager.isUsingExternalMidiReceiver() && Manager.synthIdxInUse[synthIdx] == true)) 
+			if(midi.getSequence() == null || !synthReserved)
 			{
 				if(Manager.isUsingExternalMidiReceiver() && Manager.getExternalMidiReceiver() != null)
 				{
@@ -1576,13 +1614,135 @@ public class PlatformPlayer implements Player
 				else
 				{
 					this.synthIdx = Manager.retrieveAvailableSynthIndex();
+					Manager.synthIdxInUse[synthIdx] = true;
 					this.synthesizer = Manager.exclusiveSynths[synthIdx];
 					this.rawReceiver = this.synthesizer.getReceiver();
 				}
 				this.receiver = new VolumeFilteredReceiver(this.rawReceiver, (volumeControl) controls[0]);
 				transmitter.setReceiver(this.receiver);
+				synthReserved = true;
 				midi.setSequence(midiSequence);
+				configureSequencePlayback();
 			}
+		}
+
+		private boolean hasPcmStreams()
+		{
+			if(wavStreams == null) { return false; }
+			for(int i = 0; i < wavStreams.length; i++)
+			{
+				if(wavStreams[i] != null) { return true; }
+			}
+			return false;
+		}
+
+		private boolean hasPcmClips()
+		{
+			if(wavClips == null) { return false; }
+			for(int i = 0; i < wavClips.length; i++)
+			{
+				if(wavClips[i] != null) { return true; }
+			}
+			return false;
+		}
+
+		private boolean hasMidiPlaybackEvents(Sequence sequence)
+		{
+			if(sequence == null) { return false; }
+			Track[] tracks = sequence.getTracks();
+			for(int t = 0; t < tracks.length; t++)
+			{
+				Track track = tracks[t];
+				for(int i = 0; i < track.size(); i++)
+				{
+					MidiEvent event = track.get(i);
+					if(!(event.getMessage() instanceof ShortMessage)) { continue; }
+					ShortMessage message = (ShortMessage) event.getMessage();
+					if(message.getCommand() == ShortMessage.NOTE_ON && message.getData2() > 0) { return true; }
+				}
+			}
+			return false;
+		}
+
+		protected void handleSequenceMeta(MetaMessage meta) { }
+
+		protected void stopActivePcmClips()
+		{
+			synchronized(pcmClipLock)
+			{
+				if(wavClips == null) { return; }
+				for(int i = 0; i < wavClips.length; i++)
+				{
+					if(wavClips[i] == null) { continue; }
+					wavClips[i].stop();
+					wavClips[i].flush();
+				}
+			}
+		}
+
+		protected Sequence getMidiSequence() { return midiSequence; }
+
+		protected void configureSequenceLoop(long loopStartTick, long loopEndTick, int repeatCount)
+		{
+			sequencerLoopConfigured = true;
+			midi.setLoopStartPoint(loopStartTick);
+			midi.setLoopEndPoint(loopEndTick);
+			midi.setLoopCount(repeatCount < 0 ? Sequencer.LOOP_CONTINUOUSLY : repeatCount);
+		}
+
+		protected void configureSequencePlayback() throws InvalidMidiDataException { }
+	}
+
+	private class MLDPlayer extends SMAFPlayer
+	{
+		public MLDPlayer(InputStream midiStream, InputStream[] wavStreams, Map<Integer, Integer> pcmPositions, Map<Integer, Integer> pcmVelocities)
+		{
+			super(midiStream, wavStreams, pcmPositions, pcmVelocities);
+		}
+
+		protected void handleSequenceMeta(MetaMessage meta)
+		{
+			String marker = MLDDecoder.MLDSequenceMarker.decodeMarker(meta);
+			if(!MLDDecoder.MLDSequenceMarker.isStopMarker(marker)) { return; }
+
+			stopActivePcmClips();
+		}
+
+		protected void configureSequencePlayback() throws InvalidMidiDataException
+		{
+			MLDDecoder.MLDSequenceMarker.LoopMarker loopInfo = findEmbeddedLoopMarker(getMidiSequence());
+			if(loopInfo == null) { return; }
+
+			configureSequenceLoop(loopInfo.loopStartTick, loopInfo.loopEndTick, loopInfo.repeatCount);
+		}
+
+		private MLDDecoder.MLDSequenceMarker.LoopMarker findEmbeddedLoopMarker(Sequence sequence)
+		{
+			if(sequence == null) { return null; }
+
+			Track[] tracks = sequence.getTracks();
+			for(int t = 0; t < tracks.length; t++)
+			{
+				Track track = tracks[t];
+				for(int i = 0; i < track.size(); i++)
+				{
+					MidiEvent event = track.get(i);
+					if(!(event.getMessage() instanceof MetaMessage)) { continue; }
+
+					String marker = MLDDecoder.MLDSequenceMarker.decodeMarker((MetaMessage) event.getMessage());
+					if(!MLDDecoder.MLDSequenceMarker.isLoopMarker(marker)) { continue; }
+
+					MLDDecoder.MLDSequenceMarker.LoopMarker loopMarker = MLDDecoder.MLDSequenceMarker.parseLoopMarker(marker);
+					if(loopMarker == null)
+					{
+						Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Invalid embedded MLD loop marker: " + marker);
+						continue;
+					}
+					return loopMarker;
+				}
+			}
+
+			return null;
 		}
 	}
 
@@ -1597,12 +1757,12 @@ public class PlatformPlayer implements Player
 		public wavPlayer(InputStream stream)
 		{
 			/*
-			 * A wav header is generally 44-bytes long (up to 60 for IMA ADPCM), and it is what we need to read in order 
+			 * A wav header is generally 44-bytes long (up to 60 for IMA ADPCM), and it is what we need to read in order
 			 * to get the stream's format, frame size, bit rate, number of channels, etc. which gives us information
 			 * on the kind of codec needed to play or decode the incoming stream. The stream needs to be reset
 			 * or else PCM files will be loaded without a header and it might cause issues with playback.
 			 */
-			try 
+			try
 			{
 				stream.mark(stream.available());
 				wavHeaderData = WAVTools.readHeader(stream);
@@ -1616,8 +1776,8 @@ public class PlatformPlayer implements Player
 
 		public void realize() { state = Player.REALIZED; }
 
-		public void prefetch() 
-		{ 
+		public void prefetch()
+		{
 			try
 			{
 				if(wavClip == null) { wavClip = AudioSystem.getClip(); }
@@ -1645,15 +1805,15 @@ public class PlatformPlayer implements Player
 				}
 
 				/* Like for midi, we need to listen for END_OF_MEDIA events here too. */
-				wavClip.addLineListener(new LineListener() 
+				wavClip.addLineListener(new LineListener()
 				{
 					@Override
-					public void update(LineEvent event) 
+					public void update(LineEvent event)
 					{
-						if (event.getType() == LineEvent.Type.STOP) 
+						if (event.getType() == LineEvent.Type.STOP)
 						{
 							state = Player.PREFETCHED;
-							if(numLoops != 0) 
+							if(numLoops != 0)
 							{
 								notifyListeners(PlayerListener.LOOPED, getMediaTime());
 								if(numLoops > 0) { numLoops--; } // If numLoops = -1, we're looping indefinitely
@@ -1664,13 +1824,13 @@ public class PlatformPlayer implements Player
 						}
 					}
 				});
-				state = Player.PREFETCHED; 
+				state = Player.PREFETCHED;
 			}
-			catch (Exception e) 
-			{ 
+			catch (Exception e)
+			{
 				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't prefetch wav stream: " + e.getMessage());
 				e.printStackTrace();
-			} 
+			}
 		}
 
 		public void start()
@@ -1691,19 +1851,19 @@ public class PlatformPlayer implements Player
 			notifyListeners(PlayerListener.STOPPED, getMediaTime());
 		}
 
-		public void deallocate() 
+		public void deallocate()
 		{
-			new Thread(new Runnable() 
+			new Thread(new Runnable()
 			{
 				@Override
-				public void run() 
+				public void run()
 				{
 					if(wavClip != null && wavClip.isOpen()) { wavClip.close(); }
 				}
 			}).start();
 		}
 
-		public void close() 
+		public void close()
 		{
 			tmpStream = null;
 			wavHeaderData = null;
@@ -1711,7 +1871,7 @@ public class PlatformPlayer implements Player
 
 		public void setLoopCount(int count)
 		{
-			/* 
+			/*
 			 * Treat cases where an app wants this stream to loop continuously.
 			 * Here, count = 1 means it should loop one time, whereas in j2me
 			 * it appears that count = 1 means no loop at all, at least based
@@ -1727,7 +1887,7 @@ public class PlatformPlayer implements Player
 			else if(now < 0) { wavClip.setMicrosecondPosition(0); }
 			else { wavClip.setMicrosecondPosition(now);  }
 
-			/* 
+			/*
 			 * MicrosecondPosition doesn't guarantee perfect precision, so return the new
 			 * effective position according to the stream.
 			 */
@@ -1750,25 +1910,25 @@ public class PlatformPlayer implements Player
 
 		public MP3Player(InputStream stream)
 		{
-			try 
+			try
 			{
 				tmpStream = new byte[stream.available()];
-				stream.read(tmpStream, 0, stream.available()); 
+				stream.read(tmpStream, 0, stream.available());
 			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Could not prepare mpeg stream:" + e.getMessage());}
 		}
 
 		public void realize() { state = Player.REALIZED; }
 
-		public void prefetch() 
-		{ 
+		public void prefetch()
+		{
 			try
 			{
 				mp3Player = new MPEGPlayer(new ByteArrayInputStream(tmpStream), false);
 				state = Player.PREFETCHED;
 			}
-			catch (Exception e) 
-			{ 
+			catch (Exception e)
+			{
 				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Couldn't prefetch mpeg stream: " + e.getMessage());
 				mp3Player.close();
 			}
@@ -1776,33 +1936,33 @@ public class PlatformPlayer implements Player
 
 		public void start()
 		{
-			try 
+			try
 			{
 				playerThread = new Thread(new Runnable()
 				{
 					@Override
-					public void run() 
+					public void run()
 					{
-						try 
+						try
 						{
 							mp3PlayerRunning = true;
-							while(mp3PlayerRunning) 
+							while(mp3PlayerRunning)
 							{
 								if(getMediaTime() >= getDuration()) { setMediaTime(0); }
 								else { setMediaTime(getMediaTime()); } // Resume from when last stopped
 								mp3Player.play(); // This is thread-blocking, so the code below only executes after this has finished.
 
-								/* 
-								* Check if mp3Player is still valid and exit early, since this thread can be 
-								* interrupted and the player can also be closed abruptly. 
+								/*
+								* Check if mp3Player is still valid and exit early, since this thread can be
+								* interrupted and the player can also be closed abruptly.
 								*/
 								if (mp3Player == null || !mp3PlayerRunning)  { return; }
 
-								if (!Thread.currentThread().isInterrupted()) 
+								if (!Thread.currentThread().isInterrupted())
 								{
 									state = Player.PREFETCHED;
 									notifyListeners(PlayerListener.END_OF_MEDIA, getMediaTime());
-									if(mp3Player.getLoopCount() != 0) 
+									if(mp3Player.getLoopCount() != 0)
 									{
 										if(mp3Player.getLoopCount() > 0) { mp3Player.decreaseLoopCount(); } // If getLoopCount() = -1, we're looping indefinitely
 										mp3Player.reset();
@@ -1832,12 +1992,12 @@ public class PlatformPlayer implements Player
 			notifyListeners(PlayerListener.STOPPED, getMediaTime());
 		}
 
-		public void deallocate() 
-		{ 
-			new Thread(new Runnable() 
+		public void deallocate()
+		{
+			new Thread(new Runnable()
 			{
 				@Override
-				public void run() 
+				public void run()
 				{
 					if(mp3Player != null) { mp3Player.close(); }
 					mp3Player = null;
@@ -1845,7 +2005,7 @@ public class PlatformPlayer implements Player
 			}).start();
 		}
 
-		public void close() 
+		public void close()
 		{
 			tmpStream = null;
 			playerThread = null;
@@ -1853,7 +2013,7 @@ public class PlatformPlayer implements Player
 
 		public void setLoopCount(int count)
 		{
-			/* 
+			/*
 			 * Treat cases where an app wants this stream to loop continuously.
 			 * Here, count = 1 means it should loop one time, whereas in j2me
 			 * it appears that count = 1 means no loop at all, at least based
@@ -1869,7 +2029,7 @@ public class PlatformPlayer implements Player
 			else if(now < 0) { mp3Player.setMicrosecondPosition(0); }
 			else { mp3Player.setMicrosecondPosition(now); }
 
-			/* 
+			/*
 			 * In MP3Player's case, we don't deal with microsecond resolution, so return the new
 			 * effective position converted to microseconds.
 			 */
@@ -1890,15 +2050,15 @@ public class PlatformPlayer implements Player
 	{
 		private midiPlayer player;
 
-		/* 
+		/*
 		 * Java, by default, does not directly support any of the query methods
-		 * below, which means we must implement them, and track the state of 
+		 * below, which means we must implement them, and track the state of
 		 * everything that they change ourselves.
 		 */
 		private int[] channelVolume = new int[16]; // For getChannelVolume
 
-		public midiControl(midiPlayer player) 
-		{ 
+		public midiControl(midiPlayer player)
+		{
 			this.player = player;
 			for(int channel = 0; channel < channelVolume.length; channel++) { channelVolume[channel] = 127; }
 		}
@@ -1908,18 +2068,18 @@ public class PlatformPlayer implements Player
 			Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: getBankList() untested");
 
 			if(custom) { Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: getBankList() with custom bank not implemented, returning all banks."); }
-		
+
 			// Use a list to collect bank numbers
 			ArrayList<Integer> bankList = new ArrayList<Integer>();
-		
-			try 
+
+			try
 			{
 				Patch[] patches = player.getSequence().getPatchList();
-		
+
 				// Use the current sequence as a source for the patches and its available banks
 				for (int i = 0; i < patches.length; i++) { bankList.add(patches[i].getBank()); }
 			} catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Error retrieving bank list: " + e.getMessage()); }
-		
+
 			// Return the array of banks
 			int[] bankArray = new int[bankList.size()];
 			for (int i = 0; i < bankList.size(); i++) { bankArray[i] = bankList.get(i); }
@@ -1927,72 +2087,73 @@ public class PlatformPlayer implements Player
 			return bankArray;
 		}
 
-		public int getChannelVolume(int channel) 
-		{ 
+		public int getChannelVolume(int channel)
+		{
 			Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: getChannelVolume() untested");
 			return channelVolume[channel];
 		}
 
-		public java.lang.String getKeyName(int bank, int prog, int key) 
-		{ 
+		public java.lang.String getKeyName(int bank, int prog, int key)
+		{
 			Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: getKeyName() not implemented ");
 			// And probably will never be, i don't think Java has any concept of this, all the way to Key-Mapped Banks
-			return ""; 
+			return "";
 		}
 
-		public int[] getProgram(int channel) 
+		public int[] getProgram(int channel)
 		{
 			Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: getProgram() untested");
-		
+
 			final int[] program = new int[2];
-		
+
 			// This is VERY costly, and might not even be correct as it relies on getProgramList and getBankList, which themselves are untested.
 			try
 			{
+				if(player.synthesizer == null) { return program; }
 				MidiChannel midiChannels[] = player.synthesizer.getChannels();
-				if(channel < 0 || channel > midiChannels.length) {throw new IllegalArgumentException("midiControl: Tried to call getProgram with invalid channel");}
-		
+				if(channel < 0 || channel >= midiChannels.length) {throw new IllegalArgumentException("midiControl: Tried to call getProgram with invalid channel");}
+
 				int currentProgram = midiChannels[channel].getProgram(); // This returns a {bank, program} pair, so only channel.getProgram() is not enough.
-				
+
 				// We got the program mapped to that channel, now to find the corresponding bank for this program
 				int[] banks = getBankList(false); // Retrieve the list of available banks
-				
+
 				for (int bank : banks) // Iterate through the banks to find the matching program, if there's any at all
 				{
 					int[] programList = getProgramList(bank); // Get list of programs for the current bank
-					
+
 					// Check if the current program exists in this bank
-					for (int programNum : programList) 
+					for (int programNum : programList)
 					{
 						if (programNum == currentProgram) // IF it does, we found the {bank,program} pair to be returned
-						{ 
+						{
 							program[0] = bank;
 							program[1] = currentProgram;
 						}
 					}
 				}
-			} 
-			catch (Exception e) 
+			}
+			catch (Exception e)
 			{
 				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Error retrieving program for channel: " + e.getMessage());
 				return null;
 			}
-		
+
 			return program;
 		}
 
 		public int[] getProgramList(int bank) {
 
 			Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: getProgramList()");
-		
+
 			ArrayList<Integer> programList = new ArrayList<Integer>();
-		
-			try 
+
+			try
 			{
 				Patch[] patches = player.getSequence().getPatchList();
-				
+
 				// Iterate through the available patches and collect program numbers for the specified bank
-				for (Patch patch : patches) 
+				for (Patch patch : patches)
 				{
 					if (patch.getBank() == bank) { programList.add(patch.getProgram()); } // Add the program number for the matching bank
 				}
@@ -2008,12 +2169,14 @@ public class PlatformPlayer implements Player
 		public String getProgramName(int bank, int prog)
 		{
 			Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: getProgramName()");
-		
+
 			// Java doesn't even have a concept of having names for programs, only instruments. So let's return the instrument's name instead.
-			try 
+			try
 			{
+				if(player.synthesizer == null) { return ""; }
 				Soundbank soundbank = player.synthesizer.getDefaultSoundbank();
-		
+				if(soundbank == null) { return ""; }
+
 				Instrument[] instruments = soundbank.getInstruments();
 				for (Instrument instrument : instruments)
 				{
@@ -2022,23 +2185,23 @@ public class PlatformPlayer implements Player
 					if (patch.getBank() == bank && patch.getProgram() == prog) { return instrument.getName(); }
 				}
 			} catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Error retrieving program name: " + e.getMessage()); }
-		
+
 			return ""; // Return an empty string if no match is found
 		}
 
-		public boolean isBankQuerySupported() 
-		{ 
+		public boolean isBankQuerySupported()
+		{
 			Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "isBankQuerySupported() requested, returning unsupported.");
-			return false; 
+			return false;
 		}
 
 		public int longMidiEvent(byte[] data, int offset, int length) {
 			Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: longMidiEvent() untested");
-		
+
 			// Validate input parameters
 			if (data == null || offset < 0 || length < 0 || offset + length > data.length) { throw new IllegalArgumentException("MidiControl: Invalid arguments for longMidiEvent()"); }
-		
-			try 
+
+			try
 			{
 				if (data[offset] == (byte) 0xF0 && data[offset + length - 1] == (byte) 0xF7) // Check if it is a SysEx message
 				{
@@ -2052,7 +2215,7 @@ public class PlatformPlayer implements Player
 				}
 				else // If it is not, send data as a series of short messages (probably implemented incorrectly, and being untested only makes things worse)
 				{
-					for (int i = offset; i < offset + length; i += 3) 
+					for (int i = offset; i < offset + length; i += 3)
 					{
 						int msgLength = Math.min(3, length - (i - offset)); // Ensure we don't exceed the shortMessage's length
 						ShortMessage shortMessage = new ShortMessage();
@@ -2065,54 +2228,56 @@ public class PlatformPlayer implements Player
 					}
 				}
 				return length; // Return the number of bytes sent
-			} 
-			catch (Exception e) 
+			}
+			catch (Exception e)
 			{
 				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Error sending long MIDI event: " + e.getMessage());
 				return -1; // Return -1 if an error occurred
 			}
 		}
 
-		public void setChannelVolume(int channel, int volume) 
+		public void setChannelVolume(int channel, int volume)
 		{
 			Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: setChannelVolume() untested");
 
-			try 
+			try
 			{
-				MidiChannel midiChannels[] = player.synthesizer.getChannels();
-				if(channel < 0 || channel > midiChannels.length || volume < 0 || volume > 127) {throw new IllegalArgumentException("midiControl: Tried to call setChannelVolume with invalid args");}
+				if(channel < 0 || channel > 15 || volume < 0 || volume > 127) {throw new IllegalArgumentException("midiControl: Tried to call setChannelVolume with invalid args");}
 
 				// Set the volume on the MIDI channel
 				channelVolume[channel] = volume; // For tracking purposes, whenever getChannelVolume is called.
-				midiChannels[channel].controlChange(7, volume);
+				shortMidiEvent(CONTROL_CHANGE | channel, 7, volume);
 			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Midi setChannelVolume failed: " + e.getMessage());}
 		}
 
-		public void setProgram(int channel, int bank, int program) 
-		{  
+		public void setProgram(int channel, int bank, int program)
+		{
 			Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: setProgram() untested");
-		
+
 			// Validate input parameters
 			if (channel < 0 || channel > 15) { throw new IllegalArgumentException("Channel must be between 0 and 15."); }
 			if (program < 0 || program > 127) { throw new IllegalArgumentException("Program must be between 0 and 127."); }
 			if (bank < -1 || bank > 16383) { throw new IllegalArgumentException("Bank must be between 0 and 16383, or -1 for default bank."); }
-		
-			// Send bank change
-			shortMidiEvent(CONTROL_CHANGE | channel, CONTROL_BANK_CHANGE_MSB, bank >> 7); // Send MSB (Most Significant Byte)
-			shortMidiEvent(CONTROL_CHANGE | channel, CONTROL_BANK_CHANGE_LSB, bank & 0x7F); // Send LSB (Least Significant Byte)
-		
+
+			if(bank >= 0)
+			{
+				// Send bank change
+				shortMidiEvent(CONTROL_CHANGE | channel, CONTROL_BANK_CHANGE_MSB, bank >> 7); // Send MSB (Most Significant Byte)
+				shortMidiEvent(CONTROL_CHANGE | channel, CONTROL_BANK_CHANGE_LSB, bank & 0x7F); // Send LSB (Least Significant Byte)
+			}
+
 			// Send program change
 			shortMidiEvent(PROGRAM_CHANGE | channel, program, 0);
 		}
 
-		public void shortMidiEvent(int type, int data1, int data2) 
-		{  
+		public void shortMidiEvent(int type, int data1, int data2)
+		{
 			Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "midiControl: shortMidiEvent() untested");
 
 			if(type < 0x80 || type == 0xF0 || type == 0xF7 || data1 < 0 || data1 > 127 || data2 < 0 || data2 > 127) { throw new IllegalArgumentException("midiControl: Invalid arguments for shortMidiEvent()"); }
 
-			try 
+			try
 			{
 				// Create a MIDI message from the type and data values received
 				final byte[] message = new byte[3];
@@ -2122,7 +2287,7 @@ public class PlatformPlayer implements Player
 
 				ShortMessage midiMessage = new ShortMessage();
 				midiMessage.setMessage(type, data1, data2);
-		
+
 				// Send the MIDI message to the receiver
 				player.receiver.send(midiMessage, -1); // Send message
 			}
@@ -2138,7 +2303,7 @@ public class PlatformPlayer implements Player
 		private int panValue = 64; // Center panning
 
 		// MIDI Master Volume SysEx message (Universal Realtime)
-		private byte[] volumeSysEx = new byte[] 
+		private byte[] volumeSysEx = new byte[]
 		{
 			(byte) 0xF0, // SysEx indicator
 			(byte) 0x7F, (byte) 0x7F,
@@ -2151,14 +2316,14 @@ public class PlatformPlayer implements Player
 
 		public volumeControl(audioplayer player) { this.player = player; }
 
-		public int getLevel() 
+		public int getLevel()
 		{
 			if(getState() == Player.REALIZED) { return -1; }
 
-			return volume; 
+			return volume;
 		}
 
-		public int setLevel(int level) 
+		public int setLevel(int level)
 		{
 			/* Some Digital Chocolate games actually go all the way to level = 120. E.g. Tornado Mania */
 			if(level > 100) { level = 100; }
@@ -2167,9 +2332,9 @@ public class PlatformPlayer implements Player
 			if(Mobile.compatIgnoreVolumeChanges) { return level; }
 			if(level == getLevel() && !(player instanceof midiPlayer) && !(player instanceof SMAFPlayer)) { return level; }
 
-			try 
+			try
 			{
-				if (player instanceof midiPlayer) 
+				if (player instanceof midiPlayer)
 				{
 					midiPlayer mp = (midiPlayer) player;
 					Receiver recv = (mp.rawReceiver != null) ? mp.rawReceiver : mp.receiver;
@@ -2223,9 +2388,9 @@ public class PlatformPlayer implements Player
 						}
 					}
 
-					if(((SMAFPlayer) player).wavClips != null) 
+					if(((SMAFPlayer) player).wavClips != null)
 					{
-						for(int i = 0; i < ((SMAFPlayer) player).wavClips.length; i++) 
+						for(int i = 0; i < ((SMAFPlayer) player).wavClips.length; i++)
 						{
 							if(((SMAFPlayer) player).wavClips[i] == null) { continue; }
 							volumeControl = (FloatControl) ((SMAFPlayer) player).wavClips[i].getControl(FloatControl.Type.MASTER_GAIN);
@@ -2235,10 +2400,10 @@ public class PlatformPlayer implements Player
 				}
 				else if(player instanceof MP3Player) { ((MP3Player)player).mp3Player.setLevel(level); }
 			}
-			catch(Exception e) 
-			{ 
-				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "failed to set volume: " + e.getMessage()); 
-				e.printStackTrace(); 
+			catch(Exception e)
+			{
+				Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "failed to set volume: " + e.getMessage());
+				e.printStackTrace();
 			}
 
 			volume = (byte) level;
@@ -2247,9 +2412,9 @@ public class PlatformPlayer implements Player
 			return getLevel();
 		}
 
-		public void setMute(boolean mute) 
+		public void setMute(boolean mute)
 		{
-			if(mute != isMuted()) 
+			if(mute != isMuted())
 			{
 				muted = mute;
 
@@ -2261,20 +2426,37 @@ public class PlatformPlayer implements Player
 		public boolean isMuted() { return muted; }
 
 		// These two are only really used for SMAF
-		public void setPanpot(int panning) 
+		public void setPanpot(int panning)
 		{
-			if (player instanceof SMAFPlayer) 
+			if (player instanceof SMAFPlayer)
 			{
 				SMAFPlayer sequencer = (SMAFPlayer) player;
 
-				MidiChannel midiChannels[] = sequencer.synthesizer.getChannels();
-
 				if(sequencer.isRunning())
 				{
-					for (int channel = 0; channel < midiChannels.length; channel++) 
+					Receiver recv = (sequencer.receiver != null) ? sequencer.receiver : sequencer.rawReceiver;
+					if(recv != null)
 					{
-						midiChannels[channel].controlChange(7, panning);
-						LockSupport.parkNanos(10000);
+						for (int channel = 0; channel < 16; channel++)
+						{
+							try
+							{
+								ShortMessage panMessage = new ShortMessage();
+								panMessage.setMessage(ShortMessage.CONTROL_CHANGE | channel, 10, panning);
+								recv.send(panMessage, -1);
+								LockSupport.parkNanos(10000);
+							}
+							catch(InvalidMidiDataException e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Invalid SMAF pan value: " + e.getMessage()); }
+						}
+					}
+					else if(sequencer.synthesizer != null)
+					{
+						MidiChannel midiChannels[] = sequencer.synthesizer.getChannels();
+						for (int channel = 0; channel < midiChannels.length; channel++)
+						{
+							midiChannels[channel].controlChange(10, panning);
+							LockSupport.parkNanos(10000);
+						}
 					}
 				}
 				panValue = panning;
@@ -2298,9 +2480,9 @@ public class PlatformPlayer implements Player
 
 		public tempoControl(audioplayer player) { this.player = player; }
 
-		/* 
+		/*
 		 * According to the docs, getTempo():
-		 * 
+		 *
 		 * Gets the current playback tempo. This represents the current state of the sequencer:
 		 *	1 - A sequencer may not be initialized before the Player is prefetched. An uninitialized sequencer in this case returns a default tempo of 120 beats per minute.
 		 *	2 - After prefetching has finished, the tempo is set to the start tempo of the MIDI sequence (if any).
@@ -2308,18 +2490,18 @@ public class PlatformPlayer implements Player
 		 *	4 - A stopped sequence retains the last tempo it had before it was stopped.
 		 *	5 - A call to setTempo() changes current tempo until a tempo event in the MIDI file is encountered.
 		 *
-		 * Of course, only the very basic, case 3 is considered. If needed, and a jar is found to need it, 
+		 * Of course, only the very basic, case 3 is considered. If needed, and a jar is found to need it,
 		 * we can implement the other cases for better player state handling.
 		 */
 
 		public int getTempo() { Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "getTempo()"); return tempo; }
 
-		public int setTempo(int millitempo) 
-		{ 
+		public int setTempo(int millitempo)
+		{
 			Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "setTempo()");
-			tempo = millitempo; 
-			
-			/* 
+			tempo = millitempo;
+
+			/*
 			 * Here the docs say that the midi should START at this tempo, which
 			 * indicates that we probably should add a midiEvent message to itsf
 			 * tracks in order to change their tempo at tick 0, but first we need
@@ -2328,7 +2510,7 @@ public class PlatformPlayer implements Player
 			if(player instanceof midiPlayer) { ((midiPlayer)player).midi.setTempoInBPM(getEffectiveBPM()); }
 			else if(player instanceof SMAFPlayer) { ((SMAFPlayer)player).midi.setTempoInBPM(getEffectiveBPM()); }
 
-			return tempo; 
+			return tempo;
 		}
 
 		// RateControl interface
@@ -2338,16 +2520,16 @@ public class PlatformPlayer implements Player
 
 		public int getRate() { Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "getRate()"); return rate; }
 
-		public int setRate(int millirate) 
-		{ 
+		public int setRate(int millirate)
+		{
 			Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "setRate()");
-			rate = millirate; 
-			
-			/* 
+			rate = millirate;
+
+			/*
 			 * In order to use setTempoFactor to adjust midiplayer's rate,
 			 * we need to convert the rate value we currently have (expressed as
 			 * integer) to the float range that setTempoFactor accepts.
-			 * 
+			 *
 			 * In short, 100000 here means 100% playback rate, while 1.0f means
 			 * the same in setTempoFactor, hence the division below.
 			 */
@@ -2356,7 +2538,7 @@ public class PlatformPlayer implements Player
 			if(player instanceof midiPlayer) { ((midiPlayer)player).midi.setTempoFactor(factor); }
 			else if(player instanceof SMAFPlayer) { ((SMAFPlayer)player).midi.setTempoFactor(factor); }
 
-			return rate; 
+			return rate;
 		}
 
 		/* Used for setTempo, otherwise we won't know which tempo to actually set */
@@ -2370,18 +2552,18 @@ public class PlatformPlayer implements Player
 
 		public toneControl(midiPlayer player) { Mobile.log(Mobile.LOG_DEBUG, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Tone Control"); this.player = player; }
 
-		/* 
-		 * As far as i can tell, Nokia's OTT/OTA Tones don't use this, which would leave only jars that directly use J2ME's Augmented BNF format, if there are any. 
-		 * If such a case is found, setupSequence() should be the one to parse that format into a MIDI sequence. 
+		/*
+		 * As far as i can tell, Nokia's OTT/OTA Tones don't use this, which would leave only jars that directly use J2ME's Augmented BNF format, if there are any.
+		 * If such a case is found, setupSequence() should be the one to parse that format into a MIDI sequence.
 		 */
-		public void setSequence(byte[] sequence) 
+		public void setSequence(byte[] sequence)
 		{
 			if(sequence == null) { throw new IllegalArgumentException("ToneControl: cannot set a null sequence"); }
 
 			if(getState() == Player.PREFETCHED || getState() == Player.STARTED) { throw new IllegalStateException("Cannot call setSequence(), as the player is either PREFETCHED or STARTED."); }
 
 			// If what we received is a tone sequence from nokia, siemens, sprint, etc. which is converted to midi beforehand, just send it to the player right away.
-			if(sequence[0] == 'M' && sequence[1] == 'T' && sequence[2] == 'h' && sequence[3] == 'd') 
+			if(sequence[0] == 'M' && sequence[1] == 'T' && sequence[2] == 'h' && sequence[3] == 'd')
 			{
 				player.setSequence(new ByteArrayInputStream(sequence));
 			}
@@ -2389,7 +2571,7 @@ public class PlatformPlayer implements Player
 			{
 				/* This should show up in the case a jar tries to use it... just so we can find a jar that can test this */
 				Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "setSequence() for A-BNF Tones not implemented");
-				try 
+				try
 				{
 					Sequence toneSequence = new Sequence(Sequence.PPQ, 24);
 					Track track = toneSequence.createTrack();
@@ -2412,7 +2594,7 @@ public class PlatformPlayer implements Player
 			int currentTick = 0; // This is used to keep track of the current tick, used by SetVolume and Tempo events
 			int noteVolume = 127; // Start sending notes at the max volume by default
 
-			while (index < sequence.length) 
+			while (index < sequence.length)
 			{
 				byte eventType = sequence[index++];
 				if (eventType >= -1 && eventType <= 127) // We found a note (or SILENCE, -1)
@@ -2421,36 +2603,36 @@ public class PlatformPlayer implements Player
 					byte duration = sequence[index++];
 					try { addNote(track, note, duration, noteVolume, currentTick); currentTick += duration; }
 					catch (InvalidMidiDataException e) {Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Invalid note: " + e.getMessage());}
-					
+
 				}
-				else if (eventType == ToneControl.REPEAT) 
+				else if (eventType == ToneControl.REPEAT)
 				{
 					byte numRepeats = sequence[index++];
 					byte noteToRepeat = sequence[index++];
 					byte repeatNoteDuration = sequence[index++];
-					for (int i = 0; i < numRepeats; i++) 
-					{ 
+					for (int i = 0; i < numRepeats; i++)
+					{
 						try {addNote(track, noteToRepeat, repeatNoteDuration, noteVolume, currentTick); }
 						catch (InvalidMidiDataException e) {Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Invalid repeated note: " + e.getMessage());}
 						currentTick += repeatNoteDuration;
 					}
 				}
-				else if (eventType == ToneControl.SET_VOLUME) 
+				else if (eventType == ToneControl.SET_VOLUME)
 				{
 					noteVolume = sequence[index++];
-					try 
-					{ 
+					try
+					{
 						ShortMessage volumeMessage = new ShortMessage();
 						volumeMessage.setMessage(ShortMessage.CONTROL_CHANGE, 0, 7, noteVolume);
-						track.add(new MidiEvent(volumeMessage, currentTick)); 
+						track.add(new MidiEvent(volumeMessage, currentTick));
 					}
 					catch (InvalidMidiDataException e) {Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Invalid SET_VOLUME event: " + e.getMessage());}
 				}
-				else if(eventType == ToneControl.TEMPO) 
+				else if(eventType == ToneControl.TEMPO)
 				{
 					tempo = sequence[index++];
 					int microsecondsPerBeat = 60000000 / (tempo * 4);
-					try 
+					try
 					{
 						track.add(new MidiEvent(new MetaMessage(0x51, new byte[]
 						{
@@ -2461,22 +2643,22 @@ public class PlatformPlayer implements Player
 					}
 					catch (InvalidMidiDataException e) {Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Invalid TEMPO event: " + e.getMessage());}
 				}
-				else if(eventType == ToneControl.RESOLUTION || 
+				else if(eventType == ToneControl.RESOLUTION ||
 						eventType == ToneControl.BLOCK_START ||
-						eventType == ToneControl.BLOCK_END) { /* These events don't need to be added to the midi sequence */ } 
+						eventType == ToneControl.BLOCK_END) { /* These events don't need to be added to the midi sequence */ }
 				else { throw new IllegalArgumentException("Unknown event type."); }
 			}
 		}
-		
-		private void addNote(Track track, byte note, byte duration, int volume, int tick) throws InvalidMidiDataException 
+
+		private void addNote(Track track, byte note, byte duration, int volume, int tick) throws InvalidMidiDataException
 		{
 			int midiNote = note + 60; // Convert to MIDI note (C4 = MIDI 60)
 			int noteDuration = duration; // Use duration directly as tick increment
-		
+
 			// Note on event with velocity set to currentVolume
 			ShortMessage noteOn = new ShortMessage(ShortMessage.NOTE_ON, 0, midiNote, volume);
 			track.add(new MidiEvent(noteOn, tick)); // Start immediately
-		
+
 			// Note off event
 			ShortMessage noteOff = new ShortMessage(ShortMessage.NOTE_OFF, 0, midiNote, tick + noteDuration);
 			track.add(new MidiEvent(noteOff, tick + noteDuration)); // End after the duration

@@ -16,11 +16,11 @@
 */
 package javax.microedition.media.decoders;
 
-public final class WAVYamahaADPCMDecoder 
+public final class WAVYamahaADPCMDecoder
 {
 
     // Code adapted from https://github.com/superctr/adpcm, licensed as Public Domain
-    private static final int[] ADPCMA_STEP_TABLE = 
+    private static final int[] ADPCMA_STEP_TABLE =
     {
         16, 17, 19, 21, 23, 25, 28, 31,
         34, 37, 41, 45, 50, 55, 60, 66,
@@ -30,22 +30,22 @@ public final class WAVYamahaADPCMDecoder
         724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552
     };
 
-    private static final int[] ADPCMB_STEP_TABLE = 
+    private static final int[] ADPCMB_STEP_TABLE =
     {
         57, 57, 57, 57, 77, 102, 128, 153
     };
 
-    private static final int[] DELTA_TABLE = 
+    private static final int[] DELTA_TABLE =
     {
         1, 3, 5, 7, 9, 11, 13, 15, -1, -3, -5, -7, -9, -11, -13, -15
     };
 
-    private static final int[] ADJUST_TABLE = 
+    private static final int[] ADJUST_TABLE =
     {
         -1, -1, -1, -1, 2, 5, 7, 9
     };
 
-    private static final int[] ADPCMZ_STEP_TABLE = 
+    private static final int[] ADPCMZ_STEP_TABLE =
     {
         230, 230, 230, 230, 307, 409, 512, 614
     };
@@ -54,7 +54,7 @@ public final class WAVYamahaADPCMDecoder
 
     private static int stepSize, delta, out, adjustedStep, sign, diff, newval, nstep;
 
-    private static final int ADPCMAStep(int step, int[] history, int[] stepHist) 
+    private static final int ADPCMAStep(int step, int[] history, int[] stepHist)
     {
         stepSize = ADPCMA_STEP_TABLE[stepHist[0]];
         delta = (DELTA_TABLE[step & 15] * stepSize) >> 3;
@@ -66,7 +66,7 @@ public final class WAVYamahaADPCMDecoder
         return out;
     }
 
-    private static final int ADPCMBStep(int step, int[] history, int[] stepSize) 
+    private static final int ADPCMBStep(int step, int[] history, int[] stepSize)
     {
         sign = step & 8;
         delta = step & 7;
@@ -88,21 +88,20 @@ public final class WAVYamahaADPCMDecoder
         diff = ((1 + (delta << 1)) * stepSize[0]) >> 3;
         newval = history[0] + (sign > 0 ? -clamp(diff, 0, 32767) : clamp(diff, 0, 32767));
         nstep = ADPCMZ_STEP_TABLE[delta] * stepSize[0] >> 8;
-        stepSize[0] = clamp(nstep, 1280, 32767); // Same as ADPCM-B, works better on a wide sample of PCM MLD data
-        //stepSize[0] = clamp(nstep, 127, 24576); // Original code's step clamping
+        stepSize[0] = clamp(nstep, 127, 24576);
         history[0] = newval = clamp(newval, -32768, 32767);
         return newval;
     }
 
-    public static final byte[] ADPCMADecode(byte[] buffer, int originalSampleRate, int numChannels) 
+    public static final byte[] ADPCMADecode(byte[] buffer, int originalSampleRate, int numChannels)
     {
         int[] history    = {0};
-        int[] stepHist   = {0}; 
+        int[] stepHist   = {0};
         byte[] outBuffer = new byte[buffer.length * 4]; // 4 bytes for each input byte (yamaha and ima adpcm go from 4 bits to 16)
 
         int outputIndex = 0, step = 0, decodedSample = 0;
 
-        for (int i = 0; i < buffer.length; i++) 
+        for (int i = 0; i < buffer.length; i++)
         {
             // lower nibble
             step = (buffer[i] & 0x0F);
@@ -120,7 +119,7 @@ public final class WAVYamahaADPCMDecoder
         return WAVTools.upsample(outBuffer, originalSampleRate, WAVTools.hostSampleRate, (short) numChannels, (short) 16, outBuffer.length);
     }
 
-    public static final byte[] ADPCMBDecode(byte[] buffer, int originalSampleRate, int numChannels) 
+    public static final byte[] ADPCMBDecode(byte[] buffer, int originalSampleRate, int numChannels)
     {
         int[] history    = {0};
         int[] stepSize   = {127};
@@ -128,7 +127,7 @@ public final class WAVYamahaADPCMDecoder
 
         int outputIndex = 0, step = 0, decodedSample = 0;
 
-        for (int i = 0; i < buffer.length; i++) 
+        for (int i = 0; i < buffer.length; i++)
         {
             // lower nibble
             step = (buffer[i] & 0x0F);
@@ -146,27 +145,31 @@ public final class WAVYamahaADPCMDecoder
         return WAVTools.upsample(outBuffer, originalSampleRate, WAVTools.hostSampleRate, (short) numChannels, (short) 16, outBuffer.length);
     }
 
-    public static final byte[] ADPCMZDecode(byte[] buffer, int originalSampleRate, int numChannels) 
+    public static final byte[] ADPCMZDecode(byte[] buffer, int originalSampleRate, int numChannels)
     {
         int[] history    = {0};
         int[] stepSize   = {127};
         byte[] outBuffer = new byte[buffer.length * 4]; // 4 bytes per input byte
 
         int outputIndex = 0, step = 0, decodedSample = 0;
-        
-        for (int i = 0; i < buffer.length; i++) 
+
+        // TODO: The Yamaha YMZ/AICA chips perform low-pass filtering (not implemented at all)
+        // and interpolation (done by upsample) to smooth out the resulting audio waves.
+
+        for (int i = 0; i < buffer.length; i++)
         {
-            history[0] *= (254 / 256); // Apply a bit of High pass to the historical sample
+            // Closest we have to "low-pass" right now is that
+            // (sample * 224 / 255) operation to reduce the wave's amplitude.
 
             // lower nibble
             step = (buffer[i] & 0x0F);
-            decodedSample = ADPCMZStep(step, history, stepSize);
+            decodedSample = ADPCMZStep(step, history, stepSize) * 224 / 255;
             outBuffer[outputIndex++] = (byte) (decodedSample & 0xFF);        // LSB
             outBuffer[outputIndex++] = (byte) ((decodedSample >> 8) & 0xFF); // MSB
 
             // upper nibble
             step = (buffer[i] >> 4) & 0x0F;
-            decodedSample = ADPCMZStep(step, history, stepSize);
+            decodedSample = ADPCMZStep(step, history, stepSize) * 224 / 255;
             outBuffer[outputIndex++] = (byte) (decodedSample & 0xFF);        // LSB
             outBuffer[outputIndex++] = (byte) ((decodedSample >> 8) & 0xFF); // MSB
         }

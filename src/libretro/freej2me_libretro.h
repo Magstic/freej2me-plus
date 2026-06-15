@@ -29,7 +29,7 @@
 // The max amount of phone keys currently supported (might increase since KDDI and SKT/SK-VM phones tend to have more)
 #define PHONE_KEYS 20
 
-static const char *supported_encodings[] = 
+static const char *supported_encodings[] =
 {
     "-Dfile.encoding=ISO_8859_1",
     "-Dfile.encoding=Shift_JIS",
@@ -166,26 +166,32 @@ struct retro_core_option_v2_definition core_options[] =
             { "130x130",   NULL },
             { "120x160",   NULL },
             { "128x160",   NULL },
+            { "160x128",   NULL },
             { "132x176",   NULL },
             { "208x173",   NULL },
             { "176x208",   NULL },
             { "176x220",   NULL },
             { "220x176",   NULL },
             { "208x208",   NULL },
+            { "220x220",   NULL },
             { "180x320",   NULL },
             { "320x180",   NULL },
             { "240x240",   NULL },
+            { "240x260",   NULL },
             { "208x320",   NULL },
             { "240x320",   NULL },
             { "320x240",   NULL },
             { "240x400",   NULL },
             { "400x240",   NULL },
+            { "320x320",   NULL },
             { "240x432",   NULL },
             { "240x480",   NULL },
             { "360x360",   NULL },
             { "352x416",   NULL },
+            { "360x480",   NULL },
             { "360x640",   NULL },
             { "640x360",   NULL },
+            { "480x640",   NULL },
             { "640x480",   NULL },
             { "345x800",   NULL },
             { "800x345",   NULL },
@@ -251,6 +257,7 @@ struct retro_core_option_v2_definition core_options[] =
             { "Motorola/SoftBank",   NULL },
             { "Motorola Triplets",   NULL },
             { "Motorola V8",         NULL },
+            { "Motorola A1000",      NULL },
             { "Nokia Full Keyboard", NULL },
             { "Sagem",               NULL },
             { "Sharp",               NULL },
@@ -813,26 +820,32 @@ struct retro_core_option_definition core_options_v1 [] =
             { "130x130",   NULL },
             { "120x160",   NULL },
             { "128x160",   NULL },
+            { "160x128",   NULL },
             { "132x176",   NULL },
             { "208x173",   NULL },
             { "176x208",   NULL },
             { "176x220",   NULL },
             { "220x176",   NULL },
             { "208x208",   NULL },
+            { "220x220",   NULL },
             { "180x320",   NULL },
             { "320x180",   NULL },
             { "240x240",   NULL },
+            { "240x260",   NULL },
             { "208x320",   NULL },
             { "240x320",   NULL },
             { "320x240",   NULL },
             { "240x400",   NULL },
             { "400x240",   NULL },
+            { "320x320",   NULL },
             { "240x432",   NULL },
             { "240x480",   NULL },
             { "360x360",   NULL },
             { "352x416",   NULL },
+            { "360x480",   NULL },
             { "360x640",   NULL },
             { "640x360",   NULL },
+            { "480x640",   NULL },
             { "640x480",   NULL },
             { "345x800",   NULL },
             { "800x345",   NULL },
@@ -889,6 +902,7 @@ struct retro_core_option_definition core_options_v1 [] =
             { "Motorola/SoftBank",   NULL },
             { "Motorola Triplets",   NULL },
             { "Motorola V8",         NULL },
+            { "Motorola A1000",      NULL },
             { "Nokia Full Keyboard", NULL },
             { "Sagem",               NULL },
             { "Sharp",               NULL },
@@ -1321,7 +1335,7 @@ static const struct retro_variable vars[] =
 {
     { /* Screen Resolution */
         "freej2me_resolution",
-        "Phone Resolution (Core Restart may be required); 240x320|96x65|101x64|101x80|128x128|130x130|120x160|128x160|132x176|208x173|176x208|176x220|220x176|208x208|180x320|320x180|240x240|208x320|320x240|240x400|400x240|240x432|240x480|360x360|352x416|360x640|640x360|640x480|345x800|800x345|480x800|800x480"
+        "Phone Resolution (Core Restart may be required); 240x320|96x65|101x64|101x80|128x128|130x130|120x160|128x160|160x128|132x176|208x173|176x208|176x220|220x176|208x208|220x220|180x320|320x180|240x240|240x260|208x320|320x240|240x400|400x240|320x320|240x432|240x480|360x360|352x416|360x480|360x640|640x360|480x640|640x480|345x800|800x345|480x800|800x480"
     },
     { /* DoJa API Version */
         "freej2me_dojaversion",
@@ -1329,11 +1343,11 @@ static const struct retro_variable vars[] =
     },
     { /* Screen Rotation */
         "freej2me_rotate",
-        "Rotate Screen; 0|90|180|270" 
+        "Rotate Screen; 0|90|180|270"
     },
     { /* Phone Control Type */
         "freej2me_phone",
-        "Phone Key Layout; Default|KDDI|LG|Motorola/SoftBank|Motorola Triplets|Motorola V8|Nokia Full Keyboard|Sagem|Sharp|Siemens|SKT"
+        "Phone Key Layout; Default|KDDI|LG|Motorola/SoftBank|Motorola Triplets|Motorola V8|Motorola A1000|Nokia Full Keyboard|Sagem|Sharp|Siemens|SKT"
     },
     { /* LCD Backlight Color */
         "freej2me_backlightcolor",
@@ -1341,7 +1355,7 @@ static const struct retro_variable vars[] =
     },
     { /* Game FPS limit */
         "freej2me_fps",
-        "Game FPS Limit; Auto|60|55|50|45|40|35|30|25|20|15|10" 
+        "Game FPS Limit; Auto|60|55|50|45|40|35|30|25|20|15|10"
     },
     { /* Virtual Phone Sound */
         "freej2me_sound",
