@@ -1121,7 +1121,7 @@ public class Mobile
 		org.recompile.mobile.PlatformFont.updateDefaultFont();
 
 		String fpsHackSetting = config.settings.get("fpshack");
-		if(fpsHackSetting.equals("Disabled"))        { unlockFramerateHack = 0; }
+		if(fpsHackSetting.equals("Disabled") || fpsHackSetting.equals("Default")) { unlockFramerateHack = 0; }
 		else if(fpsHackSetting.equals("Safe"))       { unlockFramerateHack = 1; }
 		else if(fpsHackSetting.equals("Extended"))   { unlockFramerateHack = 2; }
 		else if(fpsHackSetting.equals("Aggressive")) { unlockFramerateHack = 3; }

@@ -146,6 +146,7 @@ struct retro_core_option_v2_category option_categories[] =
         "MCV3 偵錯",
         "Free-J2ME MascotCapsuleV3 渲染相關設定。"
     },
+    { NULL, NULL, NULL },
 };
 
 /* Core config options if running on a frontend with support for config version 2 */
@@ -971,6 +972,17 @@ struct retro_core_option_definition core_options_v1 [] =
         "off"
     },
     {
+        "freej2me_midisearchvms",
+        "VirtualMIDISynth (Core Restart required)",
+        "When enabled, FreeJ2ME searches for a VirtualMIDISynth MIDI device and uses it as an external MIDI output. This requires VirtualMIDISynth to be installed on the system.",
+        {
+            { "on",  "Enabled" },
+            { "off", "Disabled" },
+            { NULL, NULL },
+        },
+        "on"
+    },
+    {
         "freej2me_textfont",
         "Text Font",
         "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes, so you might need to adjust the size offset.",
@@ -1364,6 +1376,10 @@ static const struct retro_variable vars[] =
     { /* MIDI Soundfont */
         "freej2me_midifont",
         "MIDI Soundfont; off|on"
+    },
+    { /* VirtualMIDISynth */
+        "freej2me_midisearchvms",
+        "VirtualMIDISynth (Core Restart required); on|off"
     },
     { /* Custom Text Font */
         "freej2me_textfont",

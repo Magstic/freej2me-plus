@@ -80,7 +80,7 @@ void retro_set_environment_core_info(retro_environment_t fn)
 	Environ(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, (void*)desc);
 
 	if (core_opt_version >= 2) { Environ(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2, &core_exposed_options); }
-	else if (core_opt_version >= 1) { Environ(RETRO_ENVIRONMENT_SET_CORE_OPTIONS, (void*)core_options); }
+	else if (core_opt_version >= 1) { Environ(RETRO_ENVIRONMENT_SET_CORE_OPTIONS, (void*)core_options_v1); }
 	else { Environ(RETRO_ENVIRONMENT_SET_VARIABLES, (void*)vars); }
 }
 

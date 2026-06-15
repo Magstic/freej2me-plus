@@ -33,6 +33,7 @@ public class Libretro
 
 	private boolean soundEnabled = true;
 	private boolean midiSearchVMS = true;
+	private String[] launchArgs;
 	private static volatile boolean canPause = false;
 
 	private static final long PAUSE_DELAY_MS = 250;
@@ -67,134 +68,19 @@ public class Libretro
 	{
 		lcdWidth  = Mobile.lcdWidth;
 		lcdHeight = Mobile.lcdHeight;
+		launchArgs = args;
 
-		/*
-		 * Notify the MIDlet class that this version of FreeJ2ME is for Libretro, which disables
-		 * the ability to close the jar when a J2ME app requests an exit as this can cause segmentation
-		 * faults on libretro frontends and also close the unexpectedly.
-		*/
-		Mobile.getPlatform().isLibretro = true;
-
-		/*
-		 * Checks if the arguments were received from the commandline -> width, height, rotate, phonetype, fps, sound, ...
-		 *
-		 * NOTE:
-		 * Due to differences in how linux and win32 pass their cmd arguments, we can't explictly check for a given size
-		 * on the argv array. Linux includes the "java", "-jar" and "path/to/freej2me" into the array while WIN32 doesn't.
-		 */
-		lcdWidth =  Integer.parseInt(args[0]);
-		lcdHeight = Integer.parseInt(args[1]);
-
-		Mobile.rotateDisplay = Integer.parseInt(args[2]) * 90;
-
-		Mobile.kddi = false;
-		Mobile.lg = false;
-		Mobile.motorola = false;
-		Mobile.motoTriplets = false;
-		Mobile.motoV8 = false;
-		Mobile.motoA1000 = false;
-		Mobile.nokiaKeyboard = false;
-		Mobile.sagem = false;
-		Mobile.siemens = false;
-		Mobile.sharp = false;
-		Mobile.skt = false;
-
-		if(Integer.parseInt(args[3]) == 1)       { Mobile.lg = true;    }
-		else if(Integer.parseInt(args[3]) == 2)  { Mobile.motorola = true;  }
-		else if(Integer.parseInt(args[3]) == 3)  { Mobile.motoTriplets = true; }
-		else if(Integer.parseInt(args[3]) == 4)  { Mobile.motoV8 = true; }
-		else if(Integer.parseInt(args[3]) == 5)  { Mobile.motoA1000 = true; }
-		else if(Integer.parseInt(args[3]) == 6)  { Mobile.nokiaKeyboard = true; }
-		else if(Integer.parseInt(args[3]) == 7)  { Mobile.sagem = true; }
-		else if(Integer.parseInt(args[3]) == 8)  { Mobile.siemens = true; }
-		else if(Integer.parseInt(args[3]) == 9)  { Mobile.sharp = true; }
-		else if(Integer.parseInt(args[3]) == 10) { Mobile.skt = true; }
-		else if(Integer.parseInt(args[3]) == 11) { Mobile.kddi = true; }
-
-		Mobile.limitFPS = Integer.parseInt(args[4]);
-
-		soundEnabled = Integer.parseInt(args[5]) != 0;
-
-		Mobile.useCustomMidi = Integer.parseInt(args[6]) != 0;
-
-		/* Dump Audio Streams will not be a per-game FreeJ2ME config, so it will have to be set every time for now */
-		Mobile.dumpAudioStreams = Integer.parseInt(args[7]) != 0;
-
-		/* Same for Logging Level */
-		Mobile.minLogLevel = (byte) (Integer.parseInt(args[8]));
-
-		/* No Alpha on Blank Images SpeedHack is a per-game config */
-		Mobile.noAlphaOnBlankImages = Integer.parseInt(args[9]) != 0;
-
-		/* LCD Backlight Mask color index. */
-		Mobile.maskIndex = Integer.parseInt(args[10]);
-
-		/* Compat setting to fix Fantasy Zone 176x208 weird mirroring */
-		Mobile.compatFantasyZoneFix = Integer.parseInt(args[11]) != 0;
-
-		/* Compat setting to translate back to the origin whenever graphics object is reset */
-		Mobile.compatTranslateToOriginOnReset = Integer.parseInt(args[12]) != 0;
-
-		// Custom font and size
-		Mobile.useCustomTextFont = Integer.parseInt(args[13]) != 0;
-
-		Mobile.fontSizeOffset = (byte) Integer.parseInt(args[14]);
-
-		// Unused for now
-		Mobile.dumpGraphicsObjects = Integer.parseInt(args[15]) != 0;
-
-		// Dump KJX extracted JAR and JAD
-		Mobile.deleteTemporaryKJXFiles = Integer.parseInt(args[16]) != 0;
-
-		// M3G Render only untextured polygons
-		Mobile.M3GRenderUntexturedPolygons = Integer.parseInt(args[17]) != 0;
-
-		// M3G Render Wireframe
-		Mobile.M3GRenderWireframe = Integer.parseInt(args[18]) != 0;
-
-		/* Framerate Unlock. */
-		Mobile.unlockFramerateHack = (byte) Integer.parseInt(args[19]);
-
-		/* Compat setting to process repaints immediately */
-		Mobile.compatImmediateRepaints = Integer.parseInt(args[20]) != 0;
-
-		/* Compat setting to override mobile platform checks */
-		Mobile.compatOverridePlatformChecks = Integer.parseInt(args[21]) != 0;
-
-		/* Compat setting to translate drawing methods in a siemens-friendly way */
-		Mobile.compatSiemensFriendlyDrawing = Integer.parseInt(args[22]) != 0;
-
-		/* Half-Res M3G Rendering SpeedHack is a per-game config */
-		Mobile.halfResM3GRaster = Integer.parseInt(args[23]) != 0;
-
-		/* DoJa API Version */
-		Mobile.DoJaVersion = Integer.parseInt(args[24]);
-
-		/* Compat setting to ignore volume changes */
-		Mobile.compatIgnoreVolumeChanges = Integer.parseInt(args[25]) != 0;
-
-		/* MascotCapsuleV3 Half Res rendering speedhack */
-		Mobile.halfResMCV3Raster = Integer.parseInt(args[26]) != 0;
-
-		/* MascotCapsuleV3 no Lighting speedhack */
-		Mobile.MCV3NoLighting = Integer.parseInt(args[27]) != 0;
-
-		/* Compat setting to fix Horizontal FOV for MascotCapsuleV3 */
-		Mobile.compatMCV3HorizontalFovFix = Integer.parseInt(args[28]) != 0;
-
-		/* MascotCapsuleV3 Show Heap debug setting */
-		Mobile.MCV3ShowHeapUsage = Integer.parseInt(args[29]) != 0;
-
-		/* MascotCapsuleV3 Show Heap debug setting */
-		Mobile.MCV3ShowTimeMetrics = Integer.parseInt(args[30]) != 0;
-
-		/* Search and use VirtualMIDISynth as external MIDI device */
-		if(args.length > 31) { midiSearchVMS = Integer.parseInt(args[31]) != 0; }
-
+		applyLaunchOptions();
 
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
 
 		Mobile.setPlatform(new MobilePlatform(lcdWidth, lcdHeight), new Runnable() { public void run() { settingsChanged(); } });
+		/*
+		 * Notify the MIDlet class that this version of FreeJ2ME is for Libretro, which disables
+		 * the ability to close the jar when a J2ME app requests an exit as this can cause segmentation
+		 * faults on libretro frontends and also close the frontend unexpectedly.
+		 */
+		Mobile.getPlatform().isLibretro = true;
 		lcdData = Mobile.getPlatform().getLcdFrontbuffer().getDataBuffer();
 
 		// The painter here is only really used to check for frontend pauses
@@ -212,6 +98,67 @@ public class Libretro
 
 		System.out.println("+READY");
 		System.out.flush();
+	}
+
+	private void applyLaunchOptions()
+	{
+		lcdWidth =  Integer.parseInt(launchArgs[0]);
+		lcdHeight = Integer.parseInt(launchArgs[1]);
+
+		Mobile.rotateDisplay = Integer.parseInt(launchArgs[2]) * 90;
+
+		Mobile.kddi = false;
+		Mobile.lg = false;
+		Mobile.motorola = false;
+		Mobile.motoTriplets = false;
+		Mobile.motoV8 = false;
+		Mobile.motoA1000 = false;
+		Mobile.nokiaKeyboard = false;
+		Mobile.sagem = false;
+		Mobile.siemens = false;
+		Mobile.sharp = false;
+		Mobile.skt = false;
+
+		if(Integer.parseInt(launchArgs[3]) == 1)       { Mobile.lg = true;    }
+		else if(Integer.parseInt(launchArgs[3]) == 2)  { Mobile.motorola = true;  }
+		else if(Integer.parseInt(launchArgs[3]) == 3)  { Mobile.motoTriplets = true; }
+		else if(Integer.parseInt(launchArgs[3]) == 4)  { Mobile.motoV8 = true; }
+		else if(Integer.parseInt(launchArgs[3]) == 5)  { Mobile.motoA1000 = true; }
+		else if(Integer.parseInt(launchArgs[3]) == 6)  { Mobile.nokiaKeyboard = true; }
+		else if(Integer.parseInt(launchArgs[3]) == 7)  { Mobile.sagem = true; }
+		else if(Integer.parseInt(launchArgs[3]) == 8)  { Mobile.siemens = true; }
+		else if(Integer.parseInt(launchArgs[3]) == 9)  { Mobile.sharp = true; }
+		else if(Integer.parseInt(launchArgs[3]) == 10) { Mobile.skt = true; }
+		else if(Integer.parseInt(launchArgs[3]) == 11) { Mobile.kddi = true; }
+
+		Mobile.limitFPS = Integer.parseInt(launchArgs[4]);
+		soundEnabled = Integer.parseInt(launchArgs[5]) != 0;
+		Mobile.useCustomMidi = Integer.parseInt(launchArgs[6]) != 0;
+		Mobile.dumpAudioStreams = Integer.parseInt(launchArgs[7]) != 0;
+		Mobile.minLogLevel = (byte) (Integer.parseInt(launchArgs[8]));
+		Mobile.noAlphaOnBlankImages = Integer.parseInt(launchArgs[9]) != 0;
+		Mobile.maskIndex = Integer.parseInt(launchArgs[10]);
+		Mobile.compatFantasyZoneFix = Integer.parseInt(launchArgs[11]) != 0;
+		Mobile.compatTranslateToOriginOnReset = Integer.parseInt(launchArgs[12]) != 0;
+		Mobile.useCustomTextFont = Integer.parseInt(launchArgs[13]) != 0;
+		Mobile.fontSizeOffset = (byte) Integer.parseInt(launchArgs[14]);
+		Mobile.dumpGraphicsObjects = Integer.parseInt(launchArgs[15]) != 0;
+		Mobile.deleteTemporaryKJXFiles = Integer.parseInt(launchArgs[16]) != 0;
+		Mobile.M3GRenderUntexturedPolygons = Integer.parseInt(launchArgs[17]) != 0;
+		Mobile.M3GRenderWireframe = Integer.parseInt(launchArgs[18]) != 0;
+		Mobile.unlockFramerateHack = (byte) Integer.parseInt(launchArgs[19]);
+		Mobile.compatImmediateRepaints = Integer.parseInt(launchArgs[20]) != 0;
+		Mobile.compatOverridePlatformChecks = Integer.parseInt(launchArgs[21]) != 0;
+		Mobile.compatSiemensFriendlyDrawing = Integer.parseInt(launchArgs[22]) != 0;
+		Mobile.halfResM3GRaster = Integer.parseInt(launchArgs[23]) != 0;
+		Mobile.DoJaVersion = Integer.parseInt(launchArgs[24]);
+		Mobile.compatIgnoreVolumeChanges = Integer.parseInt(launchArgs[25]) != 0;
+		Mobile.halfResMCV3Raster = Integer.parseInt(launchArgs[26]) != 0;
+		Mobile.MCV3NoLighting = Integer.parseInt(launchArgs[27]) != 0;
+		Mobile.compatMCV3HorizontalFovFix = Integer.parseInt(launchArgs[28]) != 0;
+		Mobile.MCV3ShowHeapUsage = Integer.parseInt(launchArgs[29]) != 0;
+		Mobile.MCV3ShowTimeMetrics = Integer.parseInt(launchArgs[30]) != 0;
+		if(launchArgs.length > 31) { midiSearchVMS = Integer.parseInt(launchArgs[31]) != 0; }
 	}
 
 	private class LibretroIO
@@ -362,6 +309,8 @@ public class Libretro
 
 									if(Mobile.getPlatform().load(getFormattedLocation(path)))
 									{
+										applyLaunchOptions();
+
 										// Check config
 
 										/* Override configs with the ones passed through commandline */
@@ -383,11 +332,11 @@ public class Libretro
 										else if(Mobile.skt)           { Mobile.config.settings.put("phone", "SKT"); }
 										else                          { Mobile.config.settings.put("phone", "Standard"); }
 
-										Mobile.config.settings.put("sound", soundEnabled ? "on" : "off");
+										Mobile.config.sysSettings.put("sound", soundEnabled ? "on" : "off");
 
 										Mobile.config.settings.put("fps", "" + Mobile.limitFPS);
 
-										Mobile.config.settings.put("soundfont", Mobile.useCustomMidi ? "Custom" : "Default");
+										Mobile.config.sysSettings.put("soundfont", Mobile.useCustomMidi ? "Custom" : "Default");
 
 										Mobile.config.settings.put("spdhacknoalpha", Mobile.noAlphaOnBlankImages ? "on" : "off");
 										Mobile.config.settings.put("spdhackm3ghalfres", Mobile.halfResM3GRaster ? "on" : "off");
@@ -409,10 +358,10 @@ public class Libretro
 										Mobile.config.settings.put("compatignorevolumechanges", Mobile.compatIgnoreVolumeChanges ? "on" : "off");
 										Mobile.config.settings.put("compatmcv3horizfovfix", Mobile.compatMCV3HorizontalFovFix ? "on" : "off");
 
-										Mobile.config.settings.put("textfont", Mobile.useCustomTextFont ? "Custom" : "Default");
+										Mobile.config.sysSettings.put("textfont", Mobile.useCustomTextFont ? "Custom" : "Default");
 										Mobile.config.settings.put("fontoffset", "" + Mobile.fontSizeOffset);
 
-										if(Mobile.unlockFramerateHack == 0)      { Mobile.config.settings.put("fpshack", "Default");  }
+										if(Mobile.unlockFramerateHack == 0)      { Mobile.config.settings.put("fpshack", "Disabled");  }
 										else if(Mobile.unlockFramerateHack == 1) { Mobile.config.settings.put("fpshack", "Safe");  }
 										else if(Mobile.unlockFramerateHack == 2) { Mobile.config.settings.put("fpshack", "Extended");  }
 										else if(Mobile.unlockFramerateHack == 3) { Mobile.config.settings.put("fpshack", "Aggressive");  }
@@ -504,9 +453,9 @@ public class Libretro
 
 									Mobile.config.settings.put("fps", ""+ Integer.parseInt(cfgtokens[5]));
 
-									Mobile.config.settings.put("sound", Integer.parseInt(cfgtokens[6]) == 1 ? "on" : "off");
+									Mobile.config.sysSettings.put("sound", Integer.parseInt(cfgtokens[6]) == 1 ? "on" : "off");
 
-									Mobile.config.settings.put("soundfont", Integer.parseInt(cfgtokens[7]) == 1 ? "Custom" : "Default");
+									Mobile.config.sysSettings.put("soundfont", Integer.parseInt(cfgtokens[7]) == 1 ? "Custom" : "Default");
 
 									Mobile.config.sysSettings.put("dumpAudioStreams", Integer.parseInt(cfgtokens[8]) == 1 ? "on" : "off");
 
@@ -525,7 +474,7 @@ public class Libretro
 
 									Mobile.config.settings.put("compattranstooriginonreset", Integer.parseInt(cfgtokens[13]) == 1 ? "on" : "off");
 
-									Mobile.config.settings.put("textfont", Integer.parseInt(cfgtokens[14]) == 1 ? "Custom" : "Default");
+									Mobile.config.sysSettings.put("textfont", Integer.parseInt(cfgtokens[14]) == 1 ? "Custom" : "Default");
 
 									Mobile.config.settings.put("fontoffset", "" + Integer.parseInt(cfgtokens[15]));
 
@@ -537,7 +486,7 @@ public class Libretro
 
 									Mobile.config.sysSettings.put("M3GWireframe", Integer.parseInt(cfgtokens[19]) == 1 ? "on" : "off");
 
-									if(Integer.parseInt(cfgtokens[20])==0) { Mobile.config.settings.put("fpshack", "Default"); }
+									if(Integer.parseInt(cfgtokens[20])==0) { Mobile.config.settings.put("fpshack", "Disabled"); }
 									if(Integer.parseInt(cfgtokens[20])==1) { Mobile.config.settings.put("fpshack", "Safe");  }
 									if(Integer.parseInt(cfgtokens[20])==2) { Mobile.config.settings.put("fpshack", "Extended");  }
 									if(Integer.parseInt(cfgtokens[20])==3) { Mobile.config.settings.put("fpshack", "Aggressive");  }
@@ -560,9 +509,9 @@ public class Libretro
 
 									Mobile.config.settings.put("compatmcv3horizfovfix", Integer.parseInt(cfgtokens[29]) == 1 ? "on" : "off");
 
-									Mobile.config.settings.put("MCV3ShowHeapUsage", Integer.parseInt(cfgtokens[30]) == 1 ? "on" : "off");
+									Mobile.config.sysSettings.put("MCV3ShowHeapUsage", Integer.parseInt(cfgtokens[30]) == 1 ? "on" : "off");
 
-									Mobile.config.settings.put("MCV3ShowTimeMetrics", Integer.parseInt(cfgtokens[31]) == 1 ? "on" : "off");
+									Mobile.config.sysSettings.put("MCV3ShowTimeMetrics", Integer.parseInt(cfgtokens[31]) == 1 ? "on" : "off");
 
 									if(cfgtokens.length > 32 && Integer.parseInt(cfgtokens[32])==0) { Mobile.config.sysSettings.put("MIDISearchVMS", "off");  }
 									else { Mobile.config.sysSettings.put("MIDISearchVMS", "on"); }

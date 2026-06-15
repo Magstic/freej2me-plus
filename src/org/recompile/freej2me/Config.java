@@ -204,6 +204,9 @@ public class Config
 			if(settings.containsKey("sound")) { settings.remove("sound"); }
 			if(settings.containsKey("soundfont")) { settings.remove("soundfont"); }
 			if(settings.containsKey("textfont")) { settings.remove("textfont"); }
+			if(settings.containsKey("MCV3ShowHeapUsage")) { settings.remove("MCV3ShowHeapUsage"); }
+			if(settings.containsKey("MCV3ShowTimeMetrics")) { settings.remove("MCV3ShowTimeMetrics"); }
+			if(settings.containsKey("fpshack") && settings.get("fpshack").equals("Default")) { settings.put("fpshack", "Disabled"); }
 
 			// Add any missing settings
 			if(!settings.containsKey("scrwidth")) { settings.put("scrwidth", ""+width); }
