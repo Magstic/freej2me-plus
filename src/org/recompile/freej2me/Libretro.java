@@ -25,6 +25,8 @@ import java.util.TimerTask;
 import java.io.File;
 import java.io.IOException;
 
+import javax.microedition.media.Manager;
+
 public class Libretro
 {
 	private int lcdWidth;
@@ -35,6 +37,8 @@ public class Libretro
 	private boolean midiSearchVMS = true;
 	private String[] launchArgs;
 	private static volatile boolean canPause = false;
+	private static volatile boolean shutdownInProgress = false;
+	private static volatile boolean shutdownHookRegistered = false;
 
 	private static final long PAUSE_DELAY_MS = 250;
 	private static volatile long lastCoreUpdateTime = System.currentTimeMillis(); // Tracks last core update for pause checks
@@ -61,7 +65,38 @@ public class Libretro
 	public static void main(String args[])
 	{
 		Mobile.clearOldLog();
+		registerShutdownHook();
 		Libretro app = new Libretro(args);
+	}
+
+	private static synchronized void registerShutdownHook()
+	{
+		if(shutdownHookRegistered) { return; }
+
+		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
+		{
+			public void run() { cleanupBeforeExit(); }
+		}, "FreeJ2ME-LR-Shutdown"));
+
+		shutdownHookRegistered = true;
+	}
+
+	private static synchronized void cleanupBeforeExit()
+	{
+		if(shutdownInProgress) { return; }
+		shutdownInProgress = true;
+
+		try { Manager.shutdownMediaEngine(); }
+		catch (Throwable t)
+		{
+			Mobile.log(Mobile.LOG_WARNING, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + "Failed to shutdown media engine: " + t.getMessage());
+		}
+	}
+
+	private static void shutdownAndExit(int exitCode)
+	{
+		cleanupBeforeExit();
+		System.exit(exitCode);
 	}
 
 	public Libretro(String args[])
@@ -201,7 +236,7 @@ public class Libretro
 					while(true)
 					{
 						bin = System.in.read(); // Blocks until there's data available
-						if(bin==-1) { return; }
+						if(bin==-1) { shutdownAndExit(0); }
 
 						//System.out.print(" "+bin);
 						din[count] = (int)(bin & 0xFF);
@@ -303,7 +338,7 @@ public class Libretro
 								case 10: // load jar
 									buffer = new byte[code];
 									bytesRead = readFully(buffer, code);
-									if (bytesRead != code) { return; }
+									if (bytesRead != code) { shutdownAndExit(0); }
 
 									path = new String(buffer, 0, bytesRead, "UTF-8");
 
@@ -407,14 +442,14 @@ public class Libretro
 									else
 									{
 										Mobile.log(Mobile.LOG_ERROR, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + "Couldn't load jar...");
-										System.exit(0);
+										shutdownAndExit(0);
 									}
 								break;
 
 								case 11: // set save path //
 									buffer = new byte[code];
 									bytesRead = readFully(buffer, code);
-									if (bytesRead != code) { return; }
+									if (bytesRead != code) { shutdownAndExit(0); }
 
 									Mobile.getPlatform().dataPath = new String(buffer, 0, bytesRead, "UTF-8");
 								break;
@@ -423,7 +458,7 @@ public class Libretro
 									/* Received updated settings from libretro core */
 									buffer = new byte[code];
 									bytesRead = readFully(buffer, code);
-									if (bytesRead != code) { return; }
+									if (bytesRead != code) { shutdownAndExit(0); }
 
 									String cfgvars = new String(buffer, 0, bytesRead, "UTF-8");
 									/* Tokens: [0]="FJ2ME_LR_OPTS:", [1]=width, [2]=height, [3]=rotate, [4]=phone, [5]=fps, ... */
@@ -520,6 +555,10 @@ public class Libretro
 									settingsChanged();
 								break;
 
+								case 14:
+									shutdownAndExit(0);
+									return;
+
 								case 15:
 									lastCoreUpdateTime = System.currentTimeMillis();
 
@@ -592,7 +631,7 @@ public class Libretro
 									catch (Exception e)
 									{
 										Mobile.log(Mobile.LOG_DEBUG, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + "Error sending frame: "+e.getMessage());
-										System.exit(0);
+										shutdownAndExit(0);
 									}
 									// We are now ready to start monitoring for pauses, the first frame was requested and sent
 								break;
@@ -601,7 +640,7 @@ public class Libretro
 						}
 					}
 				}
-				catch (Exception e) { System.exit(0); }
+				catch (Exception e) { shutdownAndExit(0); }
 			}
 		} // timer
 	} // LibretroIO
@@ -628,7 +667,7 @@ public class Libretro
 		if(!file.isFile())
 		{
 			Mobile.log(Mobile.LOG_ERROR, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + "File '" + loc + "' not found...");
-			System.exit(0);
+			shutdownAndExit(0);
 		}
 
 		return file.toURI().toString();

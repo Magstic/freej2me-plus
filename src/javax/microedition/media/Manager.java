@@ -25,8 +25,10 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.MessageDigest;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.LockSupport;
 
 import javax.sound.midi.MidiChannel;
@@ -35,6 +37,7 @@ import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
 import javax.sound.midi.Sequencer;
+import javax.sound.midi.ShortMessage;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.Synthesizer;
 import javax.microedition.media.protocol.DataSource;
@@ -468,6 +471,136 @@ public class Manager
 	}
 
 	public static Soundbank getCustomSoundfont() { return customSoundfont; }
+
+	private static void panicReceiver(Receiver receiver)
+	{
+		if(receiver == null) { return; }
+
+		for(int ch = 0; ch < 16; ch++)
+		{
+			try
+			{
+				ShortMessage cc64 = new ShortMessage();
+				cc64.setMessage(ShortMessage.CONTROL_CHANGE | ch, 64, 0); // Sustain Off
+				receiver.send(cc64, -1);
+
+				ShortMessage cc120 = new ShortMessage();
+				cc120.setMessage(ShortMessage.CONTROL_CHANGE | ch, 120, 0); // All Sound Off
+				receiver.send(cc120, -1);
+
+				ShortMessage cc123 = new ShortMessage();
+				cc123.setMessage(ShortMessage.CONTROL_CHANGE | ch, 123, 0); // All Notes Off
+				receiver.send(cc123, -1);
+
+				ShortMessage rpnNull101 = new ShortMessage();
+				rpnNull101.setMessage(ShortMessage.CONTROL_CHANGE | ch, 101, 127);
+				receiver.send(rpnNull101, -1);
+				ShortMessage rpnNull100 = new ShortMessage();
+				rpnNull100.setMessage(ShortMessage.CONTROL_CHANGE | ch, 100, 127);
+				receiver.send(rpnNull100, -1);
+
+				ShortMessage pbCenter = new ShortMessage();
+				pbCenter.setMessage(ShortMessage.PITCH_BEND | ch, 0, 64);
+				receiver.send(pbCenter, -1);
+			}
+			catch (Throwable ignore) { }
+		}
+	}
+
+	private static void panicSynthChannels(Synthesizer synth)
+	{
+		if(synth == null) { return; }
+
+		try
+		{
+			MidiChannel[] channels = synth.getChannels();
+			if(channels == null) { return; }
+
+			for(int i = 0; i < channels.length; i++)
+			{
+				if(channels[i] == null) { continue; }
+				channels[i].controlChange(64, 0);
+				channels[i].allNotesOff();
+				channels[i].allSoundOff();
+			}
+		}
+		catch (Throwable ignore) { }
+	}
+
+	public static synchronized void shutdownMediaEngine()
+	{
+		try { PlatformPlayer.shutdownActivePlayers(); }
+		catch (Throwable t)
+		{
+			Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Failed to shutdown active players: " + t.getMessage());
+		}
+
+		if(toneThread != null && toneThread.isAlive()) { toneThread.interrupt(); }
+		toneThread = null;
+
+		if(toneSequencer != null)
+		{
+			try { if(toneSequencer.isRunning()) { toneSequencer.stop(); } }
+			catch (Throwable ignore) { }
+			try { toneSequencer.close(); }
+			catch (Throwable ignore) { }
+			toneSequencer = null;
+		}
+
+		if(toneChannel != null)
+		{
+			try
+			{
+				toneChannel.controlChange(64, 0);
+				toneChannel.allNotesOff();
+				toneChannel.allSoundOff();
+			}
+			catch (Throwable ignore) { }
+			toneChannel = null;
+		}
+
+		panicReceiver(toneReceiver);
+		panicReceiver(externalMidiReceiver);
+
+		Set<Synthesizer> synthsToClose = new HashSet<Synthesizer>();
+		if(toneSynth != null) { synthsToClose.add(toneSynth); }
+		for(int i = 0; i < NUM_EXCLUSIVE_SYNTHS; i++)
+		{
+			if(exclusiveSynths[i] != null) { synthsToClose.add(exclusiveSynths[i]); }
+			exclusiveSynths[i] = null;
+			synthIdxInUse[i] = false;
+		}
+
+		for(Synthesizer synth : synthsToClose)
+		{
+			panicSynthChannels(synth);
+			try { if(synth.isOpen()) { synth.close(); } }
+			catch (Throwable ignore) { }
+		}
+
+		if(toneReceiver != null)
+		{
+			try { toneReceiver.close(); }
+			catch (Throwable ignore) { }
+			toneReceiver = null;
+		}
+
+		if(externalMidiReceiver != null)
+		{
+			try { externalMidiReceiver.close(); }
+			catch (Throwable ignore) { }
+			externalMidiReceiver = null;
+		}
+
+		if(externalMidiDevice != null)
+		{
+			try { if(externalMidiDevice.isOpen()) { externalMidiDevice.close(); } }
+			catch (Throwable ignore) { }
+			externalMidiDevice = null;
+		}
+
+		toneSynth = null;
+	}
 
 	public static void prepareMediaEngine() 
 	{

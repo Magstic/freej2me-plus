@@ -302,9 +302,7 @@ public class PlatformPlayer implements Player
 
 		try
 		{
-			if(isRunning()) { stop(); }
-			player.deallocate();
-			player.close();
+			player.shutdown();
 			controls = null;
 			player = null;
 			state = Player.CLOSED;
@@ -607,8 +605,7 @@ public class PlatformPlayer implements Player
 			{
 				if(sequencePlayers[i] != null && !sequencePlayers[i].isRunning())
 				{
-					sequencePlayers[i].deallocate();
-					sequencePlayers[i].close();
+					sequencePlayers[i].shutdown();
 					sequencePlayers[i] = midplayer;
 					Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Overriding a previously allocated midi player. Either the jar requires more than " + sequencePlayers.length + " midi at the same time, or it's not closing media properly.");
 					return;
@@ -630,8 +627,7 @@ public class PlatformPlayer implements Player
 			{
 				if(sequencePlayers[i] != null && !sequencePlayers[i].isRunning())
 				{
-					sequencePlayers[i].deallocate();
-					sequencePlayers[i].close();
+					sequencePlayers[i].shutdown();
 					sequencePlayers[i] = smafPlayer;
 					Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Overriding a previously allocated midi player. Either the jar requires more than " + sequencePlayers.length + " midi at the same time, or it's not closing media properly.");
 					return;
@@ -641,6 +637,27 @@ public class PlatformPlayer implements Player
 		else if(wavplayer != null)
 		{
 			return;
+		}
+	}
+
+	public static synchronized void shutdownActivePlayers()
+	{
+		for(int i = 0; i < sequencePlayers.length; i++)
+		{
+			if(sequencePlayers[i] == null) { continue; }
+			if(sequencePlayers[i].getSequence() == null)
+			{
+				sequencePlayers[i] = null;
+				continue;
+			}
+
+			try { sequencePlayers[i].shutdown(); }
+			catch (Throwable t)
+			{
+				Mobile.log(Mobile.LOG_WARNING, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Failed to shutdown active sequenced player: " + t.getMessage());
+			}
+
+			sequencePlayers[i] = null;
 		}
 	}
 
@@ -662,6 +679,15 @@ public class PlatformPlayer implements Player
 
 		// For sequence players
 		public Sequence getSequence() { return null; }
+		public void shutdown()
+		{
+			try { stop(); }
+			catch (Throwable ignore) { }
+			try { deallocate(); }
+			catch (Throwable ignore) { }
+			try { close(); }
+			catch (Throwable ignore) { }
+		}
 	}
 
 	private class VolumeFilteredReceiver implements Receiver
@@ -833,6 +859,10 @@ public class PlatformPlayer implements Player
 			{
 				try
 				{
+					ShortMessage cc64 = new ShortMessage();
+					cc64.setMessage(ShortMessage.CONTROL_CHANGE | ch, 64, 0); // Sustain Off
+					out.send(cc64, ts);
+
 					ShortMessage cc120 = new ShortMessage();
 					cc120.setMessage(ShortMessage.CONTROL_CHANGE | ch, 120, 0); // All Sound Off
 					out.send(cc120, ts);
@@ -1195,7 +1225,8 @@ public class PlatformPlayer implements Player
 
 		public void stop()
 		{
-			midi.stop();
+			panicReceiver();
+			if(midi != null) { midi.stop(); }
 			getMediaTime();
 			state = Player.PREFETCHED;
 			notifyListeners(PlayerListener.STOPPED, getMediaTime());
@@ -1203,6 +1234,8 @@ public class PlatformPlayer implements Player
 
 		public void deallocate()
 		{
+			panicReceiver();
+			if(transmitter != null) { transmitter.close(); }
 			transmitter = null;
 			rawReceiver = null;
 			receiver = null;
@@ -1243,13 +1276,14 @@ public class PlatformPlayer implements Player
 
 		public long getMediaTime()
 		{
+			if(midi == null) { return curTime; }
 			curTime = midi.getMicrosecondPosition();
 			return midi.getMicrosecondPosition();
 		}
 
-		public long getDuration() { return midi.getMicrosecondLength(); }
+		public long getDuration() { return midi == null ? 0 : midi.getMicrosecondLength(); }
 
-		public boolean isRunning() { return midi.isRunning(); }
+		public boolean isRunning() { return midi != null && midi.isRunning(); }
 
 		public Sequence getSequence() { return midiSequence; }
 
@@ -1261,6 +1295,7 @@ public class PlatformPlayer implements Player
 
 		private void prepareMidiSubsystem() throws MidiUnavailableException, InvalidMidiDataException
 		{
+			if(midi == null) { throw new MidiUnavailableException("MIDI sequencer not initialized."); }
 			if(midi.getSequence() == null || !synthReserved)
 			{
 				if(Manager.isUsingExternalMidiReceiver() && Manager.getExternalMidiReceiver() != null)
@@ -1282,6 +1317,21 @@ public class PlatformPlayer implements Player
 				synthReserved = true;
 				midi.setSequence(midiSequence);
 			}
+		}
+
+		private void panicReceiver()
+		{
+			if(receiver instanceof VolumeFilteredReceiver)
+			{
+				try { ((VolumeFilteredReceiver) receiver).panic(-1); }
+				catch (Throwable ignore) { }
+			}
+		}
+
+		public void shutdown()
+		{
+			panicReceiver();
+			super.shutdown();
 		}
 	}
 
@@ -1490,7 +1540,8 @@ public class PlatformPlayer implements Player
 
 		public void stop()
 		{
-			midi.stop();
+			panicReceiver();
+			if(midi != null) { midi.stop(); }
 			stopActivePcmClips();
 			isPlaying = false;
 			state = Player.PREFETCHED;
@@ -1499,6 +1550,8 @@ public class PlatformPlayer implements Player
 
 		public void deallocate()
 		{
+			panicReceiver();
+			if(transmitter != null) { transmitter.close(); }
 			transmitter = null;
 			rawReceiver = null;
 			receiver = null;
@@ -1603,6 +1656,7 @@ public class PlatformPlayer implements Player
 
 		private void prepareMidiSubsystem() throws MidiUnavailableException, InvalidMidiDataException
 		{
+			if(midi == null) { throw new MidiUnavailableException("SMAF sequencer not initialized."); }
 			if(midi.getSequence() == null || !synthReserved)
 			{
 				if(Manager.isUsingExternalMidiReceiver() && Manager.getExternalMidiReceiver() != null)
@@ -1624,6 +1678,21 @@ public class PlatformPlayer implements Player
 				midi.setSequence(midiSequence);
 				configureSequencePlayback();
 			}
+		}
+
+		private void panicReceiver()
+		{
+			if(receiver instanceof VolumeFilteredReceiver)
+			{
+				try { ((VolumeFilteredReceiver) receiver).panic(-1); }
+				catch (Throwable ignore) { }
+			}
+		}
+
+		public void shutdown()
+		{
+			panicReceiver();
+			super.shutdown();
 		}
 
 		private boolean hasPcmStreams()

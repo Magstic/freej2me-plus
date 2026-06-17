@@ -848,6 +848,10 @@ public class MobilePlatform
 			 * Load up everything needed to play sound before the jar opens to minimize ingame stutters
 			 * this basically just loads up the synthesizers, as they're the biggest troublemakers.
 			 */
+			javax.microedition.media.Manager.shutdownMediaEngine();
+			appTerminated = false;
+			MIDletLoader.MIDletSelected = false;
+			Mobile.isPaused = false;
 			javax.microedition.media.Manager.prepareMediaEngine();
 
 			loader.start();
@@ -890,9 +894,11 @@ public class MobilePlatform
 		}
 	}
 
-	public final void drawAppTerminated() 
+	public final void drawAppTerminated()
 	{
-		if(!isLibretro) 
+		javax.microedition.media.Manager.shutdownMediaEngine();
+
+		if(!isLibretro)
 		{
 			gcFrontbuffer.setColor(0, 0, 64);
 			gcFrontbuffer.fillRect(0, 0, lcdWidth, lcdHeight);

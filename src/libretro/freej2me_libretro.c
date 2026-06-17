@@ -31,6 +31,7 @@
 #include <retro_miscellaneous.h>
 
 #define NUM_ARGUMENTS 37
+#define JAVA_SHUTDOWN_TIMEOUT_MS 1000
 
 const char *slash = path_default_slash();
 
@@ -100,18 +101,23 @@ struct retro_game_geometry Geometry;
 
 bool isRunning();
 bool javaOpen(char *cmd, char **params);
+static void close_java_pipes(void);
+static bool wait_for_java_exit(unsigned int timeout_ms);
+static bool request_java_shutdown(void);
+static void force_kill_java_process(void);
+static void cleanup_java_process_state(void);
 
 #ifdef __linux__
 int javaProcess;
-int pRead[2];
-int pWrite[2];
+int pRead[2] = { -1, -1 };
+int pWrite[2] = { -1, -1 };
 
 #elif _WIN32
 BOOL succeeded = FALSE;
 PROCESS_INFORMATION javaProcess;
 STARTUPINFO startInfo;
-HANDLE pRead[2];
-HANDLE pWrite[2];
+HANDLE pRead[2] = { NULL, NULL };
+HANDLE pWrite[2] = { NULL, NULL };
 #endif
 
 int joypad[PHONE_KEYS]; /* joypad state */
@@ -323,6 +329,121 @@ int read_from_pipe(void* pipe, void *data, int datasize)
 	return (int) bytesRead;
 }
 #endif
+
+static void close_java_pipes(void)
+{
+#ifdef __linux__
+	if(pRead[0] >= 0) { close(pRead[0]); pRead[0] = -1; }
+	if(pRead[1] >= 0) { close(pRead[1]); pRead[1] = -1; }
+	if(pWrite[0] >= 0) { close(pWrite[0]); pWrite[0] = -1; }
+	if(pWrite[1] >= 0) { close(pWrite[1]); pWrite[1] = -1; }
+#elif _WIN32
+	if(pRead[0] != NULL) { CloseHandle(pRead[0]); pRead[0] = NULL; }
+	if(pRead[1] != NULL) { CloseHandle(pRead[1]); pRead[1] = NULL; }
+	if(pWrite[0] != NULL) { CloseHandle(pWrite[0]); pWrite[0] = NULL; }
+	if(pWrite[1] != NULL) { CloseHandle(pWrite[1]); pWrite[1] = NULL; }
+#endif
+}
+
+static bool wait_for_java_exit(unsigned int timeout_ms)
+{
+#ifdef __linux__
+	unsigned int waited_ms = 0;
+	int status = 0;
+
+	while(waited_ms < timeout_ms)
+	{
+		if(waitpid(javaProcess, &status, WNOHANG) == javaProcess) { return true; }
+		usleep(10000);
+		waited_ms += 10;
+	}
+
+	return waitpid(javaProcess, &status, WNOHANG) == javaProcess;
+#elif _WIN32
+	if(javaProcess.hProcess == NULL) { return true; }
+	return WaitForSingleObject(javaProcess.hProcess, timeout_ms) == WAIT_OBJECT_0;
+#endif
+}
+
+static bool request_java_shutdown(void)
+{
+	unsigned char shutdownevent[5] = { 0xE, 0, 0, 0, 0 };
+
+	if(!booted || !isRunning()) { return true; }
+
+	log_fn(RETRO_LOG_INFO, "Requesting Java app shutdown.\n");
+	write_to_pipe(pWrite[1], shutdownevent, 5);
+
+	if(wait_for_java_exit(JAVA_SHUTDOWN_TIMEOUT_MS))
+	{
+		log_fn(RETRO_LOG_INFO, "Java app exited gracefully.\n");
+		return true;
+	}
+
+	log_fn(RETRO_LOG_WARN, "Timed out waiting for Java app shutdown.\n");
+	return false;
+}
+
+static void force_kill_java_process(void)
+{
+	if(!booted || stoppedRunning) { return; }
+
+#ifdef __linux__
+	kill(javaProcess, SIGKILL);
+	waitpid(javaProcess, NULL, 0);
+#elif _WIN32
+	HANDLE hProcessSnap;
+	PROCESSENTRY32 pe32;
+
+	hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (hProcessSnap == INVALID_HANDLE_VALUE) { return; }
+
+	pe32.dwSize = sizeof(PROCESSENTRY32);
+
+	if (!Process32First(hProcessSnap, &pe32))
+	{
+		CloseHandle(hProcessSnap);
+		return;
+	}
+
+	do
+	{
+		if (pe32.th32ParentProcessID == javaProcess.dwProcessId)
+		{
+			HANDLE hChildProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pe32.th32ProcessID);
+			if (hChildProcess)
+			{
+				TerminateProcess(hChildProcess, 0);
+				CloseHandle(hChildProcess);
+			}
+		}
+	} while (Process32Next(hProcessSnap, &pe32));
+
+	if (javaProcess.hProcess != NULL)
+	{
+		TerminateProcess(javaProcess.hProcess, 0);
+		WaitForSingleObject(javaProcess.hProcess, 1000);
+	}
+
+	CloseHandle(hProcessSnap);
+#endif
+}
+
+static void cleanup_java_process_state(void)
+{
+	stoppedRunning = true;
+	booted = false;
+	frameRequested = false;
+	resetRequested = false;
+	rumbleTime = 0;
+#ifdef __linux__
+	javaProcess = 0;
+#elif _WIN32
+	if(javaProcess.hProcess != NULL) { CloseHandle(javaProcess.hProcess); }
+	ZeroMemory(&javaProcess, sizeof(javaProcess));
+#endif
+	close_java_pipes();
+}
 
 int freej2me_present(const char *path)
 {
@@ -755,6 +876,7 @@ void retro_init(void)
 	/* init buffers, structs */
 	memset(frame, 0, frameSize);
 	memset(frameBuffer, 0, frameBufferSize);
+	stoppedRunning = false;
 
 	/* Check variables and set parameters */
 	check_variables(true);
@@ -896,6 +1018,12 @@ bool retro_load_game(const struct retro_game_info *info)
 {
 	int len = 0;
 
+	if(!booted || !isRunning())
+	{
+		retro_init();
+		if(!booted) { return false; }
+	}
+
 	/* Game info is passed to a global variable to enable restarts */
 	gameinfo = *info;
 	/* Send savepath to java */
@@ -953,7 +1081,10 @@ bool retro_load_game(const struct retro_game_info *info)
 	return true;
 }
 
-void retro_unload_game(void) { /* FreeJ2ME closes the game by itself */ }
+void retro_unload_game(void)
+{
+	retro_deinit();
+}
 
 void retro_run(void)
 {
@@ -1442,70 +1573,18 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
 
 void retro_deinit(void)
 {
-	if(isRunning())
+	if(booted && !request_java_shutdown())
 	{
-#ifdef __linux__
-		kill(javaProcess, SIGKILL);
-		wait(NULL);
-#elif _WIN32
-		HANDLE hProcessSnap;
-		PROCESSENTRY32 pe32;
-		CloseHandle(pRead[0]);
-		CloseHandle(pRead[1]);
-		CloseHandle(pWrite[0]);
-		CloseHandle(pWrite[1]);
-
-		/*
-		* Since java on win32 has the "decency" to open a secondary process with another PID
-		* that is what runs freej2me's main app, the only way i (with my very limited windows
-		* knowledge) can think of to reliably close this is going nuclear: Terminate all javaw
-		* processes related to javaProcess.
-		*/
-		hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-		if (hProcessSnap == INVALID_HANDLE_VALUE) { return; }
-
-		pe32.dwSize = sizeof(PROCESSENTRY32);
-
-		if (!Process32First(hProcessSnap, &pe32))
-		{
-			CloseHandle(hProcessSnap);
-			return;
-		}
-
-		// Iterate through all processes.
-		do
-		{
-			if (pe32.th32ParentProcessID == javaProcess.dwProcessId)
-			{
-				// Open the child process with TERMINATE permission.
-				HANDLE hChildProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pe32.th32ProcessID);
-				if (hChildProcess)
-				{
-					// Terminate the child process.
-					TerminateProcess(hChildProcess, 0);
-					CloseHandle(hChildProcess);
-				}
-			}
-		} while (Process32Next(hProcessSnap, &pe32));
-
-		// Then terminate the parent process (the one we have the pointer to).
-		HANDLE hParentProcess = OpenProcess(PROCESS_TERMINATE, FALSE, javaProcess.dwProcessId);
-		if (hParentProcess)
-		{
-			TerminateProcess(hParentProcess, 0);
-			CloseHandle(hParentProcess);
-		}
-
-		CloseHandle(hProcessSnap);
-#endif
+		force_kill_java_process();
 	}
+
+	cleanup_java_process_state();
 }
 
 void retro_reset(void)
 {
 	resetRequested = false;
 	restarting = true;
-	booted = false;
 	retro_deinit();
 	retro_init();
 	retro_load_game(&gameinfo);
@@ -1559,7 +1638,9 @@ bool javaOpen(char *cmd, char **params)
 		dup2(pRead[1], fd_stdout);  /* write to parent pRead */
 
 		close(pWrite[1]);
+		pWrite[1] = -1;
 		close(pRead[0]);
+		pRead[0] = -1;
 
 		chdir(systemPath);
 
@@ -1572,7 +1653,9 @@ bool javaOpen(char *cmd, char **params)
 	if(pid>0) /* parent */
 	{
 		close(pRead[1]);
+		pRead[1] = -1;
 		close(pWrite[0]);
+		pWrite[0] = -1;
 	}
 
 	if(pid<0) /* error */
@@ -1678,9 +1761,12 @@ bool javaOpen(char *cmd, char **params)
 
 	// Close handles in parent process
 	CloseHandle(pWrite[0]); // Close unused write end for child
+	pWrite[0] = NULL;
 	CloseHandle(pRead[1]);  // Close unused read end for child
+	pRead[1] = NULL;
 
 	CloseHandle(javaProcess.hThread); // Close the thread handle, not needed
+	javaProcess.hThread = NULL;
 #endif
 
 	/* wait for java process to respond */
