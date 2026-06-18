@@ -944,9 +944,23 @@ void retro_init(void)
 	/* Allocate memory for launch arguments */
 	params = (char**)malloc(sizeof(char*) * NUM_ARGUMENTS);
 #ifdef __linux__
-	params[0] = strdup("java");
+	char javaRuntimePath[PATH_MAX_LENGTH];
+	snprintf(javaRuntimePath, sizeof(javaRuntimePath), "%s%sfreej2me_system%scustomJVM%sbin%sjava", systemPath, slash, slash, slash, slash);
+	if (freej2me_present(javaRuntimePath))
+	{
+		log_fn(RETRO_LOG_INFO, "Using custom JVM: %s\n", javaRuntimePath);
+		params[0] = strdup(javaRuntimePath);
+	}
+	else { params[0] = strdup("java"); }
 #elif _WIN32
-	params[0] = strdup("javaw");
+	char javaRuntimePath[PATH_MAX_LENGTH];
+	snprintf(javaRuntimePath, sizeof(javaRuntimePath), "%s%sfreej2me_system%scustomJVM%sbin%sjavaw.exe", systemPath, slash, slash, slash, slash);
+	if (freej2me_present(javaRuntimePath))
+	{
+		log_fn(RETRO_LOG_INFO, "Using custom JVM: %s\n", javaRuntimePath);
+		params[0] = strdup(javaRuntimePath);
+	}
+	else { params[0] = strdup("javaw"); }
 #endif
 	params[1] = strdup("-jar");
 	params[2] = strdup(supported_encodings[characterEncoding]);
@@ -1726,14 +1740,20 @@ bool javaOpen(char *cmd, char **params)
 	/* Try starting the child process. Windows requires the commandline argument to be a single string. */
 	char cmdWin[PATH_MAX_LENGTH];
 
-	snprintf(cmdWin, PATH_MAX_LENGTH, "%s", params[0]); // First argument needs no space separator
-
-	for (int i = 1; i < NUM_ARGUMENTS; i++)
+	cmdWin[0] = '\0';
+	for (int i = 0; i < NUM_ARGUMENTS; i++)
 	{
 		if (params[i] != NULL)
 		{
-			// Append a space and then the parameter
-			snprintf(cmdWin + strlen(cmdWin), PATH_MAX_LENGTH - strlen(cmdWin), " %s", params[i]);
+			const char *separator = i == 0 ? "" : " ";
+			if(strpbrk(params[i], " \t") != NULL)
+			{
+				snprintf(cmdWin + strlen(cmdWin), PATH_MAX_LENGTH - strlen(cmdWin), "%s\"%s\"", separator, params[i]);
+			}
+			else
+			{
+				snprintf(cmdWin + strlen(cmdWin), PATH_MAX_LENGTH - strlen(cmdWin), "%s%s", separator, params[i]);
+			}
 		}
 	}
 
