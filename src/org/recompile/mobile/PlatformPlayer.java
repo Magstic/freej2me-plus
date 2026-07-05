@@ -1237,6 +1237,7 @@ public class PlatformPlayer implements Player
 			panicReceiver();
 			if(transmitter != null) { transmitter.close(); }
 			transmitter = null;
+			if(Manager.isDlsReceiver(rawReceiver)) { try { rawReceiver.close(); } catch(Throwable ignore) { } }
 			rawReceiver = null;
 			receiver = null;
 			if(synthReserved) { Manager.synthIdxInUse[synthIdx] = false; synthReserved = false; }
@@ -1298,7 +1299,13 @@ public class PlatformPlayer implements Player
 			if(midi == null) { throw new MidiUnavailableException("MIDI sequencer not initialized."); }
 			if(midi.getSequence() == null || !synthReserved)
 			{
-				if(Manager.isUsingExternalMidiReceiver() && Manager.getExternalMidiReceiver() != null)
+				if(Manager.isUsingDlsSynth())
+				{
+					this.synthIdx = 0;
+					this.synthesizer = null;
+					this.rawReceiver = Manager.createDlsReceiver(midiSequence);
+				}
+				else if(Manager.isUsingExternalMidiReceiver() && Manager.getExternalMidiReceiver() != null)
 				{
 					this.synthIdx = 0;
 					this.synthesizer = null;
@@ -1553,6 +1560,7 @@ public class PlatformPlayer implements Player
 			panicReceiver();
 			if(transmitter != null) { transmitter.close(); }
 			transmitter = null;
+			if(Manager.isDlsReceiver(rawReceiver)) { try { rawReceiver.close(); } catch(Throwable ignore) { } }
 			rawReceiver = null;
 			receiver = null;
 			if(synthReserved) { Manager.synthIdxInUse[synthIdx] = false; synthReserved = false; }
@@ -1659,7 +1667,13 @@ public class PlatformPlayer implements Player
 			if(midi == null) { throw new MidiUnavailableException("SMAF sequencer not initialized."); }
 			if(midi.getSequence() == null || !synthReserved)
 			{
-				if(Manager.isUsingExternalMidiReceiver() && Manager.getExternalMidiReceiver() != null)
+				if(Manager.isUsingDlsSynth())
+				{
+					this.synthIdx = 0;
+					this.synthesizer = null;
+					this.rawReceiver = Manager.createDlsReceiver(midiSequence);
+				}
+				else if(Manager.isUsingExternalMidiReceiver() && Manager.getExternalMidiReceiver() != null)
 				{
 					this.synthIdx = 0;
 					this.synthesizer = null;

@@ -92,6 +92,10 @@ public class Mobile
 
 	// Support for loading custom MIDI soundfonts
 	public static boolean useCustomMidi = false;
+	public static int dlsSampleRate = 22050;
+	public static int dlsVoices = 256;
+	public static boolean dlsReverb = true;
+	public static boolean dlsChorus = true;
 
 	// Support for loading custom text fonts
 	public static boolean useCustomTextFont = false;
@@ -1022,6 +1026,10 @@ public class Mobile
 		String midiSoundfont = config.sysSettings.get("soundfont");
 		if(midiSoundfont.equals("Custom") && useCustomMidi == false)      { useCustomMidi = true;  Manager.changeCustomMidi(); }
 		else if(midiSoundfont.equals("Default") && useCustomMidi == true) { useCustomMidi = false; Manager.changeCustomMidi(); }
+		try { dlsSampleRate = Integer.parseInt(config.sysSettings.get("dlsRate")); } catch(Exception e) { dlsSampleRate = 22050; }
+		try { dlsVoices = Integer.parseInt(config.sysSettings.get("dlsVoices")); } catch(Exception e) { dlsVoices = 256; }
+		dlsReverb = config.sysSettings.get("dlsReverb").equals("on");
+		dlsChorus = config.sysSettings.get("dlsChorus").equals("on");
 
 		String textFont = config.sysSettings.get("textfont");
 		if(textFont.equals("Custom"))       { useCustomTextFont = true; }

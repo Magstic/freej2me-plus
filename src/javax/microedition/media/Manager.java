@@ -36,6 +36,7 @@ import javax.sound.midi.MidiDevice;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
+import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.Soundbank;
@@ -46,6 +47,9 @@ import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformPlayer;
 import org.recompile.mobile.JavaxPlatformPlayer;
 import org.recompile.mobile.SiemensPlatformPlayer;
+import org.recompile.mobile.dls.DlsBank;
+import org.recompile.mobile.dls.DlsReceiver;
+import org.recompile.mobile.dls.DlsSynth;
 
 public class Manager
 {
@@ -56,6 +60,7 @@ public class Manager
 	private static File soundfontDir = new File("freej2me_system" + File.separatorChar + "customMIDI" + File.separatorChar);
 	private static Soundbank customSoundfont;
 	private static Soundbank defaultSoundbank = null;
+	private static DlsBank customDlsBank = null;
 	
 	public static final int NUM_EXCLUSIVE_SYNTHS = 4;
 	public static final Synthesizer[] exclusiveSynths = new Synthesizer[NUM_EXCLUSIVE_SYNTHS];
@@ -76,6 +81,28 @@ public class Manager
 	public static Receiver getExternalMidiReceiver()
 	{
 		return externalMidiReceiver;
+	}
+
+	public static boolean isUsingDlsSynth()
+	{
+		return customDlsBank != null;
+	}
+
+	public static Receiver createDlsReceiver() throws MidiUnavailableException
+	{
+		return createDlsReceiver(null);
+	}
+
+	public static Receiver createDlsReceiver(Sequence sequence) throws MidiUnavailableException
+	{
+		if(customDlsBank == null) { return null; }
+		return DlsSynth.createReceiver(customDlsBank, Mobile.dlsSampleRate, Mobile.dlsVoices,
+				Mobile.dlsReverb, Mobile.dlsChorus, DlsSynth.childTailInput(sequence));
+	}
+
+	public static boolean isDlsReceiver(Receiver receiver)
+	{
+		return receiver instanceof DlsReceiver;
 	}
 
 	private static boolean isVirtualMidiSynthEnabled()
@@ -378,13 +405,22 @@ public class Manager
 			try 
 			{
 				soundfontDir.mkdirs();
-				File dummyFile = new File(soundfontDir.getPath() + File.separatorChar + "place sf2 file or gm for early java 6 here");
+				File dummyFile = new File(soundfontDir.getPath() + File.separatorChar + "place dls, sf2 file or gm for early java 6 here");
 				dummyFile.createNewFile();
 			}
 			catch(IOException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Failed to create custom midi dir:" + e.getMessage()); }
 		}
 		
-		/* Get the first sf2 or gm soundfont in the directory */
+		/* DLS is handled by FreeJ2ME's DLS renderer; SF2/GM keep using Java Sound. */
+		String[] dlsfile = soundfontDir.list(new FilenameFilter()
+		{
+			@Override
+			public boolean accept(File f, String soundfont)
+			{
+				return soundfont.toLowerCase().endsWith(".dls");
+			}
+		});
+
 		String[] fontfile = soundfontDir.list(new FilenameFilter() 
 		{
 			@Override
@@ -394,6 +430,20 @@ public class Manager
 				return lowerCaseFont.endsWith(".sf2") || lowerCaseFont.endsWith(".gm");
 			}
 		});
+
+		customDlsBank = null;
+
+		if(Mobile.useCustomMidi && dlsfile != null && dlsfile.length > 0)
+		{
+			try
+			{
+				customDlsBank = DlsSynth.load(new File(soundfontDir, dlsfile[0]));
+				customSoundfont = defaultSoundbank;
+				Mobile.log(Mobile.LOG_INFO, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Loaded DLS MIDI bank: " + dlsfile[0]);
+				return;
+			}
+			catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Could not load DLS bank: " + e.getMessage()); }
+		}
 
 		/* 
 			* Only really set the player to use a custom midi soundfont if there is
@@ -411,7 +461,7 @@ public class Manager
 		else if (!Mobile.useCustomMidi) { customSoundfont = defaultSoundbank; }
 		else 
 		{ 
-			Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Custom MIDI enabled but there's no soundfont in: " + (soundfontDir.getPath() + File.separatorChar)); 
+			Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Custom MIDI enabled but there's no DLS/SF2/GM bank in: " + (soundfontDir.getPath() + File.separatorChar));
 			customSoundfont = defaultSoundbank;
 		}
 	}
@@ -432,7 +482,7 @@ public class Manager
 
 			for(int i = 0; i < NUM_EXCLUSIVE_SYNTHS; i++) 
 			{
-				if(exclusiveSynths[i] != null) { exclusiveSynths[i].loadAllInstruments(Manager.getCustomSoundfont()); }
+				if(exclusiveSynths[i] != null && !isUsingDlsSynth()) { exclusiveSynths[i].loadAllInstruments(Manager.getCustomSoundfont()); }
 			}
 			
 			// Restart the sequencer if needed

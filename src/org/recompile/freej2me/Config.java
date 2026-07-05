@@ -162,6 +162,10 @@ public class Config
 				sysSettings.put("dumpGraphicsObjects", "off");
 				sysSettings.put("sound", "on");
 				sysSettings.put("soundfont", "Default");
+				sysSettings.put("dlsRate", "22050");
+				sysSettings.put("dlsVoices", "256");
+				sysSettings.put("dlsReverb", "on");
+				sysSettings.put("dlsChorus", "on");
 				sysSettings.put("textfont", "Default");
 				// AWT Inputs
 				updateAWTInputs();
@@ -254,6 +258,10 @@ public class Config
 			if(!sysSettings.containsKey("dumpAudioStreams")) { sysSettings.put("dumpAudioStreams", "off"); }
 			if(!sysSettings.containsKey("dumpGraphicsObjects")) { sysSettings.put("dumpGraphicsObjects", "off"); }
 			if(!sysSettings.containsKey("soundfont")) { sysSettings.put("soundfont", "Default"); }
+			if(!sysSettings.containsKey("dlsRate")) { sysSettings.put("dlsRate", "22050"); }
+			if(!sysSettings.containsKey("dlsVoices")) { sysSettings.put("dlsVoices", "256"); }
+			if(!sysSettings.containsKey("dlsReverb")) { sysSettings.put("dlsReverb", "on"); }
+			if(!sysSettings.containsKey("dlsChorus")) { sysSettings.put("dlsChorus", "on"); }
 			if(!sysSettings.containsKey("textfont")) { sysSettings.put("textfont", "Default"); }
 			if(!sysSettings.containsKey("sound")) { sysSettings.put("sound", "on"); }
 			// AWT Inputs
@@ -606,6 +614,38 @@ public class Config
 	{
 		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "SysConfig: soundfont "+value);
 		sysSettings.put("soundfont", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateDlsRate(String value)
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "SysConfig: dlsRate "+value);
+		sysSettings.put("dlsRate", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateDlsVoices(String value)
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "SysConfig: dlsVoices "+value);
+		sysSettings.put("dlsVoices", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateDlsReverb(String value)
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "SysConfig: dlsReverb "+value);
+		sysSettings.put("dlsReverb", value);
+		saveConfig();
+		onChange.run();
+	}
+
+	public void updateDlsChorus(String value)
+	{
+		Mobile.log(Mobile.LOG_DEBUG, Config.class.getPackage().getName() + "." + Config.class.getSimpleName() + ": " + "SysConfig: dlsChorus "+value);
+		sysSettings.put("dlsChorus", value);
 		saveConfig();
 		onChange.run();
 	}

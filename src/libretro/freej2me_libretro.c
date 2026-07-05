@@ -30,7 +30,7 @@
 #include <file/file_path.h>
 #include <retro_miscellaneous.h>
 
-#define NUM_ARGUMENTS 37
+#define NUM_ARGUMENTS 41
 #define JAVA_SHUTDOWN_TIMEOUT_MS 1000
 
 const char *slash = path_default_slash();
@@ -174,6 +174,10 @@ int gameFPS; /* Auto(0), 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10 */
 int soundEnabled; /* also acts as a boolean */
 int customMidi; /* Also acts as a boolean */
 int midiSearchVMS = 1; /* Also acts as a boolean, search for VirtualMIDISynth */
+int dlsRate = 22050;
+int dlsVoices = 256;
+int dlsReverb = 1;
+int dlsChorus = 1;
 int customFont; /* Also acts as a boolean */
 int fontOffset = 0; /* -4, -3, -2, -1, 0 (Default), 1, 2, 3, 4 */
 int dumpAudioStreams;
@@ -584,6 +588,32 @@ static void check_variables(bool first_time_startup)
 		else if (!strcmp(var.value, "on")) { midiSearchVMS = 1; }
 	}
 
+	var.key = "freej2me_dlsrate";
+	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		dlsRate = atoi(var.value);
+	}
+
+	var.key = "freej2me_dlsvoices";
+	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		dlsVoices = atoi(var.value);
+	}
+
+	var.key = "freej2me_dlsreverb";
+	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		if (!strcmp(var.value, "off"))     { dlsReverb = 0; }
+		else if (!strcmp(var.value, "on")) { dlsReverb = 1; }
+	}
+
+	var.key = "freej2me_dlschorus";
+	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		if (!strcmp(var.value, "off"))     { dlsChorus = 0; }
+		else if (!strcmp(var.value, "on")) { dlsChorus = 1; }
+	}
+
 	var.key = "freej2me_textfont";
 	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
 	{
@@ -844,10 +874,11 @@ static void check_variables(bool first_time_startup)
 	/* Prepare a string to pass those core options to the Java app */
 	options_update = malloc(sizeof(char) * PIPE_MAX_LEN);
 
-	snprintf(options_update, PIPE_MAX_LEN, "FJ2ME_LR_OPTS:|%lux%lu|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d", screenRes[0], screenRes[1], rotateScreen,
+	snprintf(options_update, PIPE_MAX_LEN, "FJ2ME_LR_OPTS:|%lux%lu|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d", screenRes[0], screenRes[1], rotateScreen,
 		phoneType, gameFPS, soundEnabled, customMidi, dumpAudioStreams, loggingLevel, spdHackNoAlpha, backlightColor, compatFantasyZoneFix,
 		compatTransToOriginOnGFXReset, customFont, fontOffset, dumpGraphicsData, deleteTemporaryKJXFiles, m3gUntextured, m3gWireframe, spdFrameRateUnlock, compatImmediateRepaintCalls,
-		compatOverridePlatCheck, compatSiemensFriendlyDraw, spdHackM3GHalfRes, dojaVersion, compatIgnoreVolumeChanges, spdHackMCV3HalfRes, spdHackMCV3NoLight, compatMCV3HorFovFix, mcv3Heap, mcv3TimeStats, midiSearchVMS);
+		compatOverridePlatCheck, compatSiemensFriendlyDraw, spdHackM3GHalfRes, dojaVersion, compatIgnoreVolumeChanges, spdHackMCV3HalfRes, spdHackMCV3NoLight, compatMCV3HorFovFix, mcv3Heap, mcv3TimeStats, midiSearchVMS,
+		dlsRate, dlsVoices, dlsReverb, dlsChorus);
 	optstrlen = strlen(options_update);
 
 	/* 0xD = 13, which is the special case where the java app will receive the updated configs */
@@ -885,6 +916,7 @@ void retro_init(void)
 	char fpsunlockHack[2], compatImmediateRepaintArg[2], compatOverridePlatCheckArg[2], compatSiemensFriendlyDrawArg[2], spdHackM3GHalfResArg[2], dojaVersionArg[4];
 	char compatIgnoreVolumeChangesArg[2], spdHackMCV3HalfResArg[2], spdHackMCV3NoLightArg[2], compatMCV3HorFovFixArg[2], mcv3HeapArg[2], mcv3TimeStatsArg[2];
 	char midiSearchVMSArg[2];
+	char dlsRateArg[8], dlsVoicesArg[8], dlsReverbArg[2], dlsChorusArg[2];
 
 	sprintf(resArg[0], "%lu", screenRes[0]);
 	sprintf(resArg[1], "%lu", screenRes[1]);
@@ -918,6 +950,10 @@ void retro_init(void)
 	sprintf(mcv3HeapArg, "%d", mcv3Heap);
 	sprintf(mcv3TimeStatsArg, "%d", mcv3TimeStats);
 	sprintf(midiSearchVMSArg, "%d", midiSearchVMS);
+	sprintf(dlsRateArg, "%d", dlsRate);
+	sprintf(dlsVoicesArg, "%d", dlsVoices);
+	sprintf(dlsReverbArg, "%d", dlsReverb);
+	sprintf(dlsChorusArg, "%d", dlsChorus);
 
 	/* We need to clean up any argument memory from the previous launch arguments in order to load up updated ones */
 	if (restarting) { log_fn(RETRO_LOG_INFO, "Restarting FreeJ2ME-Plus.\n"); }
@@ -997,7 +1033,11 @@ void retro_init(void)
 	params[33] = strdup(mcv3HeapArg);
 	params[34] = strdup(mcv3TimeStatsArg);
 	params[35] = strdup(midiSearchVMSArg);
-	params[36] = NULL; // Null-terminate the array
+	params[36] = strdup(dlsRateArg);
+	params[37] = strdup(dlsVoicesArg);
+	params[38] = strdup(dlsReverbArg);
+	params[39] = strdup(dlsChorusArg);
+	params[40] = NULL; // Null-terminate the array
 
 	log_fn(RETRO_LOG_INFO, "Preparing to open FreeJ2ME-Plus' Java app.\n");
 

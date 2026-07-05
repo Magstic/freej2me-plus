@@ -353,6 +353,66 @@ struct retro_core_option_v2_definition core_options[] =
         "on"
     },
     {
+        "freej2me_dlsrate",
+        "System > DLS Sample Rate",
+        "DLS 採樣率",
+        "DLS 採樣率。僅在載入 DLS 音源時生效。",
+        "DLS 採樣率。僅在載入 DLS 音源時生效。",
+        "system_settings",
+        {
+            { "22050", "22050 Hz" },
+            { "32000", "32000 Hz" },
+            { "44100", "44100 Hz" },
+            { "48000", "48000 Hz" },
+            { NULL, NULL },
+        },
+        "22050"
+    },
+    {
+        "freej2me_dlsvoices",
+        "System > DLS Voices",
+        "DLS 複音數",
+        "DLS 複音數。僅在載入 DLS 音源時生效。",
+        "DLS 複音數。僅在載入 DLS 音源時生效。",
+        "system_settings",
+        {
+            { "32",  "32" },
+            { "64",  "64" },
+            { "128", "128" },
+            { "256", "256" },
+            { NULL, NULL },
+        },
+        "256"
+    },
+    {
+        "freej2me_dlsreverb",
+        "System > DLS Reverb",
+        "DLS 混響",
+        "DLS 混響開關。僅在載入 DLS 音源時生效。",
+        "DLS 混響開關。僅在載入 DLS 音源時生效。",
+        "system_settings",
+        {
+            { "on",  "啟用" },
+            { "off", "禁用" },
+            { NULL, NULL },
+        },
+        "on"
+    },
+    {
+        "freej2me_dlschorus",
+        "System > DLS Chorus",
+        "DLS 合唱",
+        "DLS 和聲開關。僅在載入 DLS 音源時生效。",
+        "DLS 和聲開關。僅在載入 DLS 音源時生效。",
+        "system_settings",
+        {
+            { "on",  "啟用" },
+            { "off", "禁用" },
+            { NULL, NULL },
+        },
+        "on"
+    },
+    {
         "freej2me_textfont",
         "System > Text Font",
         "文本字體",
@@ -983,6 +1043,54 @@ struct retro_core_option_definition core_options_v1 [] =
         "on"
     },
     {
+        "freej2me_dlsrate",
+        "DLS Sample Rate",
+        "Only used when a DLS bank is loaded from customMIDI.",
+        {
+            { "22050", "22050 Hz" },
+            { "32000", "32000 Hz" },
+            { "44100", "44100 Hz" },
+            { "48000", "48000 Hz" },
+            { NULL, NULL },
+        },
+        "22050"
+    },
+    {
+        "freej2me_dlsvoices",
+        "DLS Voices",
+        "Only used when a DLS bank is loaded from customMIDI.",
+        {
+            { "32",  "32" },
+            { "64",  "64" },
+            { "128", "128" },
+            { "256", "256" },
+            { NULL, NULL },
+        },
+        "256"
+    },
+    {
+        "freej2me_dlsreverb",
+        "DLS Reverb",
+        "Only used when a DLS bank is loaded from customMIDI.",
+        {
+            { "on",  "Enabled" },
+            { "off", "Disabled" },
+            { NULL, NULL },
+        },
+        "on"
+    },
+    {
+        "freej2me_dlschorus",
+        "DLS Chorus",
+        "Only used when a DLS bank is loaded from customMIDI.",
+        {
+            { "on",  "Enabled" },
+            { "off", "Disabled" },
+            { NULL, NULL },
+        },
+        "on"
+    },
+    {
         "freej2me_textfont",
         "Text Font",
         "Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes, so you might need to adjust the size offset.",
@@ -1380,6 +1488,22 @@ static const struct retro_variable vars[] =
     { /* VirtualMIDISynth */
         "freej2me_midisearchvms",
         "VirtualMIDISynth (Core Restart required); on|off"
+    },
+    { /* DLS Sample Rate */
+        "freej2me_dlsrate",
+        "DLS Sample Rate; 22050|32000|44100|48000"
+    },
+    { /* DLS Voices */
+        "freej2me_dlsvoices",
+        "DLS Voices; 32|64|128|256"
+    },
+    { /* DLS Reverb */
+        "freej2me_dlsreverb",
+        "DLS Reverb; on|off"
+    },
+    { /* DLS Chorus */
+        "freej2me_dlschorus",
+        "DLS Chorus; on|off"
     },
     { /* Custom Text Font */
         "freej2me_textfont",

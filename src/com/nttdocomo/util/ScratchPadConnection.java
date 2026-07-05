@@ -128,15 +128,15 @@ public class ScratchPadConnection implements javax.microedition.io.StreamConnect
 
 		if(spIndex == 0) { pos+=64; } // First scratchpad has a header of 64 bytes
 
-		if(openedScratchPads[spIndex].getNumRecords() == 0) // If there's no scratchpad data copy in the rms file, create it
+		try
 		{
-			try
+			if(openedScratchPads[spIndex].getNumRecords() == 0) // If there's no scratchpad data copy in the rms file, create it
 			{
 				byte[] spData = loadScratchPadBinary();
 				if(spData != null) { openedScratchPads[spIndex].addRecord(spData, 0, spData.length); }
 			}
-			catch(Exception e) { Mobile.log(Mobile.LOG_DEBUG, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to add scratchpad data to record: " + e.getMessage()); }
 		}
+		catch(Exception e) { Mobile.log(Mobile.LOG_DEBUG, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to add scratchpad data to record: " + e.getMessage()); }
 
 		try
 		{
@@ -174,15 +174,15 @@ public class ScratchPadConnection implements javax.microedition.io.StreamConnect
 
 		if(spIndex == 0) { pos+=64; } // First scratchpad has a header of 64 bytes
 
-		if(openedScratchPads[spIndex].getNumRecords() == 0) // If there's no data copy of this scratchpad in the rms file, create it
+		try
 		{
-			try
+			if(openedScratchPads[spIndex].getNumRecords() == 0) // If there's no data copy of this scratchpad in the rms file, create it
 			{
 				byte[] spData = loadScratchPadBinary();
 				if(spData != null) { openedScratchPads[spIndex].addRecord(spData, 0, spData.length); }
 			}
-			catch(Exception e) { Mobile.log(Mobile.LOG_DEBUG, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to add scratchpad data to record: " + e.getMessage()); }
 		}
+		catch(Exception e) { Mobile.log(Mobile.LOG_DEBUG, ScratchPadConnection.class.getPackage().getName() + "." + ScratchPadConnection.class.getSimpleName() + ": " + " Failed to add scratchpad data to record: " + e.getMessage()); }
 
 		try
 		{

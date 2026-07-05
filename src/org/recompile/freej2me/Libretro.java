@@ -35,6 +35,10 @@ public class Libretro
 
 	private boolean soundEnabled = true;
 	private boolean midiSearchVMS = true;
+	private int dlsRate = 22050;
+	private int dlsVoices = 256;
+	private boolean dlsReverb = true;
+	private boolean dlsChorus = true;
 	private String[] launchArgs;
 	private static volatile boolean canPause = false;
 	private static volatile boolean shutdownInProgress = false;
@@ -194,6 +198,14 @@ public class Libretro
 		Mobile.MCV3ShowHeapUsage = Integer.parseInt(launchArgs[29]) != 0;
 		Mobile.MCV3ShowTimeMetrics = Integer.parseInt(launchArgs[30]) != 0;
 		if(launchArgs.length > 31) { midiSearchVMS = Integer.parseInt(launchArgs[31]) != 0; }
+		if(launchArgs.length > 32) { dlsRate = Integer.parseInt(launchArgs[32]); }
+		if(launchArgs.length > 33) { dlsVoices = Integer.parseInt(launchArgs[33]); }
+		if(launchArgs.length > 34) { dlsReverb = Integer.parseInt(launchArgs[34]) != 0; }
+		if(launchArgs.length > 35) { dlsChorus = Integer.parseInt(launchArgs[35]) != 0; }
+		Mobile.dlsSampleRate = dlsRate;
+		Mobile.dlsVoices = dlsVoices;
+		Mobile.dlsReverb = dlsReverb;
+		Mobile.dlsChorus = dlsChorus;
 	}
 
 	private class LibretroIO
@@ -420,6 +432,10 @@ public class Libretro
 										Mobile.config.sysSettings.put("dumpAudioStreams", Mobile.dumpAudioStreams ? "on" : "off");
 										Mobile.config.sysSettings.put("dumpGraphicsObjects", Mobile.dumpGraphicsObjects ? "on" : "off");
 										Mobile.config.sysSettings.put("MIDISearchVMS", midiSearchVMS ? "on" : "off");
+										Mobile.config.sysSettings.put("dlsRate", "" + dlsRate);
+										Mobile.config.sysSettings.put("dlsVoices", "" + dlsVoices);
+										Mobile.config.sysSettings.put("dlsReverb", dlsReverb ? "on" : "off");
+										Mobile.config.sysSettings.put("dlsChorus", dlsChorus ? "on" : "off");
 
 										if(Mobile.libretroRestartRequested == 1)
 										{
@@ -550,6 +566,11 @@ public class Libretro
 
 									if(cfgtokens.length > 32 && Integer.parseInt(cfgtokens[32])==0) { Mobile.config.sysSettings.put("MIDISearchVMS", "off");  }
 									else { Mobile.config.sysSettings.put("MIDISearchVMS", "on"); }
+
+									if(cfgtokens.length > 33) { Mobile.config.sysSettings.put("dlsRate", "" + Integer.parseInt(cfgtokens[33])); }
+									if(cfgtokens.length > 34) { Mobile.config.sysSettings.put("dlsVoices", "" + Integer.parseInt(cfgtokens[34])); }
+									if(cfgtokens.length > 35) { Mobile.config.sysSettings.put("dlsReverb", Integer.parseInt(cfgtokens[35]) == 1 ? "on" : "off"); }
+									if(cfgtokens.length > 36) { Mobile.config.sysSettings.put("dlsChorus", Integer.parseInt(cfgtokens[36]) == 1 ? "on" : "off"); }
 
 									Mobile.config.saveConfig();
 									settingsChanged();

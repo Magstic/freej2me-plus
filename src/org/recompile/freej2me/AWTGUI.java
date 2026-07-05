@@ -92,6 +92,7 @@ public final class AWTGUI
 	final Menu screenRotation = new Menu("Screen Rotation (Ctrl+Alt+R)");
 	final Menu backlightColor = new Menu("Backlight Color");
 	final Menu fontOffset = new Menu("Font Size Offset");
+	final Menu dlsSettings = new Menu("DLS Synth");
 
 	public final String[] supportedResolutions = {"96x65","101x64","101x80","128x128","130x130","120x160","128x160","160x128","132x176","208x173","176x208","176x220","220x176","208x208","220x220","180x320","320x180","240x240","240x260","208x320","240x320","320x240","240x400","400x240","320x320","240x432","240x480","360x360","352x416","360x480","360x640","640x360","480x640","640x480","345x800","800x345","480x800","800x480"};
 
@@ -191,6 +192,8 @@ public final class AWTGUI
 	final CheckboxMenuItem useCustomMidi = new CheckboxMenuItem("Use custom midi soundfont", false);
 	final CheckboxMenuItem useVirtualMidiSynth = new CheckboxMenuItem("Use VirtualMIDISynth (Restart Required)", false);
 	final CheckboxMenuItem useCustomFont = new CheckboxMenuItem("Use custom text font", false);
+	final CheckboxMenuItem useDlsReverb = new CheckboxMenuItem("DLS Reverb", true);
+	final CheckboxMenuItem useDlsChorus = new CheckboxMenuItem("DLS Chorus", true);
 
 	final CheckboxMenuItem[] dojaVersions =
 	{
@@ -264,6 +267,24 @@ public final class AWTGUI
 		new CheckboxMenuItem("10 FPS", false)
 	};
 	final String[] fpsValues = {"0", "60", "55", "50", "45", "40", "35", "30", "25", "20", "15", "10"};
+
+	final CheckboxMenuItem[] dlsRates =
+	{
+		new CheckboxMenuItem("22050 Hz", true),
+		new CheckboxMenuItem("32000 Hz", false),
+		new CheckboxMenuItem("44100 Hz", false),
+		new CheckboxMenuItem("48000 Hz", false)
+	};
+	final String[] dlsRateValues = {"22050", "32000", "44100", "48000"};
+
+	final CheckboxMenuItem[] dlsVoices =
+	{
+		new CheckboxMenuItem("32 voices", false),
+		new CheckboxMenuItem("64 voices", false),
+		new CheckboxMenuItem("128 voices", false),
+		new CheckboxMenuItem("256 voices", true)
+	};
+	final String[] dlsVoiceValues = {"32", "64", "128", "256"};
 
 	final CheckboxMenuItem[] fpsHackOptions =
 	{
@@ -684,6 +705,66 @@ public final class AWTGUI
 				else{ config.updateMIDISearchVMS("off"); hasPendingChange = true; }
 
 				showRestartDialog();
+			}
+		});
+
+		for(byte i = 0; i < dlsRates.length; i++)
+		{
+			final byte index = i;
+			dlsRates[i].addItemListener(new ItemListener()
+			{
+				public void itemStateChanged(ItemEvent e)
+				{
+					if(!dlsRates[index].getState()){ dlsRates[index].setState(true); }
+					if(dlsRates[index].getState())
+					{
+						config.updateDlsRate(dlsRateValues[index]);
+						for(int j = 0; j < dlsRates.length; j++)
+						{
+							if(j != index) { dlsRates[j].setState(false); }
+						}
+						hasPendingChange = true;
+					}
+				}
+			});
+		}
+
+		for(byte i = 0; i < dlsVoices.length; i++)
+		{
+			final byte index = i;
+			dlsVoices[i].addItemListener(new ItemListener()
+			{
+				public void itemStateChanged(ItemEvent e)
+				{
+					if(!dlsVoices[index].getState()){ dlsVoices[index].setState(true); }
+					if(dlsVoices[index].getState())
+					{
+						config.updateDlsVoices(dlsVoiceValues[index]);
+						for(int j = 0; j < dlsVoices.length; j++)
+						{
+							if(j != index) { dlsVoices[j].setState(false); }
+						}
+						hasPendingChange = true;
+					}
+				}
+			});
+		}
+
+		useDlsReverb.addItemListener(new ItemListener()
+		{
+			public void itemStateChanged(ItemEvent e)
+			{
+				if(useDlsReverb.getState()){ config.updateDlsReverb("on"); hasPendingChange = true; }
+				else{ config.updateDlsReverb("off"); hasPendingChange = true; }
+			}
+		});
+
+		useDlsChorus.addItemListener(new ItemListener()
+		{
+			public void itemStateChanged(ItemEvent e)
+			{
+				if(useDlsChorus.getState()){ config.updateDlsChorus("on"); hasPendingChange = true; }
+				else{ config.updateDlsChorus("off"); hasPendingChange = true; }
 			}
 		});
 
@@ -1113,6 +1194,7 @@ public final class AWTGUI
 		optionMenu.add(enableAudio);
 		optionMenu.add(useCustomMidi);
 		optionMenu.add(useVirtualMidiSynth);
+		optionMenu.add(dlsSettings);
 		optionMenu.add(useCustomFont);
 		optionMenu.add(resChangeMenuItem);
 		optionMenu.add(mapInputs);
@@ -1164,6 +1246,12 @@ public final class AWTGUI
 		for(int i = 0; i < layoutOptions.length; i++) { phoneType.add(layoutOptions[i]); }
 		for(int i = 0; i < backlightOptions.length; i++) { backlightColor.add(backlightOptions[i]); }
 		for(int i = 0; i < fpsOptions.length; i++) { fpsCap.add(fpsOptions[i]); }
+		for(int i = 0; i < dlsRates.length; i++) { dlsSettings.add(dlsRates[i]); }
+		dlsSettings.addSeparator();
+		for(int i = 0; i < dlsVoices.length; i++) { dlsSettings.add(dlsVoices[i]); }
+		dlsSettings.addSeparator();
+		dlsSettings.add(useDlsReverb);
+		dlsSettings.add(useDlsChorus);
 		for(int i = 0; i < fpsHackOptions.length; i++) { unlockFPSHack.add(fpsHackOptions[i]); }
 		for(int i = 0; i < fpsCounterPos.length; i++) { showFPS.add(fpsCounterPos[i]); }
 		for(int i = 0; i < fontOffsets.length; i++) { fontOffset.add(fontOffsets[i]); }
@@ -1193,6 +1281,10 @@ public final class AWTGUI
 			enableAudio.setState(config.sysSettings.get("sound").equals("on"));
 			useCustomMidi.setState(config.sysSettings.get("soundfont").equals("Custom"));
 			useVirtualMidiSynth.setState(config.sysSettings.get("MIDISearchVMS").equals("on"));
+			for(int i = 0; i < dlsRates.length; i++) { dlsRates[i].setState(config.sysSettings.get("dlsRate").equals(dlsRateValues[i])); }
+			for(int i = 0; i < dlsVoices.length; i++) { dlsVoices[i].setState(config.sysSettings.get("dlsVoices").equals(dlsVoiceValues[i])); }
+			useDlsReverb.setState(config.sysSettings.get("dlsReverb").equals("on"));
+			useDlsChorus.setState(config.sysSettings.get("dlsChorus").equals("on"));
 			useCustomFont.setState(config.sysSettings.get("textfont").equals("Custom"));
 
 			for(int i = 0; i < dojaVersions.length; i++) { dojaVersions[i].setState(config.settings.get("dojaversion").equals(dojaVersionValues[i])); }
