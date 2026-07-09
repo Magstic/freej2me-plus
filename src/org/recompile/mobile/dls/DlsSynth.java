@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
@@ -82,17 +81,7 @@ public final class DlsSynth
 					if(command >= 0x80 && command <= 0xE0)
 					{
 						events.add(new SequenceEvent(event.getTick(), track, order++, command,
-								sm.getChannel(), sm.getData1(), sm.getData2(), -1));
-					}
-				}
-				else if(message instanceof MetaMessage)
-				{
-					MetaMessage meta = (MetaMessage) message;
-					byte[] data = meta.getData();
-					if(meta.getType() == 0x51 && data.length == 3)
-					{
-						int tempo = ((data[0] & 0xFF) << 16) | ((data[1] & 0xFF) << 8) | (data[2] & 0xFF);
-						events.add(new SequenceEvent(event.getTick(), track, order++, -1, -1, 0, 0, clampTempo(tempo)));
+								sm.getChannel(), sm.getData1(), sm.getData2()));
 					}
 				}
 			}
@@ -131,29 +120,13 @@ public final class DlsSynth
 
 		int active = 0;
 		int maxMetric = 0;
-		long tick = 0;
-		long micros = 0;
-		int tempo = 500000;
 		for(int e = 0; e < events.size(); e++)
 		{
 			SequenceEvent event = events.get(e);
-			if(sequence.getDivisionType() == Sequence.PPQ)
-			{
-				micros += (event.tick - tick) * tempo / division;
-			}
-			else
-			{
-				micros = (long) (event.tick * 1000000.0 / (sequence.getDivisionType() * division));
-			}
-			tick = event.tick;
-			if(event.tempo > 0)
-			{
-				tempo = event.tempo;
-				continue;
-			}
 			if(event.channel < 0) { continue; }
 
-			int ms = (int) Math.min(Integer.MAX_VALUE, micros / 1000L);
+			// Type-5 prepare scans all MIDI events into the metric sink at time 0.
+			int ms = 0;
 			int high = event.command & 0xF0;
 			int ch = event.channel & 0x0F;
 			if(high == 0x90 && event.data2 > 0)
@@ -275,12 +248,6 @@ public final class DlsSynth
 		return voices;
 	}
 
-	private static int clampTempo(int value)
-	{
-		if(value < 29296) { return 29296; }
-		return value > 15000000 ? 15000000 : value;
-	}
-
 	private static int childTailMetric(int ms, int[] channelWeight, int[] recChannel, int[] recType,
 			int[] recWeight, int[] recFlags, int[] recTime)
 	{
@@ -326,9 +293,8 @@ public final class DlsSynth
 		final int channel;
 		final int data1;
 		final int data2;
-		final int tempo;
 
-		SequenceEvent(long tick, int track, int order, int command, int channel, int data1, int data2, int tempo)
+		SequenceEvent(long tick, int track, int order, int command, int channel, int data1, int data2)
 		{
 			this.tick = tick;
 			this.track = track;
@@ -337,7 +303,6 @@ public final class DlsSynth
 			this.channel = channel;
 			this.data1 = data1;
 			this.data2 = data2;
-			this.tempo = tempo;
 		}
 	}
 }

@@ -1,7 +1,7 @@
 package org.recompile.mobile.dls;
 
 /** DLS connection block entry used by articulation and modulation. */
-public final class Connection extends SynthesisSupport {
+public final class Connection {
     public final int source;
     public final int control;
     public final int destination;

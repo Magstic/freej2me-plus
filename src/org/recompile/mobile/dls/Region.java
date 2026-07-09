@@ -1,7 +1,7 @@
 package org.recompile.mobile.dls;
 
 /** Playable key and velocity region mapped to a wave sample. */
-public final class Region extends SynthesisSupport {
+public final class Region {
     public final boolean level2;
     public int keyLow = 0;
     public int keyHigh = 127;

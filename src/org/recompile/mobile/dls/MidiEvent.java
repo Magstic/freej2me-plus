@@ -1,7 +1,7 @@
 package org.recompile.mobile.dls;
 
 /** Single MIDI event normalized to absolute ticks and microseconds. */
-public final class MidiEvent extends SynthesisSupport {
+public final class MidiEvent {
     public final long tick;
     public long micros;
     public final int track;

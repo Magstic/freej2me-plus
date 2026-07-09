@@ -8,6 +8,8 @@
 */
 package org.recompile.mobile.dls;
 
+import static org.recompile.mobile.dls.SynthesisSupport.*;
+
 import java.util.Arrays;
 
 import javax.sound.midi.MidiMessage;
@@ -21,7 +23,7 @@ import javax.sound.sampled.DataLine;
 import javax.sound.sampled.SourceDataLine;
 
 /** Realtime Java Sound receiver that renders incoming MIDI through a loaded DLS bank. */
-public final class DlsReceiver extends SynthesisSupport implements Receiver, Runnable
+public final class DlsReceiver implements Receiver, Runnable
 {
 	private final Object lock = new Object();
 	private final PreviewRenderer renderer;

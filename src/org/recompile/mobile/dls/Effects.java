@@ -1,7 +1,9 @@
 package org.recompile.mobile.dls;
 
+import static org.recompile.mobile.dls.SynthesisSupport.*;
+
 /** Synthesis DSP helpers: filters, envelopes, LFOs, chorus, reverb, and dynamics. */
-final class PlusFilter extends SynthesisSupport {
+final class PlusFilter {
     final int lowThreshold;
     final int midThreshold;
     final int highThreshold;
@@ -22,7 +24,7 @@ final class PlusFilter extends SynthesisSupport {
         lowThreshold = filterMappedCutoff(log10Q16(base / 240));
         midThreshold = filterMappedCutoff(log10Q16(base / 6));
         highThreshold = filterMappedCutoff(log10Q16(base / 2));
-        baseCutoff = Math.max(cutoff, FILTER_MIN_CUTOFF);
+        baseCutoff = cutoff;
         this.resonance = clamp(resonance, 0, FILTER_MAX_RESONANCE);
         effectiveCutoff = baseCutoff;
         if (effectiveCutoff < highThreshold) {
@@ -92,7 +94,7 @@ final class PlusFilter extends SynthesisSupport {
         }
     }
 }
-final class ChorusEffect extends SynthesisSupport {
+final class ChorusEffect {
     // ponytail: default CHRS type 2; wire compact effect blob/public properties when those inputs exist.
     static final int FEEDBACK_GAIN = 0x00000F5C;
     static final int RATE_FIXED = 0x00028000;
@@ -150,7 +152,7 @@ final class ChorusEffect extends SynthesisSupport {
         return base + (int) (((long) (phase & 0xFFFF) * (prev - base)) >> 16);
     }
 }
-final class ReverbEffect extends SynthesisSupport {
+final class ReverbEffect {
     // ponytail: bridge default IRVB type 1/time 1300; wire public properties and compact blobs when inputs exist.
     static final int DELAY_LENGTH = 8192;
     static final int TYPE_SCALE = 0x00010000;
@@ -272,7 +274,7 @@ final class ReverbEffect extends SynthesisSupport {
         return fixedMul16_16(sampleRate, REVERB_TIME);
     }
 }
-final class EffectGate extends SynthesisSupport {
+final class EffectGate {
     final int tailBlocks;
     int state = 1;
     int tailRemaining;
@@ -301,7 +303,7 @@ final class EffectGate extends SynthesisSupport {
         return false;
     }
 }
-final class MixDynamics extends SynthesisSupport {
+final class MixDynamics {
     boolean dynamicEnabled;
     int targetGain = 0x10000;
     int threshold = exp10Q16(-1179648 / 20) << 7;
@@ -453,7 +455,7 @@ final class MixDynamics extends SynthesisSupport {
         return exp10Q16(fixedDiv16_16(-315652, wholeMillis + 0x10000));
     }
 }
-final class Lfo extends SynthesisSupport {
+final class Lfo {
     final int startDelay;
     final int period;
     int phase;
@@ -487,11 +489,12 @@ final class Lfo extends SynthesisSupport {
         return output;
     }
 }
-final class Envelope extends SynthesisSupport {
+final class Envelope {
     static final long EG1_FULL = 0xFFFF0000L;
     static final int EG2_FULL = 0xFFFF;
     final int attackMicros;
     final int decayMicros;
+    final int releaseMicros;
     final int attackTicks;
     final int decayTicks;
     final int releaseTicks;
@@ -502,7 +505,6 @@ final class Envelope extends SynthesisSupport {
     final int releaseMultiplier;
     int stage;
     int tickIndex;
-    int releaseStart;
     int current;
     long eg1Current;
     boolean finished;
@@ -510,15 +512,16 @@ final class Envelope extends SynthesisSupport {
     Envelope(int attackMicros, int decayMicros, int sustainQ16, int releaseMicros, boolean eg1) {
         this.attackMicros = clamp(attackMicros, 0, 40000000);
         this.decayMicros = clamp(decayMicros, 0, 40000000);
-        attackTicks = microsToControlTicks(attackMicros);
-        decayTicks = microsToControlTicks(decayMicros);
-        releaseTicks = microsToControlTicks(releaseMicros);
+        this.releaseMicros = clamp(releaseMicros, 0, 40000000);
+        attackTicks = microsToControlTicks(this.attackMicros);
+        decayTicks = microsToControlTicks(this.decayMicros);
+        releaseTicks = microsToControlTicks(this.releaseMicros);
         sustain = eg1 ? clamp(sustainQ16, 0, 0x10000)
                 : (int) (((long) EG2_FULL * clamp(sustainQ16, 0, 0x10000)) >> 16);
         this.eg1 = eg1;
         eg1Sustain = eg1SustainTarget(sustainQ16);
-        decayMultiplier = eg1Multiplier(decayMicros);
-        releaseMultiplier = eg1Multiplier(releaseMicros);
+        decayMultiplier = eg1Multiplier(this.decayMicros);
+        releaseMultiplier = eg1Multiplier(this.releaseMicros);
         current = !eg1 && attackTicks == 0 ? EG2_FULL : 0;
         eg1Current = 0;
         stage = !eg1 && attackTicks == 0 ? (decayTicks == 0 ? 2 : 1) : 0;
@@ -528,36 +531,57 @@ final class Envelope extends SynthesisSupport {
         if (eg1) {
             return nextEg1();
         }
-        return nextLinear();
+        return nextEg2();
     }
 
-    int nextLinear() {
+    int nextEg2() {
         if (finished) {
             return 0;
         }
         if (stage == 0) {
-            current = (int) Math.min(EG2_FULL, tickIndex++ * (long) EG2_FULL / Math.max(1, attackTicks));
-            if (tickIndex >= attackTicks) {
+            int step = eg2RampStep(tickIndex, attackMicros);
+            current = step;
+            if (step >= EG2_FULL) {
                 stage = decayTicks == 0 ? 2 : 1;
                 tickIndex = 0;
                 current = EG2_FULL;
+            } else {
+                tickIndex += 10000;
             }
         } else if (stage == 1) {
-            current = EG2_FULL - (int) ((EG2_FULL - (long) sustain) * tickIndex++ / Math.max(1, decayTicks));
-            if (tickIndex >= decayTicks) {
+            current = EG2_FULL - eg2RampStep(tickIndex, decayMicros);
+            if (current <= sustain) {
                 stage = 2;
                 current = sustain;
+            } else {
+                tickIndex += 10000;
             }
         } else if (stage == 2) {
             current = sustain;
         } else if (stage == 3) {
-            current = releaseStart - (int) (releaseStart * (long) tickIndex++ / Math.max(1, releaseTicks));
-            if (releaseTicks == 0 || tickIndex >= releaseTicks) {
+            // Plus sub_11DB140 keeps EG2 release on the full-scale ramp instead of scaling from release start.
+            int step = eg2RampStep(tickIndex, releaseMicros);
+            current = EG2_FULL - step;
+            if (step >= EG2_FULL) {
                 current = 0;
                 finished = true;
+            } else {
+                tickIndex += 10000;
             }
         }
         return clamp(current, 0, EG2_FULL);
+    }
+
+    int eg2RampStep(int elapsedMicros, int durationMicros) {
+        if (durationMicros <= 0) {
+            return EG2_FULL;
+        }
+        int divisor = durationMicros >> 2;
+        if (divisor <= 0) {
+            return EG2_FULL;
+        }
+        long step = ((((long) elapsedMicros) << 6) / divisor) << 8;
+        return step >= EG2_FULL ? EG2_FULL : (int) step;
     }
 
     int nextEg1() {
@@ -615,8 +639,7 @@ final class Envelope extends SynthesisSupport {
 
     void release() {
         if (stage != 3 && !finished) {
-            releaseStart = current;
-            tickIndex = 0;
+            tickIndex = eg1 ? 0 : fixedMul16_16(EG2_FULL - current, releaseMicros);
             stage = 3;
         }
     }

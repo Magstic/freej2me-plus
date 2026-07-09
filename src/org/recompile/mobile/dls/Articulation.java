@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** DLS articulation state and runtime connection list. */
-public final class Articulation extends SynthesisSupport {
+public final class Articulation {
     public int lfoFrequency = 200000;
     public int lfoStartDelay = 10000;
     public int vibratoFrequency = 200000;
@@ -21,7 +21,7 @@ public final class Articulation extends SynthesisSupport {
     public int pan = 0;
     public int chorus = 0;
     public int reverb = 0;
-    public int filterCutoff = FILTER_DISABLED_CUTOFF;
+    public int filterCutoff = SynthesisSupport.FILTER_DISABLED_CUTOFF;
     public int filterResonance = 0;
     public int connectionCount = 0;
     public final List<Connection> runtimeConnections = new ArrayList<Connection>();
@@ -45,32 +45,32 @@ public final class Articulation extends SynthesisSupport {
         } else if (c.destination == 0x81) {
             reverb = c.scale / 1000;
         } else if (c.destination == 0x104) {
-            lfoFrequency = plusLfoPeriod(c.scale);
+            lfoFrequency = SynthesisSupport.plusLfoPeriod(c.scale);
         } else if (c.destination == 0x105) {
-            lfoStartDelay = timecentToMicros(c.scale);
+            lfoStartDelay = SynthesisSupport.timecentToMicros(c.scale);
         } else if (c.destination == 0x114) {
-            vibratoFrequency = plusLfoPeriod(c.scale);
+            vibratoFrequency = SynthesisSupport.plusLfoPeriod(c.scale);
         } else if (c.destination == 0x115) {
-            vibratoStartDelay = timecentToMicros(c.scale);
+            vibratoStartDelay = SynthesisSupport.timecentToMicros(c.scale);
         } else if (c.destination == 0x206) {
-            eg1Attack = timecentToMicros(c.scale);
+            eg1Attack = SynthesisSupport.timecentToMicros(c.scale);
         } else if (c.destination == 0x207) {
-            eg1Decay = timecentToMicros(c.scale);
+            eg1Decay = SynthesisSupport.timecentToMicros(c.scale);
         } else if (c.destination == 0x209) {
-            eg1Release = timecentToMicros(c.scale);
+            eg1Release = SynthesisSupport.timecentToMicros(c.scale);
         } else if (c.destination == 0x20A) {
             eg1Sustain = c.scale / 1000;
         } else if (c.destination == 0x30A) {
-            eg2Attack = timecentToMicros(c.scale);
+            eg2Attack = SynthesisSupport.timecentToMicros(c.scale);
         } else if (c.destination == 0x30B) {
-            eg2Decay = timecentToMicros(c.scale);
+            eg2Decay = SynthesisSupport.timecentToMicros(c.scale);
         } else if (c.destination == 0x30D) {
-            eg2Release = timecentToMicros(c.scale);
+            eg2Release = SynthesisSupport.timecentToMicros(c.scale);
         } else if (c.destination == 0x30E) {
             eg2Sustain = c.scale / 1000;
         } else if (c.destination == 0x500) {
-            filterCutoff = c.scale == Integer.MAX_VALUE ? FILTER_DISABLED_CUTOFF : c.scale / 100;
-            if (filterCutoff == FILTER_DISABLED_CUTOFF) {
+            filterCutoff = c.scale == Integer.MAX_VALUE ? SynthesisSupport.FILTER_DISABLED_CUTOFF : c.scale / 100;
+            if (filterCutoff == SynthesisSupport.FILTER_DISABLED_CUTOFF) {
                 filterResonance = 0;
             }
         } else if (c.destination == 0x501) {

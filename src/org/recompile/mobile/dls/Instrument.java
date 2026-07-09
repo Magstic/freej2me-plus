@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 /** DLS instrument with bank selector, articulation, and regions. */
-public final class Instrument extends SynthesisSupport {
+public final class Instrument {
     public final int rawBank;
     public final int rawInstrument;
     public final int bankMsb;

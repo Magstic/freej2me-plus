@@ -1,5 +1,7 @@
 package org.recompile.mobile.dls;
 
+import static org.recompile.mobile.dls.SynthesisSupport.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -7,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 /** DLS/RIFF parser and wave decoders. */
-final class DlsParser extends SynthesisSupport {
+final class DlsParser {
     final byte[] data;
     final String sourceName;
     String formType;
@@ -735,14 +737,14 @@ final class DlsParser extends SynthesisSupport {
         return new IllegalArgumentException(sourceName + " @0x" + Integer.toHexString(Math.max(0, p)) + ": " + message);
     }
 }
-final class Fmt extends SynthesisSupport {
+final class Fmt {
     int tag;
     int channels;
     int sampleRate;
     int blockAlign;
     int bitsPerSample;
 }
-final class Decoded extends SynthesisSupport {
+final class Decoded {
     final short[] pcm;
     final int frames;
 

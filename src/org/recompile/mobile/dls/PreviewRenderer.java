@@ -1,11 +1,13 @@
 package org.recompile.mobile.dls;
 
+import static org.recompile.mobile.dls.SynthesisSupport.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 /** MIDI event interpreter, voice allocation, and dry/effect send mixing. */
-final class PreviewRenderer extends SynthesisSupport {
+final class PreviewRenderer {
     static final int[] VOICE_STEAL_ORDER = {15, 14, 13, 12, 11, 10, 8, 7, 6, 5, 4, 3, 2, 1, 0, 9};
 
     final DlsBank bank;
@@ -416,7 +418,7 @@ final class PreviewRenderer extends SynthesisSupport {
         return candidate;
     }
 }
-final class ChannelState extends SynthesisSupport {
+final class ChannelState {
     final PreviewRenderer renderer;
     final int index;
     int bankMsb;
@@ -533,7 +535,7 @@ final class ChannelState extends SynthesisSupport {
         return ((pan & 0x7F) << 7) | (panLsb & 0x7F);
     }
 }
-final class Voice extends SynthesisSupport {
+final class Voice {
     final int channel;
     final int key;
     final int regionIndex;
@@ -611,6 +613,8 @@ final class Voice extends SynthesisSupport {
         int eg2Attack = articulation.eg2Attack;
         int eg2Decay = articulation.eg2Decay;
         int eg2Release = articulation.eg2Release;
+        int filterCutoff = articulation.filterCutoff == FILTER_DISABLED_CUTOFF ? FILTER_DISABLED_CUTOFF
+                : Math.max(articulation.filterCutoff, FILTER_MIN_CUTOFF);
         for (Connection connection : articulation.runtimeConnections) {
             int value = noteOnConnectionValueQ16(connection, midiKey, velocity, sample.unityNote,
                     ch.modulation14(), ch.rpnValues[0]);
@@ -635,6 +639,9 @@ final class Voice extends SynthesisSupport {
                 eg2Decay = modulatedTimeMicros(eg2Decay, value);
             } else if (connection.destination == 0x30D) {
                 eg2Release = modulatedTimeMicros(eg2Release, value);
+            } else if (connection.destination == 0x500) {
+                // Plus note-on modulation folds FILTER_CUTOFF into the initial filter base.
+                filterCutoff += value / 100;
             }
         }
         if (sample.fineTuneCents != 0) {
@@ -653,8 +660,8 @@ final class Voice extends SynthesisSupport {
         this.looping = sample.loopMode == LOOP_FORWARD && loopEndFrame > loopStartFrame;
         this.loopStart = ((long) loopStartFrame) << 16;
         this.loopEnd = ((long) loopEndFrame) << 16;
-        this.filter = articulation.filterCutoff == FILTER_DISABLED_CUTOFF ? null
-                : new PlusFilter(outputRate, articulation.filterCutoff, articulation.filterResonance);
+        this.filter = filterCutoff == FILTER_DISABLED_CUTOFF ? null
+                : new PlusFilter(outputRate, filterCutoff, articulation.filterResonance);
         this.envelope = new Envelope(eg1Attack, eg1Decay, articulation.eg1Sustain, eg1Release, true);
         this.eg2Envelope = new Envelope(eg2Attack, eg2Decay, articulation.eg2Sustain, eg2Release, false);
         this.vibratoLfo = new Lfo(articulation.vibratoFrequency, articulation.vibratoStartDelay);

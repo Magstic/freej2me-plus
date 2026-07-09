@@ -1,7 +1,7 @@
 package org.recompile.mobile.dls;
 
 /** Decoded PCM wave data plus its sample metadata. */
-public final class Wave extends SynthesisSupport {
+public final class Wave {
     public final int index;
     public final int formatTag;
     public final int channels;
