@@ -22,6 +22,7 @@ final class DlsParser {
     final List<Instrument> instruments = new ArrayList<Instrument>();
     final List<Wave> waves = new ArrayList<Wave>();
     int[] programAliases;
+    int[] percussionKeyAliases;
     Map<Integer, Integer> programAliasSelectors;
     boolean selectorRawModeActive;
     boolean selectorImplicitModeSeen;
@@ -39,7 +40,8 @@ final class DlsParser {
         }
         return new DlsBank(sourceName, parser.formType, parser.declaredInstrumentCount,
                 parser.articulationChunkCount, parser.articulationConnectionCount,
-                parser.instruments, parser.waves, parser.programAliases, parser.programAliasSelectors);
+                parser.instruments, parser.waves, parser.programAliases, parser.percussionKeyAliases,
+                parser.programAliasSelectors);
     }
 
     void parseRoot() {
@@ -93,11 +95,35 @@ final class DlsParser {
     }
 
     void parsePgal(int body, int size) {
-        int recordOffset = pgalRecordOffset(body, size);
-        if (recordOffset < 0) {
+        int versionMarker = size >= 4 ? u32(body) : -1;
+        int version;
+        int tableOffset;
+        int countOffset;
+        int recordOffset;
+        if (versionMarker == 1 || versionMarker == 2) {
+            version = versionMarker;
+            tableOffset = body + 4;
+            countOffset = body + 132;
+            recordOffset = body + 136;
+        } else if (versionMarker == 0x03020100) {
+            version = 0;
+            tableOffset = body;
+            countOffset = body + 128;
+            recordOffset = body + 132;
+        } else {
             return;
         }
-        int count = u32(recordOffset - 4);
+        if (recordOffset - body > size) {
+            return;
+        }
+        int count = u32(countOffset);
+        if (count < 0 || recordOffset - body + count * 8L != size) {
+            return;
+        }
+        int[] keyAliases = new int[128];
+        for (int i = 0; i < keyAliases.length; i++) {
+            keyAliases[i] = data[tableOffset + i] & 0x7F;
+        }
         int[] aliases = new int[128];
         Arrays.fill(aliases, -1);
         Map<Integer, Integer> aliasSelectors = new HashMap<Integer, Integer>();
@@ -107,32 +133,25 @@ final class DlsParser {
             int fromProgram = u16(p + 2) & 0x7F;
             int toBank = u16(p + 4);
             int toProgram = u16(p + 6) & 0x7F;
+            if (version < 2) {
+                fromBank = pgalLegacyBank(fromBank);
+                toBank = pgalLegacyBank(toBank);
+            }
             aliases[fromProgram] = toProgram;
             aliasSelectors.put(selector(pgalBankMsb(fromBank), pgalBankLsb(fromBank), fromProgram),
                     selector(pgalBankMsb(toBank), pgalBankLsb(toBank), toProgram));
         }
+        percussionKeyAliases = keyAliases;
         programAliases = aliases;
         programAliasSelectors = aliasSelectors;
     }
 
-    int pgalRecordOffset(int body, int size) {
-        if (size >= 132) {
-            int count = u32(body + 128);
-            if (count >= 0 && 132 + count * 8L == size) {
-                return body + 132;
-            }
-        }
-        if (size >= 136) {
-            int count = u32(body + 132);
-            if (count >= 0 && 136 + count * 8L == size) {
-                return body + 136;
-            }
-        }
-        return -1;
+    int pgalLegacyBank(int bank) {
+        return (bank & 0x7F) | 0x3C80;
     }
 
     int pgalBankMsb(int bank) {
-        return bank == 0 ? 121 : (bank >>> 7) & 0x7F;
+        return (bank >>> 7) & 0x7F;
     }
 
     int pgalBankLsb(int bank) {

@@ -124,8 +124,10 @@ final class PreviewRenderer {
                     return;
                 }
             }
+            int key = bank.percussionKeyAliasFor(ch.programSelected ? ch.selectedBankSelector : ch.bankSelector(),
+                    event.data1);
             for (Voice voice : voices) {
-                if (voice.channel == event.channel && voice.key == event.data1) {
+                if (voice.channel == event.channel && voice.key == key) {
                     voice.noteOff();
                 }
             }
@@ -310,7 +312,8 @@ final class PreviewRenderer {
         if (instrument == null) {
             return;
         }
-        Region region = instrument.regionFor(key, velocity);
+        int voiceKey = bank.percussionKeyAliasFor(ch.selectedBankSelector, key);
+        Region region = instrument.regionFor(voiceKey, velocity);
         if (region == null || region.tableIndex < 0 || region.tableIndex >= bank.waves.size()) {
             return;
         }
@@ -319,17 +322,18 @@ final class PreviewRenderer {
             return;
         }
         SampleInfo sample = region.sample.effectiveWith(wave.sample);
-        killExclusiveVoices(channel, key, region);
+        killExclusiveVoices(channel, voiceKey, region);
         if (voices.size() >= ordinaryVoiceLimit) {
             voices.remove(stealVoiceIndex(channel));
         }
-        voices.add(new Voice(channel, key, region.index, region.keyGroup, wave, sample,
-                region.articulation, key, velocity, ch, sampleRate, nextVoiceSerial++));
+        voices.add(new Voice(channel, voiceKey, region.index, region.keyGroup, wave, sample,
+                region.articulation, voiceKey, velocity, ch, sampleRate, nextVoiceSerial++));
     }
 
     void programChange(ChannelState ch, int program) {
         ch.program = program & 0x7F;
-        ch.selectedInstrument = bank.midiInstrument(ch.bankSelector(), ch.program);
+        ch.selectedBankSelector = ch.bankSelector();
+        ch.selectedInstrument = bank.midiInstrument(ch.selectedBankSelector, ch.program);
         ch.programSelected = true;
     }
 
@@ -445,6 +449,7 @@ final class ChannelState {
     int nrpnLsb;
     int selectorMode;
     Instrument selectedInstrument;
+    int selectedBankSelector;
     boolean programSelected;
 
     ChannelState(int index) {
@@ -462,6 +467,7 @@ final class ChannelState {
         bankLsb = 0;
         program = 0;
         selectedInstrument = null;
+        selectedBankSelector = 0;
         programSelected = false;
         resetControllers();
     }

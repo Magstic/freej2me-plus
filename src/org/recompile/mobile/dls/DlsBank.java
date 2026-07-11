@@ -16,25 +16,34 @@ public final class DlsBank {
     public final List<Wave> waves;
     final Map<Integer, Instrument> bySelector;
     final int[] programAliases;
+    final int[] percussionKeyAliases;
     final Map<Integer, Integer> programAliasSelectors;
 
     DlsBank(String sourceName, String formType, int declaredInstrumentCount,
                     int articulationChunkCount, int articulationConnectionCount,
                     List<Instrument> instruments, List<Wave> waves) {
         this(sourceName, formType, declaredInstrumentCount, articulationChunkCount, articulationConnectionCount,
-                instruments, waves, null, null);
+                instruments, waves, null, null, null);
     }
 
     DlsBank(String sourceName, String formType, int declaredInstrumentCount,
                     int articulationChunkCount, int articulationConnectionCount,
                     List<Instrument> instruments, List<Wave> waves, int[] programAliases) {
         this(sourceName, formType, declaredInstrumentCount, articulationChunkCount, articulationConnectionCount,
-                instruments, waves, programAliases, null);
+                instruments, waves, programAliases, null, null);
     }
 
     DlsBank(String sourceName, String formType, int declaredInstrumentCount,
                     int articulationChunkCount, int articulationConnectionCount,
                     List<Instrument> instruments, List<Wave> waves, int[] programAliases,
+                    Map<Integer, Integer> programAliasSelectors) {
+        this(sourceName, formType, declaredInstrumentCount, articulationChunkCount, articulationConnectionCount,
+                instruments, waves, programAliases, null, programAliasSelectors);
+    }
+
+    DlsBank(String sourceName, String formType, int declaredInstrumentCount,
+                    int articulationChunkCount, int articulationConnectionCount,
+                    List<Instrument> instruments, List<Wave> waves, int[] programAliases, int[] percussionKeyAliases,
                     Map<Integer, Integer> programAliasSelectors) {
         this.sourceName = sourceName;
         this.formType = formType;
@@ -44,6 +53,7 @@ public final class DlsBank {
         this.instruments = Collections.unmodifiableList(instruments);
         this.waves = Collections.unmodifiableList(waves);
         this.programAliases = programAliases == null ? null : programAliases.clone();
+        this.percussionKeyAliases = percussionKeyAliases == null ? null : percussionKeyAliases.clone();
         Map<Integer, Integer> aliasSelectors = new HashMap<Integer, Integer>();
         if (programAliasSelectors != null) {
             aliasSelectors.putAll(programAliasSelectors);
@@ -111,6 +121,13 @@ public final class DlsBank {
             return program & 0x7F;
         }
         return programAliases[program] & 0x7F;
+    }
+
+    public int percussionKeyAliasFor(int bankSelector, int key) {
+        if ((bankSelector & 0x3F80) != (120 << 7) || percussionKeyAliases == null) {
+            return key & 0x7F;
+        }
+        return percussionKeyAliases[key & 0x7F] & 0x7F;
     }
 
     Instrument midiInstrument(int bankSelector, int program) {
