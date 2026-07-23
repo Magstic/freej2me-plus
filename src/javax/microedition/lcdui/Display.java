@@ -143,10 +143,17 @@ public class Display
 			// Process all pending inputs added since the previous thread loop, after any previously pending events were processed.
 			synchronized(inputEvents) 
 			{ 
-				while(!inputEvents.isEmpty()) 
-				{ 
+				while(!inputEvents.isEmpty())
+				{
 					call = inputEvents.poll();
-					if(call != null) { call.run(); }
+					if(call != null)
+					{
+						try { call.run(); }
+						catch(Exception e)
+						{
+							Mobile.log(Mobile.LOG_WARNING, Display.class.getPackage().getName() + "." + Display.class.getSimpleName() + ": Failed to run input event: " + e);
+						}
+					}
 				}
 			}
 		}

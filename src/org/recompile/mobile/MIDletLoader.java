@@ -1028,6 +1028,7 @@ public class MIDletLoader extends URLClassLoader
 	private class ASMVisitor extends ClassAdapter
 	{
 		private String superName;
+		private boolean isRunnable;
 
 		public ASMVisitor(ClassVisitor visitor)
 		{
@@ -1037,12 +1038,17 @@ public class MIDletLoader extends URLClassLoader
 		public void visit(final int version, final int access, final String name, final String signature, final String superName, final String[] interfaces)
 		{
 			this.superName = superName;
+			for(String interfaceName : interfaces)
+			{
+				if("java/lang/Runnable".equals(interfaceName)) { isRunnable = true; }
+			}
 
 			super.visit(version, access, name, signature, superName, interfaces);
 		}
 
 		public FieldVisitor visitField(int access, String name, String desc, String signature, Object value)
 		{
+			if(isRunnable && "Z".equals(desc) && (access & Opcodes.ACC_FINAL) == 0) { access |= Opcodes.ACC_VOLATILE; }
 			return super.visitField(access, name, desc, signature, value);
 		}
 

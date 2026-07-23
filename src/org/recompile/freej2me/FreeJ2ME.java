@@ -679,9 +679,9 @@ public class FreeJ2ME
 
 	private int getMobileKey(int keycode)
 	{
-		for(int i = 0; i < awtGUI.inputKeycodes.length; i++)
+		for(int i = 0; i < Config.inputKeycodes.length; i++)
 		{
-			if(keycode == awtGUI.inputKeycodes[i]) { return Mobile.convertAWTKeycode(i);}
+			if(keycode == Config.inputKeycodes[i]) { return Mobile.convertAWTKeycode(i);}
 		}
 		return Integer.MIN_VALUE;
 	}
