@@ -627,23 +627,6 @@ static int runtimeTransformSourceQ16(int sourceQ16, int transform) {
     return value;
 }
 
-static int transformSourceQ16(int sourceQ16, int transform) {
-    int value = sourceQ16;
-    int type = (transform >>> 10) & 0x0F;
-    if (type == 1) {
-        value = log10Q16(0x10000 + 9 * clamp(value, 0, 0x10000));
-    } else if (type != 0) {
-        return 0;
-    }
-    if ((transform & 0x4000) != 0) {
-        value = (value << 1) - 0x10000;
-    }
-    if ((transform & 0x8000) != 0) {
-        value = 0x10000 - value;
-    }
-    return value;
-}
-
 static int log10Q16(int value) {
     int v = value == 0 ? 1 : value;
     int bias = 0;

@@ -14,6 +14,11 @@ public final class Wave {
 
     Wave(int index, int formatTag, int channels, int sampleRate, int bitsPerSample,
                  int frames, int factFrames, short[] pcm, SampleInfo sample) {
+        long requiredSamples = ((long) frames + 1L) * channels;
+        if (frames < 0 || channels <= 0 || requiredSamples > Integer.MAX_VALUE
+                || pcm == null || pcm.length < requiredSamples) {
+            throw new IllegalArgumentException("invalid wave dimensions");
+        }
         this.index = index;
         this.formatTag = formatTag;
         this.channels = channels;

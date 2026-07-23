@@ -9,13 +9,7 @@ public final class SampleInfo {
     public int attenuation = 0;
     public int loopStart = 0;
     public int loopEndInclusive = -1;
-
-    SampleInfo effectiveWith(SampleInfo fallback) {
-        if (present) {
-            return this;
-        }
-        return fallback == null ? this : fallback;
-    }
+    public boolean loopUntilRelease;
 }
 
 

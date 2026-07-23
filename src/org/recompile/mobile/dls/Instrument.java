@@ -1,5 +1,6 @@
 package org.recompile.mobile.dls;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -33,7 +34,7 @@ public final class Instrument {
         this.bankMsb = rawMode ? rawMsb : (drum ? 120 : 121);
         this.bankLsb = rawMode ? rawLsb : rawMsb;
         this.articulation = articulation;
-        this.regions = Collections.unmodifiableList(regions);
+        this.regions = Collections.unmodifiableList(new ArrayList<Region>(regions));
     }
 
     public Region regionFor(int key, int velocity) {

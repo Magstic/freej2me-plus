@@ -2,6 +2,8 @@ package org.recompile.mobile.dls;
 
 /** Playable key and velocity region mapped to a wave sample. */
 public final class Region {
+    static final int OPTION_SELF_EXCLUSIVE = 0x10;
+
     public final boolean level2;
     public int keyLow = 0;
     public int keyHigh = 127;
@@ -13,7 +15,7 @@ public final class Region {
     public int tableIndex = -1;
     public int index = 0;
     public Articulation articulation;
-    public final SampleInfo sample = new SampleInfo();
+    public SampleInfo sample = new SampleInfo();
     boolean ownsArticulation;
 
     Region(boolean level2, Articulation inheritedArticulation) {

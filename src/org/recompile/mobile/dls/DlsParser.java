@@ -21,7 +21,6 @@ final class DlsParser {
     int articulationConnectionCount = 0;
     final List<Instrument> instruments = new ArrayList<Instrument>();
     final List<Wave> waves = new ArrayList<Wave>();
-    int[] programAliases;
     int[] percussionKeyAliases;
     Map<Integer, Integer> programAliasSelectors;
     boolean selectorRawModeActive;
@@ -40,8 +39,7 @@ final class DlsParser {
         }
         return new DlsBank(sourceName, parser.formType, parser.declaredInstrumentCount,
                 parser.articulationChunkCount, parser.articulationConnectionCount,
-                parser.instruments, parser.waves, parser.programAliases, parser.percussionKeyAliases,
-                parser.programAliasSelectors);
+                parser.instruments, parser.waves, parser.percussionKeyAliases, parser.programAliasSelectors);
     }
 
     void parseRoot() {
@@ -58,7 +56,8 @@ final class DlsParser {
         if (!cdlPasses(12, end)) {
             throw error(12, "cdl condition failed");
         }
-        for (int p = 12; p < end; p = nextChunk(p)) {
+        for (int p = 12, next; p < end; p = next) {
+            next = nextChunk(p, end);
             String id = fourcc(p);
             int size = u32(p + 4);
             int body = p + 8;
@@ -124,8 +123,6 @@ final class DlsParser {
         for (int i = 0; i < keyAliases.length; i++) {
             keyAliases[i] = data[tableOffset + i] & 0x7F;
         }
-        int[] aliases = new int[128];
-        Arrays.fill(aliases, -1);
         Map<Integer, Integer> aliasSelectors = new HashMap<Integer, Integer>();
         for (int i = 0; i < count; i++) {
             int p = recordOffset + i * 8;
@@ -137,12 +134,10 @@ final class DlsParser {
                 fromBank = pgalLegacyBank(fromBank);
                 toBank = pgalLegacyBank(toBank);
             }
-            aliases[fromProgram] = toProgram;
             aliasSelectors.put(selector(pgalBankMsb(fromBank), pgalBankLsb(fromBank), fromProgram),
                     selector(pgalBankMsb(toBank), pgalBankLsb(toBank), toProgram));
         }
         percussionKeyAliases = keyAliases;
-        programAliases = aliases;
         programAliasSelectors = aliasSelectors;
     }
 
@@ -159,7 +154,8 @@ final class DlsParser {
     }
 
     void parseLins(int start, int end) {
-        for (int p = start; p < end; p = nextChunk(p)) {
+        for (int p = start, next; p < end; p = next) {
+            next = nextChunk(p, end);
             String id = fourcc(p);
             int size = u32(p + 4);
             int body = p + 8;
@@ -176,7 +172,8 @@ final class DlsParser {
         boolean sawInsh = false;
         Articulation articulation = new Articulation();
         List<Region> regions = new ArrayList<Region>();
-        for (int p = start; p < end; p = nextChunk(p)) {
+        for (int p = start, next; p < end; p = next) {
+            next = nextChunk(p, end);
             String id = fourcc(p);
             int size = u32(p + 4);
             int body = p + 8;
@@ -223,7 +220,8 @@ final class DlsParser {
     }
 
     void parseRegions(int start, int end, Articulation inheritedArticulation, List<Region> regions) {
-        for (int p = start; p < end; p = nextChunk(p)) {
+        for (int p = start, next; p < end; p = next) {
+            next = nextChunk(p, end);
             String id = fourcc(p);
             int size = u32(p + 4);
             int body = p + 8;
@@ -244,7 +242,8 @@ final class DlsParser {
     Region parseRegion(int start, int end, boolean level2, Articulation inheritedArticulation) {
         Region region = new Region(level2, inheritedArticulation);
         boolean sawRgnh = false;
-        for (int p = start; p < end; p = nextChunk(p)) {
+        for (int p = start, next; p < end; p = next) {
+            next = nextChunk(p, end);
             String id = fourcc(p);
             int size = u32(p + 4);
             int body = p + 8;
@@ -292,7 +291,8 @@ final class DlsParser {
         if (!cdlPasses(start, end)) {
             return;
         }
-        for (int p = start; p < end; p = nextChunk(p)) {
+        for (int p = start, next; p < end; p = next) {
+            next = nextChunk(p, end);
             String id = fourcc(p);
             int size = u32(p + 4);
             if (id.equals("art1") || id.equals("art2")) {
@@ -340,7 +340,8 @@ final class DlsParser {
     }
 
     boolean cdlPasses(int start, int end) {
-        for (int p = start; p < end; p = nextChunk(p)) {
+        for (int p = start, next; p < end; p = next) {
+            next = nextChunk(p, end);
             String id = fourcc(p);
             int size = u32(p + 4);
             int body = p + 8;
@@ -353,42 +354,47 @@ final class DlsParser {
     }
 
     int evalCdl(int body, int size) {
-        int acc = 0;
+        int value = 0;
         int p = body;
         int end = body + size;
         while (p + 2 <= end) {
             int op = u16(p);
             p += 2;
-            if (op == 0x03 || op == 0x05 || op == 0x0A || op == 0x0C) {
-                acc = 0;
-            } else if (op == 0x04) {
-                acc *= 2;
-            } else if (op == 0x06) {
-                acc *= acc;
-            } else if (op == 0x07 || op == 0x08 || op == 0x09) {
-                acc = acc != 0 ? 1 : 0;
-            } else if (op == 0x0B || op == 0x0D || op == 0x0E) {
-                acc = 1;
-            } else if (op == 0x0F) {
-                acc = acc == 0 ? 1 : 0;
-            } else if (op == 0x10) {
+            if (op == 0x10) {
                 if (p + 4 > end) {
                     return 0;
                 }
-                acc = i32(p);
+                value = i32(p);
                 p += 4;
             } else if (op == 0x11 || op == 0x12) {
                 if (p + 16 > end) {
                     return 0;
                 }
-                acc = cdlQueryValue(p);
+                int query = cdlQueryIndex(p);
+                if (query >= 0) {
+                    value = CDL_QUERY_VALUES[query];
+                }
                 p += 16;
+            } else if (op == 0x0F) {
+                value = value == 0 ? 1 : 0;
+            } else if (op == 0x03 || op == 0x05 || op == 0x0A || op == 0x0C) {
+                value = 0;
+            } else if (op == 0x04) {
+                value *= 2;
+            } else if (op == 0x06) {
+                value *= value;
+            } else if (op == 0x07) {
+                value = value == 0 ? 0 : 1;
+            } else if (op == 0x08 || op == 0x09) {
+                value = value == 0 ? 0 : 1;
+            } else if (op == 0x0B || op == 0x0D || op == 0x0E) {
+                value = 1;
             }
         }
-        return acc;
+        return p == end ? value : 0;
     }
 
-    int cdlQueryValue(int p) {
+    int cdlQueryIndex(int p) {
         for (int i = 0; i < CDL_QUERY_GUIDS.length; i++) {
             int[] guid = CDL_QUERY_GUIDS[i];
             boolean same = true;
@@ -399,10 +405,10 @@ final class DlsParser {
                 }
             }
             if (same) {
-                return CDL_QUERY_VALUES[i];
+                return i;
             }
         }
-        return 0;
+        return -1;
     }
 
     static final int[][] CDL_QUERY_GUIDS = {
@@ -437,13 +443,9 @@ final class DlsParser {
     void parseWavePool() {
         waves.clear();
         if (poolOffsets.length > 0) {
-            int baseA = wvplChunkData + 4;
-            int baseB = wvplChunkData;
+            int wavePoolStart = wvplChunkData + 4;
             for (int i = 0; i < poolOffsets.length; i++) {
-                int p = baseA + poolOffsets[i];
-                if (!looksLikeWaveChunk(p)) {
-                    p = baseB + poolOffsets[i];
-                }
+                int p = wavePoolStart + poolOffsets[i];
                 if (!looksLikeWaveChunk(p)) {
                     throw error(wvplChunkData, "ptbl offset does not point to wave chunk");
                 }
@@ -454,7 +456,8 @@ final class DlsParser {
         int start = wvplChunkData + 4;
         int end = wvplChunkData + wvplChunkSize;
         int index = 0;
-        for (int p = start; p < end; p = nextChunk(p)) {
+        for (int p = start, next; p < end; p = next) {
+            next = nextChunk(p, end);
             if (looksLikeWaveChunk(p)) {
                 waves.add(parseWave(index++, p));
             }
@@ -482,7 +485,8 @@ final class DlsParser {
         byte[] pcmData = null;
         int factFrames = -1;
         SampleInfo sample = new SampleInfo();
-        for (int q = start; q < end; q = nextChunk(q)) {
+        for (int q = start, next; q < end; q = next) {
+            next = nextChunk(q, end);
             String id = fourcc(q);
             int chunkSize = u32(q + 4);
             int body = q + 8;
@@ -533,6 +537,11 @@ final class DlsParser {
                 throw error(body, "unsupported extensible subformat");
             }
             fmt.tag = 1;
+        } else if (fmt.tag == 85) {
+            if (size < 30 || u16(body + 16) != 12) {
+                throw error(body, "bad MPEG fmt");
+            }
+            fmt.bitsPerSample = 16;
         }
         return fmt;
     }
@@ -559,13 +568,16 @@ final class DlsParser {
         sample.loopMode = LOOP_NONE;
         sample.loopStart = 0;
         sample.loopEndInclusive = -1;
+        sample.loopUntilRelease = false;
         if (loopCount == 1 && size >= 36) {
+            int loopType = u32(body + 24);
             int loopStart = u32(body + 28);
             int loopLength = u32(body + 32);
             if (loopLength != 0) {
                 sample.loopMode = LOOP_FORWARD;
                 sample.loopStart = loopStart;
                 sample.loopEndInclusive = loopStart + loopLength - 1;
+                sample.loopUntilRelease = loopType == 1;
             }
         }
     }
@@ -585,6 +597,7 @@ final class DlsParser {
                 sample.loopMode = type == 0 ? LOOP_FORWARD : LOOP_NONE;
                 sample.loopStart = start;
                 sample.loopEndInclusive = end;
+                sample.loopUntilRelease = false;
             }
         }
     }
@@ -595,8 +608,8 @@ final class DlsParser {
         }
         sample.present = true;
         sample.unityNote = data[body] & 0xFF;
-        sample.fineTuneCents = (byte) data[body + 1];
-        sample.attenuation = ((byte) data[body + 2]) * 655360;
+        sample.fineTuneCents = data[body + 1];
+        sample.attenuation = data[body + 2] * 655360;
     }
 
     Decoded decodeWave(Fmt fmt, byte[] bytes, int factFrames, int at) {
@@ -632,6 +645,16 @@ final class DlsParser {
         }
         if (fmt.tag == 17) {
             return decodeImaWav(fmt, bytes, factFrames, at);
+        }
+        if (fmt.tag == 85) {
+            if (factFrames < 0) {
+                throw error(at, "compressed wave missing fact");
+            }
+            try {
+                return MpegDecoder.decode(bytes, fmt);
+            } catch (IllegalArgumentException ex) {
+                throw error(at, ex.getMessage());
+            }
         }
         throw error(at, "unsupported WAVE format tag " + fmt.tag);
     }
@@ -726,22 +749,24 @@ final class DlsParser {
     }
 
     int rootRiffEnd(int size) {
-        long strict = 8L + size;
-        if (strict <= data.length) {
-            return (int) strict;
+        long declaredSize = size & 0xFFFFFFFFL;
+        long standardEnd = 8L + declaredSize;
+        if (standardEnd >= 12 && standardEnd <= data.length) {
+            return (int) standardEnd;
         }
-        if (size == data.length) {
+        // The MobileBAE profile banks store the absolute file length in the RIFF size field.
+        if (declaredSize == data.length) {
             return data.length;
         }
         throw error(4, "RIFF root exceeds file");
     }
 
-    int nextChunk(int p) {
+    int nextChunk(int p, int parentEnd) {
         require(p, 8);
         int size = u32(p + 4);
         long next = (long) p + 8 + size + (size & 1);
-        if (next < p || next > data.length) {
-            throw error(p, "chunk exceeds file");
+        if (next < p || next > parentEnd || parentEnd > data.length) {
+            throw error(p, "chunk exceeds parent");
         }
         return (int) next;
     }

@@ -12,7 +12,7 @@ final class PreviewRenderer {
 
     final DlsBank bank;
     final int sampleRate;
-    final int ordinaryVoiceLimit;
+    final int voiceLimit;
     final boolean reverbEnabled;
     final boolean chorusEnabled;
     final boolean filterVibration;
@@ -36,10 +36,16 @@ final class PreviewRenderer {
     long nextVoiceSerial;
 
     PreviewRenderer(DlsBank bank, int sampleRate, boolean reverbEnabled, boolean chorusEnabled,
-                            int ordinaryVoiceLimit, boolean filterVibration) {
+                            int voiceLimit, boolean filterVibration) {
+        if (sampleRate <= 0) {
+            throw new IllegalArgumentException("sampleRate must be positive");
+        }
+        if (voiceLimit <= 0) {
+            throw new IllegalArgumentException("voiceLimit must be positive");
+        }
         this.bank = bank;
         this.sampleRate = sampleRate;
-        this.ordinaryVoiceLimit = ordinaryVoiceLimit;
+        this.voiceLimit = voiceLimit;
         this.reverbEnabled = reverbEnabled;
         this.chorusEnabled = chorusEnabled;
         this.filterVibration = filterVibration;
@@ -221,7 +227,7 @@ final class PreviewRenderer {
         if (pairs > 0 && mipThresholds[0] != 0) {
             activeMask = 0;
             for (int i = 0; i < pairs && mipThresholds[i] != 0; i++) {
-                if (mipThresholds[i] <= ordinaryVoiceLimit) {
+                if (mipThresholds[i] <= voiceLimit) {
                     activeMask |= 1 << mipChannels[i];
                 }
             }
@@ -264,12 +270,7 @@ final class PreviewRenderer {
         } else if (cc == 100) {
             ch.rpnLsb = value;
             ch.selectorMode = 1;
-        } else if (cc == 99) {
-            ch.nrpnMsb = value;
-            ch.nrpnLsb = 127;
-            ch.selectorMode = 2;
-        } else if (cc == 98) {
-            ch.nrpnLsb = value;
+        } else if (cc == 99 || cc == 98) {
             ch.selectorMode = 2;
         } else if (cc == 6 || cc == 38 || cc == 96 || cc == 97) {
             int rpn = ((ch.rpnMsb & 0x7F) << 7) | (ch.rpnLsb & 0x7F);
@@ -313,20 +314,22 @@ final class PreviewRenderer {
             return;
         }
         int voiceKey = bank.percussionKeyAliasFor(ch.selectedBankSelector, key);
-        Region region = instrument.regionFor(voiceKey, velocity);
-        if (region == null || region.tableIndex < 0 || region.tableIndex >= bank.waves.size()) {
+        int regionKey = bank.hasPercussionKeyAliasesFor(ch.selectedBankSelector) ? voiceKey
+                : clamp(voiceKey + globalCoarseSemitones(), 0, 127);
+        Region region = instrument.regionFor(regionKey, velocity);
+        if (region == null) {
             return;
         }
         Wave wave = bank.waves.get(region.tableIndex);
-        if (wave.channels != 1 && wave.channels != 2) {
-            return;
-        }
-        SampleInfo sample = region.sample.effectiveWith(wave.sample);
         killExclusiveVoices(channel, voiceKey, region);
-        if (voices.size() >= ordinaryVoiceLimit) {
-            voices.remove(stealVoiceIndex(channel));
+        if (voices.size() >= voiceLimit) {
+            int stolen = stealVoiceIndex(channel);
+            if (stolen < 0) {
+                return;
+            }
+            voices.remove(stolen);
         }
-        voices.add(new Voice(channel, voiceKey, region.index, region.keyGroup, wave, sample,
+        voices.add(new Voice(channel, voiceKey, region.index, region.keyGroup, wave, region.sample,
                 region.articulation, voiceKey, velocity, ch, sampleRate, nextVoiceSerial++));
     }
 
@@ -343,7 +346,8 @@ final class PreviewRenderer {
             if (voice.channel != channel) {
                 continue;
             }
-            if (((region.options & 0x10) != 0 && voice.key == key && voice.regionIndex == region.index)
+            if (((region.options & Region.OPTION_SELF_EXCLUSIVE) != 0
+                    && voice.key == key && voice.regionIndex == region.index)
                     || (exclusiveClass != 0 && (voice.keyGroup & 0x0F) == exclusiveClass)) {
                 voice.fastKill();
             }
@@ -356,19 +360,9 @@ final class PreviewRenderer {
                 return i;
             }
         }
-        int candidate = findRecyclableVoice(newChannel);
-        if (candidate >= 0) {
-            return candidate;
-        }
-        candidate = findSustainedReleasedVoice();
-        if (candidate >= 0) {
-            return candidate;
-        }
-        candidate = findActiveVoice(newChannel);
-        return candidate >= 0 ? candidate : 0;
-    }
-
-    int findRecyclableVoice(int newChannel) {
+        // MobileBAE Plus sub_11F5A10 first returns the last recyclable voice in
+        // the first eligible channel bucket, then prefers held percussion, and
+        // finally uses the lowest per-voice allocation priority in that bucket.
         for (int channel : VOICE_STEAL_ORDER) {
             if (newChannel != 9 && channel == 9) {
                 continue;
@@ -384,42 +378,38 @@ final class PreviewRenderer {
                 return candidate;
             }
         }
-        return -1;
-    }
-
-    int findSustainedReleasedVoice() {
-        int candidate = -1;
-        long oldest = Long.MAX_VALUE;
-        for (int i = 0; i < voices.size(); i++) {
-            Voice voice = voices.get(i);
-            if (voice.sustainedReleased() && voice.startSerial < oldest) {
-                candidate = i;
-                oldest = voice.startSerial;
+        if (newChannel == 9) {
+            int candidate = -1;
+            long priority = Long.MAX_VALUE;
+            for (int i = 0; i < voices.size(); i++) {
+                Voice voice = voices.get(i);
+                if (voice.channel == 9 && voice.keyHeld && voice.startSerial < priority) {
+                    candidate = i;
+                    priority = voice.startSerial;
+                }
+            }
+            if (candidate >= 0) {
+                return candidate;
             }
         }
-        return candidate;
-    }
-
-    int findActiveVoice(int newChannel) {
-        int candidate = -1;
         for (int channel : VOICE_STEAL_ORDER) {
             if (newChannel != 9 && channel == 9) {
                 continue;
             }
-            int channelCandidate = -1;
-            long oldest = Long.MAX_VALUE;
+            int candidate = -1;
+            long priority = Long.MAX_VALUE;
             for (int i = 0; i < voices.size(); i++) {
                 Voice voice = voices.get(i);
-                if (voice.channel == channel && voice.stealableActive() && voice.startSerial < oldest) {
-                    channelCandidate = i;
-                    oldest = voice.startSerial;
+                if (voice.channel == channel && voice.active && voice.startSerial < priority) {
+                    candidate = i;
+                    priority = voice.startSerial;
                 }
             }
-            if (channelCandidate >= 0) {
-                candidate = channelCandidate;
+            if (candidate >= 0) {
+                return candidate;
             }
         }
-        return candidate;
+        return -1;
     }
 }
 final class ChannelState {
@@ -445,8 +435,6 @@ final class ChannelState {
     final int[] rpnValues = new int[5];
     int rpnMsb;
     int rpnLsb;
-    int nrpnMsb;
-    int nrpnLsb;
     int selectorMode;
     Instrument selectedInstrument;
     int selectedBankSelector;
@@ -493,13 +481,7 @@ final class ChannelState {
         rpnValues[2] = 0x2000;
         rpnMsb = 127;
         rpnLsb = 127;
-        nrpnMsb = 127;
-        nrpnLsb = 127;
         selectorMode = 0;
-    }
-
-    int nrpnSelector() {
-        return ((nrpnMsb & 0x7F) << 7) | (nrpnMsb & 0x7F);
     }
 
     int bankSelector() {
@@ -557,6 +539,7 @@ final class Voice {
     final long loopStart;
     final long loopEnd;
     final boolean looping;
+    final boolean loopUntilRelease;
     final int controlBlockFrames;
     final PlusFilter filter;
     final Envelope envelope;
@@ -613,10 +596,14 @@ final class Voice {
         int pitchMultiplierQ16 = pitchRatioQ16(articulation.pitch);
         int gainQ16 = exp10Q16(sample.attenuation / 200);
         int panOffset = articulation.pan;
+        int eg1Delay = articulation.eg1Delay;
         int eg1Attack = articulation.eg1Attack;
+        int eg1Hold = articulation.eg1Hold;
         int eg1Decay = articulation.eg1Decay;
         int eg1Release = articulation.eg1Release;
+        int eg2Delay = articulation.eg2Delay;
         int eg2Attack = articulation.eg2Attack;
+        int eg2Hold = articulation.eg2Hold;
         int eg2Decay = articulation.eg2Decay;
         int eg2Release = articulation.eg2Release;
         int filterCutoff = articulation.filterCutoff == FILTER_DISABLED_CUTOFF ? FILTER_DISABLED_CUTOFF
@@ -633,14 +620,22 @@ final class Voice {
                 pitchMultiplierQ16 = fixedMul16_16(pitchMultiplierQ16, exp2Q16(value / 1200));
             } else if (connection.destination == 4) {
                 panOffset += value / 500;
+            } else if (connection.destination == 0x20B) {
+                eg1Delay = modulatedTimeMicros(eg1Delay, value);
             } else if (connection.destination == 0x206) {
                 eg1Attack = modulatedTimeMicros(eg1Attack, value);
+            } else if (connection.destination == 0x20C) {
+                eg1Hold = modulatedTimeMicros(eg1Hold, value);
             } else if (connection.destination == 0x207) {
                 eg1Decay = modulatedTimeMicros(eg1Decay, value);
             } else if (connection.destination == 0x209) {
                 eg1Release = modulatedTimeMicros(eg1Release, value);
+            } else if (connection.destination == 0x30F) {
+                eg2Delay = modulatedTimeMicros(eg2Delay, value);
             } else if (connection.destination == 0x30A) {
                 eg2Attack = modulatedTimeMicros(eg2Attack, value);
+            } else if (connection.destination == 0x310) {
+                eg2Hold = modulatedTimeMicros(eg2Hold, value);
             } else if (connection.destination == 0x30B) {
                 eg2Decay = modulatedTimeMicros(eg2Decay, value);
             } else if (connection.destination == 0x30D) {
@@ -664,26 +659,34 @@ final class Voice {
         int loopEndFrame = (int) Math.max(0L,
                 Math.min((long) wave.frames, (long) sample.loopEndInclusive + 1L));
         this.looping = sample.loopMode == LOOP_FORWARD && loopEndFrame > loopStartFrame;
+        this.loopUntilRelease = sample.loopUntilRelease;
         this.loopStart = ((long) loopStartFrame) << 16;
         this.loopEnd = ((long) loopEndFrame) << 16;
         this.filter = filterCutoff == FILTER_DISABLED_CUTOFF ? null
                 : new PlusFilter(outputRate, filterCutoff, articulation.filterResonance);
-        this.envelope = new Envelope(eg1Attack, eg1Decay, articulation.eg1Sustain, eg1Release, true);
-        this.eg2Envelope = new Envelope(eg2Attack, eg2Decay, articulation.eg2Sustain, eg2Release, false);
+        this.envelope = new Envelope(eg1Delay, eg1Attack, eg1Hold, eg1Decay,
+                articulation.eg1Sustain, eg1Release, true);
+        this.eg2Envelope = new Envelope(eg2Delay, eg2Attack, eg2Hold, eg2Decay,
+                articulation.eg2Sustain, eg2Release, false);
         this.vibratoLfo = new Lfo(articulation.vibratoFrequency, articulation.vibratoStartDelay);
         this.modulationLfo = new Lfo(articulation.lfoFrequency, articulation.lfoStartDelay);
         tickControl();
     }
 
     void release() {
-        envelope.release();
-        eg2Envelope.release();
+        if (envelope.stage != Envelope.RELEASE && envelope.stage != Envelope.SHUTDOWN) {
+            envelope.release(envelope.releaseMicros);
+        }
+        if (eg2Envelope.stage != Envelope.RELEASE && eg2Envelope.stage != Envelope.SHUTDOWN) {
+            eg2Envelope.release(eg2Envelope.releaseMicros);
+        }
     }
 
     void fastKill() {
         keyHeld = false;
         sustainSnapshot = false;
-        release();
+        envelope.shutdown();
+        eg2Envelope.shutdown();
         controlFramesUntilTick = 0;
     }
 
@@ -693,14 +696,6 @@ final class Voice {
 
     boolean recyclable() {
         return active && !keyHeld && !sustainSnapshot;
-    }
-
-    boolean sustainedReleased() {
-        return active && !keyHeld && sustainSnapshot;
-    }
-
-    boolean stealableActive() {
-        return active;
     }
 
     int next() {
@@ -746,7 +741,7 @@ final class Voice {
             lastRightSample = sample;
         }
         position += currentIncrement;
-        while (looping && position >= loopEnd) {
+        while (looping && (!loopUntilRelease || keyHeld || sustainSnapshot) && position >= loopEnd) {
             position = loopStart + (position - loopEnd);
         }
         advanceGainRamp();
