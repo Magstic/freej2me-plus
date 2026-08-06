@@ -45,7 +45,7 @@ public final class TextDecoder
 
 	public static BufferedReader openDescriptor(InputStream input, String encoding, int maximumSize) throws IOException
 	{
-		byte[] data = readAll(input, maximumSize);
+		byte[] data = unfoldDescriptor(readAll(input, maximumSize));
 		if(!"ISO_8859_1".equals(encoding))
 		{
 			return new BufferedReader(new StringReader(decode(data, 0, data.length, encoding)));
@@ -70,6 +70,23 @@ public final class TextDecoder
 		}
 
 		return new BufferedReader(new StringReader(text));
+	}
+
+	private static byte[] unfoldDescriptor(byte[] data)
+	{
+		ByteArrayOutputStream output = new ByteArrayOutputStream(data.length);
+		for(int i = 0; i < data.length; i++)
+		{
+			int newlineLength = data[i] == '\n' ? 1 :
+				(data[i] == '\r' ? (i + 1 < data.length && data[i + 1] == '\n' ? 2 : 1) : 0);
+			if(newlineLength > 0 && i + newlineLength < data.length && data[i + newlineLength] == ' ')
+			{
+				i += newlineLength;
+				continue;
+			}
+			output.write(data[i]);
+		}
+		return output.toByteArray();
 	}
 
 	private static byte[] readAll(InputStream input, int maximumSize) throws IOException

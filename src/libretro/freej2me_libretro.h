@@ -251,8 +251,8 @@ struct retro_core_option_v2_definition core_options[] =
         "freej2me_phone",
         "System > Phone Key Layout",
         "鍵值佈局",
-        "J2ME 平台存在不同的手機製造商，這導致遊戲之間的按鍵佈局也不盡相同。若遊戲的按鍵響應非常奇怪，請嘗試調整該選項。",
-        "J2ME 平台存在不同的手機製造商，這導致遊戲之間的按鍵佈局也不盡相同。若遊戲的按鍵響應非常奇怪，請嘗試調整該選項。",
+        "J2ME 平台存在不同的手機製造商，這導致遊戲之間的按鍵佈局也不盡相同。若遊戲的按鍵響應非常奇怪，請嘗試調整該選項。注意：Sharp 裝置使用 Motorola 或 Motorola Triplets 的按鍵佈局。",
+        "J2ME 平台存在不同的手機製造商，這導致遊戲之間的按鍵佈局也不盡相同。若遊戲的按鍵響應非常奇怪，請嘗試調整該選項。注意：Sharp 裝置使用 Motorola 或 Motorola Triplets 的按鍵佈局。",
         "system_settings",
         {
             { "Default",             NULL },
@@ -264,7 +264,6 @@ struct retro_core_option_v2_definition core_options[] =
             { "Motorola A1000",      NULL },
             { "Nokia Full Keyboard", NULL },
             { "Sagem",               NULL },
-            { "Sharp",               NULL },
             { "Siemens",             NULL },
             { "SKT",                 NULL },
             { NULL, NULL },
@@ -958,7 +957,7 @@ struct retro_core_option_definition core_options_v1 [] =
     {
         "freej2me_phone",
         "Phone Key Layout",
-        "Due to the different mobile phone manufacturers on the J2ME space, it's usual to have some games expecting a certain phone's key layout like Nokia's for example. If a game is not responding to the inputs correctly, try changing this option.",
+        "Due to the different mobile phone manufacturers on the J2ME space, it's usual to have some games expecting a certain phone's key layout like Nokia's for example. If a game is not responding to the inputs correctly, try changing this option. NOTE: Sharp devices are known to use motorola's mappings.",
         {
             { "Default",             NULL },
             { "KDDI",                NULL },
@@ -969,7 +968,6 @@ struct retro_core_option_definition core_options_v1 [] =
             { "Motorola A1000",      NULL },
             { "Nokia Full Keyboard", NULL },
             { "Sagem",               NULL },
-            { "Sharp",               NULL },
             { "Siemens",             NULL },
             { "SKT",                 NULL },
             { NULL, NULL },
@@ -1470,7 +1468,7 @@ static const struct retro_variable vars[] =
     },
     { /* Phone Control Type */
         "freej2me_phone",
-        "Phone Key Layout; Default|KDDI|LG|Motorola/SoftBank|Motorola Triplets|Motorola V8|Motorola A1000|Nokia Full Keyboard|Sagem|Sharp|Siemens|SKT"
+        "Phone Key Layout; Default|KDDI|LG|Motorola/SoftBank|Motorola Triplets|Motorola V8|Motorola A1000|Nokia Full Keyboard|Sagem|Siemens|SKT"
     },
     { /* LCD Backlight Color */
         "freej2me_backlightcolor",

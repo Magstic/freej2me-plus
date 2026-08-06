@@ -175,7 +175,6 @@ public class Mobile
 	public static boolean nokiaKeyboard = false;
 	public static boolean sagem = false;
 	public static boolean siemens = false;
-	public static boolean sharp = false;
 	public static boolean skt = false;
 
 	/*
@@ -311,15 +310,6 @@ public class Mobile
 	public static final int SAGEM_SOFT1 = -7; // KEY_SOFTKEY1 = -7; (Left Soft)
 	public static final int SAGEM_SOFT2 = -6; // KEY_SOFTKEY2 = -6; (Right Soft)
 	public static final int SAGEM_SOFT3 = -5; // KEY_SOFTKEY3 = -5; (Fire)
-
-	//Sharp keycodes
-	public static final int SHARP_UP    = 1;  // KEY_UP_ARROW = 1;
-	public static final int SHARP_DOWN  = 6;  // KEY_DOWN_ARROW = 6;
-	public static final int SHARP_LEFT  = 2;  // KEY_LEFT_ARROW = 2;
-	public static final int SHARP_RIGHT = 5;  // KEY_RIGHT_ARROW = 5;
-	public static final int SHARP_SOFT1 = 21; // KEY_SOFTKEY1 = 21; (Left Soft)
-	public static final int SHARP_SOFT2 = 22; // KEY_SOFTKEY2 = 22; (Right Soft)
-	public static final int SHARP_FIRE  = 20; // KEY_SOFTKEY3 = 20; (Fire)
 
 	//Siemens keycodes
 	public static final int SIEMENS_UP    = -59;
@@ -503,19 +493,6 @@ public class Mobile
 				case 9: return SIEMENS_SOFT1; // Select
 			}
 		}
-		if(sharp)
-		{
-			switch(keycode)
-			{
-				case 0: return SHARP_UP; // Up
-				case 1: return SHARP_DOWN; // Down
-				case 2: return SHARP_LEFT; // Left
-				case 3: return SHARP_RIGHT; // Right
-				case 7: return SHARP_FIRE; // Y
-				case 8: return SHARP_SOFT2; // Start
-				case 9: return SHARP_SOFT1; // Select
-			}
-		}
 		if(skt)
 		{
 			switch(keycode)
@@ -676,17 +653,6 @@ public class Mobile
 				case SIEMENS_LEFT:  return Canvas.LEFT; // Left
 				case SIEMENS_RIGHT: return Canvas.RIGHT; // Right
 				case SIEMENS_FIRE:  return Canvas.FIRE; // Y
-			}
-		}
-		if (sharp)
-		{
-			switch (keycode)
-			{
-				case SHARP_UP:    return Canvas.UP; // Up
-				case SHARP_DOWN:  return Canvas.DOWN; // Down
-				case SHARP_LEFT:  return Canvas.LEFT; // Left
-				case SHARP_RIGHT: return Canvas.RIGHT; // Right
-				case SHARP_FIRE:  return Canvas.FIRE; // Y
 			}
 		}
 		if (skt)
@@ -858,19 +824,6 @@ public class Mobile
 				case SIEMENS_FIRE:  return Canvas.FIRE; // Y
 				case SIEMENS_SOFT1: return Canvas.KEY_SOFT_LEFT;
 				case SIEMENS_SOFT2: return Canvas.KEY_SOFT_RIGHT;
-			}
-		}
-		if (sharp)
-		{
-			switch (keycode)
-			{
-				case SHARP_UP:    return Canvas.UP; // Up
-				case SHARP_DOWN:  return Canvas.DOWN; // Down
-				case SHARP_LEFT:  return Canvas.LEFT; // Left
-				case SHARP_RIGHT: return Canvas.RIGHT; // Right
-				case SHARP_FIRE:  return Canvas.FIRE; // Y
-				case SHARP_SOFT1: return Canvas.KEY_SOFT_LEFT;
-				case SHARP_SOFT2: return Canvas.KEY_SOFT_RIGHT;
 			}
 		}
 		if (skt)
@@ -1051,7 +1004,6 @@ public class Mobile
 		nokiaKeyboard = false;
 		sagem = false;
 		siemens = false;
-		sharp = false;
 		skt = false;
 		if(phone.equals("KDDI"))          { kddi = true;}
 		if(phone.equals("LG"))            { lg = true;}
@@ -1062,7 +1014,6 @@ public class Mobile
 		if(phone.equals("NokiaKeyboard")) { nokiaKeyboard = true;}
 		if(phone.equals("Sagem"))         { sagem = true;}
 		if(phone.equals("Siemens"))       { siemens = true;}
-		if(phone.equals("Sharp"))         { sharp = true;}
 		if(phone.equals("SKT"))           { skt = true;}
 
 		String lcdBacklightColor = config.settings.get("backlightcolor");

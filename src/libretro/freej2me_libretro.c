@@ -650,9 +650,8 @@ static void check_variables(bool first_time_startup)
 		else if (!strcmp(var.value, "Nokia Full Keyboard")){ phoneType = 6; }
 		else if (!strcmp(var.value, "Sagem"))              { phoneType = 7; }
 		else if (!strcmp(var.value, "Siemens"))            { phoneType = 8; }
-		else if (!strcmp(var.value, "Sharp"))              { phoneType = 9; }
-		else if (!strcmp(var.value, "SKT"))                { phoneType = 10; }
-		else if (!strcmp(var.value, "KDDI"))               { phoneType = 11; }
+		else if (!strcmp(var.value, "SKT"))                { phoneType = 9; }
+		else if (!strcmp(var.value, "KDDI"))               { phoneType = 10; }
 	}
 
 	var.key = "freej2me_backlightcolor";
@@ -1781,6 +1780,7 @@ bool javaOpen(char *cmd, char **params)
 		close(pRead[0]);
 		pRead[0] = -1;
 
+		setenv("LC_ALL", "C.UTF-8", 1);
 		chdir(systemPath);
 
 		execvp(cmd, params);

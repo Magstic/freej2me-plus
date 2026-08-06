@@ -157,7 +157,6 @@ public class Libretro
 		Mobile.nokiaKeyboard = false;
 		Mobile.sagem = false;
 		Mobile.siemens = false;
-		Mobile.sharp = false;
 		Mobile.skt = false;
 
 		if(Integer.parseInt(launchArgs[3]) == 1)       { Mobile.lg = true;    }
@@ -168,9 +167,8 @@ public class Libretro
 		else if(Integer.parseInt(launchArgs[3]) == 6)  { Mobile.nokiaKeyboard = true; }
 		else if(Integer.parseInt(launchArgs[3]) == 7)  { Mobile.sagem = true; }
 		else if(Integer.parseInt(launchArgs[3]) == 8)  { Mobile.siemens = true; }
-		else if(Integer.parseInt(launchArgs[3]) == 9)  { Mobile.sharp = true; }
-		else if(Integer.parseInt(launchArgs[3]) == 10) { Mobile.skt = true; }
-		else if(Integer.parseInt(launchArgs[3]) == 11) { Mobile.kddi = true; }
+		else if(Integer.parseInt(launchArgs[3]) == 9)  { Mobile.skt = true; }
+		else if(Integer.parseInt(launchArgs[3]) == 10) { Mobile.kddi = true; }
 
 		Mobile.limitFPS = Integer.parseInt(launchArgs[4]);
 		soundEnabled = Integer.parseInt(launchArgs[5]) != 0;
@@ -373,7 +371,6 @@ public class Libretro
 										else if(Mobile.nokiaKeyboard) { Mobile.config.settings.put("phone", "NokiaKeyboard"); }
 										else if(Mobile.sagem)         { Mobile.config.settings.put("phone", "Sagem"); }
 										else if(Mobile.siemens)       { Mobile.config.settings.put("phone", "Siemens"); }
-										else if(Mobile.sharp)         { Mobile.config.settings.put("phone", "Sharp"); }
 										else if(Mobile.skt)           { Mobile.config.settings.put("phone", "SKT"); }
 										else                          { Mobile.config.settings.put("phone", "Standard"); }
 
@@ -496,9 +493,8 @@ public class Libretro
 									if(Integer.parseInt(cfgtokens[4])==6)  { Mobile.config.settings.put("phone", "NokiaKeyboard"); }
 									if(Integer.parseInt(cfgtokens[4])==7)  { Mobile.config.settings.put("phone", "Sagem"); }
 									if(Integer.parseInt(cfgtokens[4])==8)  { Mobile.config.settings.put("phone", "Siemens"); }
-									if(Integer.parseInt(cfgtokens[4])==9)  { Mobile.config.settings.put("phone", "Sharp"); }
-									if(Integer.parseInt(cfgtokens[4])==10) { Mobile.config.settings.put("phone", "SKT"); }
-									if(Integer.parseInt(cfgtokens[4])==11) { Mobile.config.settings.put("phone", "KDDI"); }
+									if(Integer.parseInt(cfgtokens[4])==9)  { Mobile.config.settings.put("phone", "SKT"); }
+									if(Integer.parseInt(cfgtokens[4])==10) { Mobile.config.settings.put("phone", "KDDI"); }
 
 									Mobile.config.settings.put("fps", ""+ Integer.parseInt(cfgtokens[5]));
 
@@ -637,15 +633,18 @@ public class Libretro
 										Mobile.vibrationDuration = 0;
 
 										/* Send display data to libretro */
-										for(int i=0; i<lcdData.length; i++)
+										synchronized (Mobile.getPlatform().getLcdFrontbuffer())
 										{
-											frameBuffer[3*i]   = (byte)((lcdData[i]>>16)&0xFF);
-											frameBuffer[3*i+1] = (byte)((lcdData[i]>>8)&0xFF);
-											frameBuffer[3*i+2] = (byte)((lcdData[i])&0xFF);
-										}
+											for(int i=0; i<lcdData.length; i++)
+											{
+												frameBuffer[3*i]   = (byte)((lcdData[i]>>16)&0xFF);
+												frameBuffer[3*i+1] = (byte)((lcdData[i]>>8)&0xFF);
+												frameBuffer[3*i+2] = (byte)((lcdData[i])&0xFF);
+											}
 
-										System.out.write(frameBuffer, 0, lcdData.length*3);
-										System.out.flush();
+											System.out.write(frameBuffer, 0, lcdData.length*3);
+											System.out.flush();
+										}
 									}
 									catch (Exception e)
 									{

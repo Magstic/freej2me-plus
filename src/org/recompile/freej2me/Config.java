@@ -206,28 +206,73 @@ public class Config
 			if(settings.containsKey("MCV3ShowHeapUsage")) { settings.remove("MCV3ShowHeapUsage"); }
 			if(settings.containsKey("MCV3ShowTimeMetrics")) { settings.remove("MCV3ShowTimeMetrics"); }
 			if(settings.containsKey("fpshack") && settings.get("fpshack").equals("Default")) { settings.put("fpshack", "Disabled"); }
+			if(settings.containsKey("phone") && settings.get("phone").equals("Sharp")) { settings.put("phone", "MotoTriplets"); }
 
 			// Add any missing settings
-			if(!settings.containsKey("scrwidth")) { settings.put("scrwidth", ""+width); }
-			if(!settings.containsKey("scrheight")) { settings.put("scrheight", ""+height); }
+			if(!settings.containsKey("scrwidth")) { settings.put("scrwidth", ""+Mobile.lcdWidth); }
+			if(!settings.containsKey("scrheight")) { settings.put("scrheight", ""+Mobile.lcdHeight); }
 			if(!settings.containsKey("phone")) { settings.put("phone", "Standard"); }
-			if(!settings.containsKey("backlightcolor")) { settings.put("backlightcolor", "Disabled"); }
-			if(!settings.containsKey("rotate")) { settings.put("rotate", "0"); }
-			if(!settings.containsKey("fps")) { settings.put("fps", "0"); }
-			if(!settings.containsKey("fontoffset")) { settings.put("fontoffset", "0"); }
-			if(!settings.containsKey("spdhacknoalpha")) { settings.put("spdhacknoalpha", "off"); }
-			if(!settings.containsKey("compatfantasyzonefix")) { settings.put("compatfantasyzonefix", "off"); }
-			if(!settings.containsKey("compattranstooriginonreset")) { settings.put("compattranstooriginonreset", "off"); }
-			if(!settings.containsKey("compatimmediaterepaints")) { settings.put("compatimmediaterepaints", "off"); }
-			if(!settings.containsKey("compatoverrideplatchecks")) { settings.put("compatoverrideplatchecks", "on"); }
-			if(!settings.containsKey("compatsiemensfriendlydrawing")) { settings.put("compatsiemensfriendlydrawing", "off"); }
-			if(!settings.containsKey("compatignorevolumechanges")) { settings.put("compatignorevolumechanges", "off"); }
-			if(!settings.containsKey("compatmcv3horizfovfix")) { settings.put("compatmcv3horizfovfix", "off"); }
-			if(!settings.containsKey("fpshack")) { settings.put("fpshack", "Disabled"); }
-			if(!settings.containsKey("spdhackm3ghalfres")) { settings.put("spdhackm3ghalfres", "off"); }
-			if(!settings.containsKey("spdhackmcv3halfres")) { settings.put("spdhackmcv3halfres", "off"); }
-			if(!settings.containsKey("spdhackmcv3nolighting")) { settings.put("spdhackmcv3nolighting", "off"); }
-			if(!settings.containsKey("dojaversion")) { settings.put("dojaversion", "200"); }
+			if(!settings.containsKey("backlightcolor"))
+			{
+				switch(Mobile.maskIndex)
+				{
+					case 0:
+						settings.put("backlightcolor", "Disabled");
+						break;
+					case 1:
+						settings.put("backlightcolor", "Green");
+						break;
+					case 2:
+						settings.put("backlightcolor", "Cyan");
+						break;
+					case 3:
+						settings.put("backlightcolor", "Orange");
+						break;
+					case 4:
+						settings.put("backlightcolor", "Violet");
+						break;
+					case 5:
+						settings.put("backlightcolor", "Red");
+						break;
+					default:
+						throw new IllegalArgumentException();
+				}
+			}
+			if(!settings.containsKey("rotate")) { settings.put("rotate", ""+Mobile.rotateDisplay); }
+			if(!settings.containsKey("fps")) { settings.put("fps", ""+Mobile.limitFPS); }
+			if(!settings.containsKey("fontoffset")) { settings.put("fontoffset", ""+Mobile.fontSizeOffset); }
+			if(!settings.containsKey("spdhacknoalpha")) { settings.put("spdhacknoalpha", Mobile.noAlphaOnBlankImages ? "on" : "off"); }
+			if(!settings.containsKey("compatfantasyzonefix")) { settings.put("compatfantasyzonefix", Mobile.compatFantasyZoneFix ? "on" : "off"); }
+			if(!settings.containsKey("compattranstooriginonreset")) { settings.put("compattranstooriginonreset", Mobile.compatTranslateToOriginOnReset ? "on" : "off"); }
+			if(!settings.containsKey("compatimmediaterepaints")) { settings.put("compatimmediaterepaints", Mobile.compatImmediateRepaints ? "on" : "off"); }
+			if(!settings.containsKey("compatoverrideplatchecks")) { settings.put("compatoverrideplatchecks", Mobile.compatOverridePlatformChecks ? "on" : "off"); }
+			if(!settings.containsKey("compatsiemensfriendlydrawing")) { settings.put("compatsiemensfriendlydrawing", Mobile.compatSiemensFriendlyDrawing ? "on" : "off"); }
+			if(!settings.containsKey("compatignorevolumechanges")) { settings.put("compatignorevolumechanges", Mobile.compatIgnoreVolumeChanges ? "on" : "off"); }
+			if(!settings.containsKey("compatmcv3horizfovfix")) { settings.put("compatmcv3horizfovfix", Mobile.compatMCV3HorizontalFovFix ? "on" : "off"); }
+			if(!settings.containsKey("fpshack"))
+			{
+				switch(Mobile.unlockFramerateHack)
+				{
+					case 0:
+						settings.put("fpshack", "Disabled");
+						break;
+					case 1:
+						settings.put("fpshack", "Safe");
+						break;
+					case 2:
+						settings.put("fpshack", "Extended");
+						break;
+					case 3:
+						settings.put("fpshack", "Aggressive");
+						break;
+					default:
+						throw new IllegalArgumentException();
+				}
+			}
+			if(!settings.containsKey("spdhackm3ghalfres")) { settings.put("spdhackm3ghalfres", Mobile.halfResM3GRaster ? "on" : "off"); }
+			if(!settings.containsKey("spdhackmcv3halfres")) { settings.put("spdhackmcv3halfres", Mobile.halfResMCV3Raster ? "on" : "off"); }
+			if(!settings.containsKey("spdhackmcv3nolighting")) { settings.put("spdhackmcv3nolighting", Mobile.MCV3NoLighting ? "on" : "off"); }
+			if(!settings.containsKey("dojaversion")) { settings.put("dojaversion", ""+Mobile.DoJaVersion); }
 
 			// System settings
 			reader = TextDecoder.open(new FileInputStream(sFile), "UTF-8");
@@ -257,8 +302,8 @@ public class Config
 			if(!sysSettings.containsKey("dlsVoices")) { sysSettings.put("dlsVoices", "256"); }
 			if(!sysSettings.containsKey("dlsReverb")) { sysSettings.put("dlsReverb", "on"); }
 			if(!sysSettings.containsKey("dlsChorus")) { sysSettings.put("dlsChorus", "on"); }
-			if(!sysSettings.containsKey("textfont")) { sysSettings.put("textfont", "Default"); }
-			if(!sysSettings.containsKey("sound")) { sysSettings.put("sound", "on"); }
+			if(!sysSettings.containsKey("textfont")) { sysSettings.put("textfont", Mobile.useCustomTextFont ? "Custom" : "Default"); }
+			if(!sysSettings.containsKey("sound")) { sysSettings.put("sound", Mobile.sound ? "on" : "off"); }
 			// AWT Inputs
 			if(!sysSettings.containsKey("input_LeftSoft"))    { sysSettings.put("input_LeftSoft", ""     + inputKeycodes[0]); }
 			if(!sysSettings.containsKey("input_RightSoft"))   { sysSettings.put("input_RightSoft", ""    + inputKeycodes[1]); }
@@ -684,4 +729,3 @@ public class Config
 	}
 
 }
-

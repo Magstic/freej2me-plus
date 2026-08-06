@@ -216,17 +216,16 @@ public final class AWTGUI
 		new CheckboxMenuItem("Default", true),
 		new CheckboxMenuItem("KDDI", false),
 		new CheckboxMenuItem("LG", false),
-		new CheckboxMenuItem("Motorola/SoftBank", false),
+		new CheckboxMenuItem("Motorola/SoftBank/Sharp", false),
 		new CheckboxMenuItem("Motorola V8", false),
-		new CheckboxMenuItem("Motorola Triplets", false),
+		new CheckboxMenuItem("Motorola Triplets/Sharp", false),
 		new CheckboxMenuItem("Motorola A1000", false),
 		new CheckboxMenuItem("Nokia Full Keyboard", false),
 		new CheckboxMenuItem("Sagem", false),
-		new CheckboxMenuItem("Sharp", false),
 		new CheckboxMenuItem("Siemens", false),
 		new CheckboxMenuItem("SKT", false)
 	};
-	final String[] layoutValues = {"Standard", "KDDI", "LG", "Motorola", "MotoV8", "MotoTriplets", "MotoA1000", "NokiaKeyboard", "Sagem", "Sharp", "Siemens", "SKT"};
+	final String[] layoutValues = {"Standard", "KDDI", "LG", "Motorola", "MotoV8", "MotoTriplets", "MotoA1000", "NokiaKeyboard", "Sagem", "Siemens", "SKT"};
 
 	final CheckboxMenuItem[] backlightOptions =
 	{
