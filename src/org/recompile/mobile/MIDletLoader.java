@@ -397,7 +397,7 @@ public class MIDletLoader extends URLClassLoader
         StringBuilder currentValue = new StringBuilder();
         try
 		{
-			BufferedReader br = new BufferedReader(new InputStreamReader(is));
+			BufferedReader br = TextDecoder.openDescriptor(is, Mobile.textEncoding, 1024 * 1024);
 			try
 			{
 				String line;

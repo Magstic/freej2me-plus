@@ -152,7 +152,14 @@ unsigned int frameBufferSize = MAX_WIDTH * MAX_HEIGHT * 3;
 unsigned int frame[MAX_WIDTH * MAX_HEIGHT];
 unsigned char frameBuffer[MAX_WIDTH * MAX_HEIGHT * 3];
 unsigned char frameHeader[15]; // This is always frameHeader's length in Libretro.java -1 (we read the status byte separately)
-struct retro_game_info gameinfo;
+
+/*
+ * Content is owned by the core instead of retaining retro_game_info pointers.
+ * Frontends only guarantee info->data for the duration of retro_load_game()
+ * unless persistent_data is explicitly requested.
+ */
+static unsigned char *gameContent = NULL;
+static size_t gameContentSize = 0;
 
 bool frameRequested = false;
 bool fast_forwarding = false;
@@ -284,25 +291,58 @@ unsigned int joymouseClickedImage[408] =
  * pipe write/read is requested.
  */
 #ifdef __linux__
-void write_to_pipe(int pipe, void *data, int datasize) { if(isRunning()) { write(pipe, data, datasize); } }
+bool write_to_pipe(int pipe, const void *data, size_t datasize)
+{
+	size_t total = 0;
+	const unsigned char *bytes = (const unsigned char*)data;
+
+	if(!isRunning()) { return false; }
+
+	while(total < datasize)
+	{
+		ssize_t written = write(pipe, bytes + total, datasize - total);
+		if(written < 0 && errno == EINTR) { continue; }
+		if(written <= 0)
+		{
+			log_fn(RETRO_LOG_WARN, "Failed to write to pipe. Error: %d!\n", errno);
+			Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[PIPE_WRITE_FAIL_MSG]);
+			return false;
+		}
+		total += (size_t)written;
+	}
+
+	return true;
+}
 int read_from_pipe(int pipe, void *data, int datasize) { return isRunning() ? read(pipe, data, datasize) : -1; }
 
 #elif _WIN32
-void write_to_pipe(void* pipe, void *data, int datasize)
+bool write_to_pipe(void* pipe, const void *data, size_t datasize)
 {
-	if(!isRunning()) { return; }
-	BOOL succeeded = FALSE;
-	succeeded = WriteFile(
-		pipe,               /* pipe handle */
-		data,               /* message */
-		datasize,           /* message length */
-		NULL,               /* bytes written (not needed) */
-		NULL);              /* not overlapped */
-	if (!succeeded)
+	size_t total = 0;
+	const unsigned char *bytes = (const unsigned char*)data;
+
+	if(!isRunning()) { return false; }
+
+	while(total < datasize)
 	{
-		log_fn(RETRO_LOG_WARN, "Failed to write to pipe. Error: %d!\n", GetLastError() );
-		Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[PIPE_WRITE_FAIL_MSG]);
+		DWORD bytesWritten = 0;
+		DWORD requestSize = (datasize - total > MAXDWORD) ? MAXDWORD : (DWORD)(datasize - total);
+		BOOL succeeded = WriteFile(
+			pipe,
+			bytes + total,
+			requestSize,
+			&bytesWritten,
+			NULL);
+		if(!succeeded || bytesWritten == 0)
+		{
+			log_fn(RETRO_LOG_WARN, "Failed to write to pipe. Error: %d!\n", GetLastError() );
+			Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[PIPE_WRITE_FAIL_MSG]);
+			return false;
+		}
+		total += (size_t)bytesWritten;
 	}
+
+	return true;
 }
 
 int read_from_pipe(void* pipe, void *data, int datasize)
@@ -456,6 +496,85 @@ int freej2me_present(const char *path)
 #else
     return access(path, F_OK) == 0;
 #endif
+}
+
+static void clear_game_content(void)
+{
+	free(gameContent);
+	gameContent = NULL;
+	gameContentSize = 0;
+}
+
+static bool store_game_content(const struct retro_game_info *info)
+{
+	unsigned char *newContent;
+
+	if(!info || !info->data || info->size == 0 || info->size > MAX_CONTENT_SIZE)
+	{
+		log_fn(RETRO_LOG_ERROR, "Invalid or oversized in-memory content.\n");
+		return false;
+	}
+
+	newContent = (unsigned char*)malloc(info->size);
+	if(!newContent)
+	{
+		log_fn(RETRO_LOG_ERROR, "Could not allocate %lu bytes for content.\n", (unsigned long)info->size);
+		return false;
+	}
+	memcpy(newContent, info->data, info->size);
+
+	clear_game_content();
+	gameContent = newContent;
+	gameContentSize = info->size;
+
+	return true;
+}
+
+static bool send_pipe_event(unsigned char type, const void *payload, size_t size)
+{
+	if(size > (size_t)0xFFFFFFFFu || (size > 0 && !payload)) { return false; }
+
+	unsigned char event[5] =
+	{
+		type,
+		(unsigned char)((size >> 24) & 0xFF),
+		(unsigned char)((size >> 16) & 0xFF),
+		(unsigned char)((size >> 8) & 0xFF),
+		(unsigned char)(size & 0xFF)
+	};
+
+	return write_to_pipe(pWrite[1], event, sizeof(event)) &&
+		(size == 0 || write_to_pipe(pWrite[1], payload, size));
+}
+
+static bool send_save_path_to_java(void)
+{
+	char *savedir = NULL;
+	char savepath[PATH_MAX_LENGTH];
+
+	Environ(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &savedir);
+	if(!savedir || savedir[0] == '\0')
+	{
+		Environ(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &savedir);
+	}
+	if(!savedir) { return false; }
+
+	snprintf(savepath, sizeof(savepath), "%s%sfreej2me%s", savedir, slash, slash);
+	log_fn(RETRO_LOG_INFO, "Savepath: %s.\n", savepath);
+	return send_pipe_event(SAVE_PATH_EVENT, savepath, strlen(savepath));
+}
+
+static bool send_game_content_to_java(void)
+{
+	if(!gameContent || gameContentSize == 0 || gameContentSize > MAX_CONTENT_SIZE)
+	{
+		log_fn(RETRO_LOG_ERROR, "No owned content is available to send.\n");
+		return false;
+	}
+
+	log_fn(RETRO_LOG_INFO, "Sending %lu bytes of in-memory content using protocol v1.\n",
+		(unsigned long)gameContentSize);
+	return send_pipe_event(CONTENT_EVENT_V1, gameContent, gameContentSize);
 }
 
 // Fast-forward state tracker
@@ -1070,74 +1189,33 @@ void retro_init(void)
 
 bool retro_load_game(const struct retro_game_info *info)
 {
-	int len = 0;
+	if(!store_game_content(info)) { return false; }
 
 	if(!booted || !isRunning())
 	{
 		retro_init();
-		if(!booted) { return false; }
-	}
-
-	/* Game info is passed to a global variable to enable restarts */
-	gameinfo = *info;
-	/* Send savepath to java */
-	char *savedir;
-	Environ(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &savedir);
-	if (savedir[0] == '\0')
-	{
-		Environ(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &savedir);
-	}
-
-	char savepath[PATH_MAX_LENGTH];
-	snprintf(savepath, sizeof(savepath), "%s%sfreej2me%s", savedir, slash, slash);
-	len = strlen(savepath);
-
-	unsigned char saveevent[5] = { 0xB, (len>>24)&0xFF, (len>>16)&0xFF, (len>>8)&0xFF, len&0xFF };
-	write_to_pipe(pWrite[1], saveevent, 5);
-	write_to_pipe(pWrite[1], savepath, len);
-
-	log_fn(RETRO_LOG_INFO, "Savepath: %s.\n", savepath);
-
-	/* Tell java app to load and run game */
-	char romPath[PATH_MAX_LENGTH];
-	if (path_is_absolute(info->path))
-	{
-		snprintf(romPath, sizeof(romPath), "%s", info->path);
-		path_resolve_realpath(romPath, sizeof(romPath));
-	}
-	else
-	{
-		char refpath[PATH_MAX_LENGTH];
-		refpath[0] = '\0';
-		if (systemPath && systemPath[0] != '\0')
+		if(!booted)
 		{
-			snprintf(refpath, sizeof(refpath), "%s%s", systemPath, path_default_slash());
-			path_parent_dir(refpath);
-			fill_pathname_resolve_relative(romPath, refpath, info->path, sizeof(romPath));
-			path_resolve_realpath(romPath, sizeof(romPath));
-		}
-		else
-		{
-			snprintf(romPath, sizeof(romPath), "%s", info->path);
-			path_resolve_realpath(romPath, sizeof(romPath));
+			clear_game_content();
+			return false;
 		}
 	}
 
-	len = strlen(romPath);
-	log_fn(RETRO_LOG_INFO, "Loading freej2me app from %s\n", romPath);
+	if(!send_save_path_to_java() || !send_game_content_to_java())
+	{
+		retro_deinit();
+		clear_game_content();
+		return false;
+	}
 
-	unsigned char loadevent[5] = { 0xA, (len>>24)&0xFF, (len>>16)&0xFF, (len>>8)&0xFF, len&0xFF };
-	write_to_pipe(pWrite[1], loadevent, 5);
-	write_to_pipe(pWrite[1], (unsigned char*) romPath, len);
-
-	log_fn(RETRO_LOG_INFO, "Sent app file and save paths to Java app.\n");
-
+	log_fn(RETRO_LOG_INFO, "Sent content and save location to Java app.\n");
 	return true;
 }
 
 void retro_unload_game(void)
 {
 	retro_deinit();
+	clear_game_content();
 }
 
 void retro_run(void)
@@ -1607,7 +1685,8 @@ void retro_get_system_info(struct retro_system_info *info)
 	info->library_name = "FreeJ2ME-Plus";
 	info->library_version = "1.52";
 	info->valid_extensions = "jar|kjx";
-	info->need_fullpath = true;
+	info->need_fullpath = false;
+	info->block_extract = true;
 }
 
 void retro_get_system_av_info(struct retro_system_av_info *info)
@@ -1641,7 +1720,13 @@ void retro_reset(void)
 	restarting = true;
 	retro_deinit();
 	retro_init();
-	retro_load_game(&gameinfo);
+	if(booted)
+	{
+		if(!send_save_path_to_java() || !send_game_content_to_java())
+		{
+			log_fn(RETRO_LOG_ERROR, "Could not resend owned content after restart.\n");
+		}
+	}
 }
 
 /* Stubs */

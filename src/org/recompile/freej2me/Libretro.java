@@ -18,11 +18,11 @@ package org.recompile.freej2me;
 
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
+import org.recompile.mobile.ManagedContentCache;
 
 import java.util.Timer;
 import java.util.TimerTask;
 
-import java.io.File;
 import java.io.IOException;
 
 import javax.microedition.media.Manager;
@@ -45,6 +45,8 @@ public class Libretro
 	private static volatile boolean shutdownHookRegistered = false;
 
 	private static final long PAUSE_DELAY_MS = 250;
+	private static final int SAVE_PATH_EVENT = 0x0B;
+	private static final int CONTENT_EVENT_V1 = 0x10;
 	private static volatile long lastCoreUpdateTime = System.currentTimeMillis(); // Tracks last core update for pause checks
 
 	private byte[] frameBuffer = new byte[800*800*3];
@@ -347,14 +349,10 @@ public class Libretro
 									}
 								break;
 
-								case 10: // load jar
-									buffer = new byte[code];
-									bytesRead = readFully(buffer, code);
-									if (bytesRead != code) { shutdownAndExit(0); }
+								case CONTENT_EVENT_V1: // pathless content
+									path = ManagedContentCache.materialize(System.in, code);
 
-									path = new String(buffer, 0, bytesRead, "UTF-8");
-
-									if(Mobile.getPlatform().load(getFormattedLocation(path)))
+									if(Mobile.getPlatform().load(path))
 									{
 										applyLaunchOptions();
 
@@ -462,7 +460,7 @@ public class Libretro
 									}
 								break;
 
-								case 11: // set save path //
+								case SAVE_PATH_EVENT:
 									buffer = new byte[code];
 									bytesRead = readFully(buffer, code);
 									if (bytesRead != code) { shutdownAndExit(0); }
@@ -677,21 +675,6 @@ public class Libretro
 		{
 			MobilePlatform.pauseResumeApp(); // Call to pause the app
 		}
-	}
-
-	private static String getFormattedLocation(String loc)
-	{
-		if (loc.startsWith("file:") || loc.startsWith("http://") || loc.startsWith("https://"))
-			return loc;
-
-		File file = new File(loc);
-		if(!file.isFile())
-		{
-			Mobile.log(Mobile.LOG_ERROR, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + "File '" + loc + "' not found...");
-			shutdownAndExit(0);
-		}
-
-		return file.toURI().toString();
 	}
 
 	private void settingsChanged()

@@ -17,6 +17,9 @@
 #include "libretro.h"
 
 #define PIPE_READ_BUFFER_SIZE 32767
+#define SAVE_PATH_EVENT 0x0B
+#define CONTENT_EVENT_V1 0x10
+#define MAX_CONTENT_SIZE (256U * 1024U * 1024U)
 #define DEFAULT_FPS 60
 #define BASE_WIDTH 320
 #define BASE_HEIGHT 240

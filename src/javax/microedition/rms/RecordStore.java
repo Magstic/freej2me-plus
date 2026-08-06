@@ -17,11 +17,12 @@
 package javax.microedition.rms;
 
 import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
@@ -31,11 +32,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Vector;
 
 import org.recompile.mobile.Base64Util;
 import org.recompile.mobile.Mobile;
+import org.recompile.mobile.TextDecoder;
 
 public class RecordStore
 {
@@ -184,17 +185,9 @@ public class RecordStore
 		return new File(rmsFile).getAbsolutePath();
 	}
 
-	private static String buildRmsPath(String suitename) throws RecordStoreException
+	private static String buildRmsPath(String suitename)
 	{
-		try
-		{
-			// For ISO-8859-1 encodings, we'll use UTF-8 for save paths, helps with chinese and special characters
-			return new String((Mobile.getPlatform().dataPath + "./rms/" + suitename).getBytes(System.getProperty("file.encoding")), System.getProperty("file.encoding").equals(Mobile.supportedEncodings[Mobile.ISO_8859_1]) ? "UTF-8" : Mobile.textEncoding);
-		}
-		catch (UnsupportedEncodingException e)
-		{
-			throw new RecordStoreException("Problem Creating Record Store Path for " + suitename);
-		}
+		return new File(new File(Mobile.getPlatform().dataPath, "rms"), suitename).getPath();
 	}
 
 	private void checkOpen() throws RecordStoreNotOpenException
@@ -859,7 +852,7 @@ public class RecordStore
 		jsonBuilder.append("  \"ids\": ").append(Arrays.toString(validRecords)); // IDs
 
 		jsonBuilder.append("\n}");
-		return jsonBuilder.toString().getBytes();
+		return jsonBuilder.toString().getBytes(StandardCharsets.UTF_8);
 	}
 
 	private void saveRecordStoreRecord(int recordId) {
@@ -952,11 +945,10 @@ public class RecordStore
 		{
 			state.resetVectors();
 			StringBuilder jsonBuilder = new StringBuilder();
-			FileInputStream fis = new FileInputStream(state.rmsFile);
-			Scanner scanner = new Scanner(fis);
-			while (scanner.hasNextLine()) { jsonBuilder.append(scanner.nextLine().trim()); }
-			scanner.close();
-			fis.close();
+			BufferedReader reader = TextDecoder.open(new FileInputStream(state.rmsFile), "UTF-8");
+			String line;
+			while ((line = reader.readLine()) != null) { jsonBuilder.append(line.trim()); }
+			reader.close();
 
 			String jsonString = jsonBuilder.toString();
 			if (jsonString == null || jsonString.length() < 2) {
@@ -1149,11 +1141,10 @@ public class RecordStore
 		try 
 		{
 			StringBuilder jsonBuilder = new StringBuilder();
-			FileInputStream fis = new FileInputStream(filePath);
-			Scanner scanner = new Scanner(fis);
-			while (scanner.hasNextLine()) { jsonBuilder.append(scanner.nextLine().trim()); }
-			scanner.close();
-			fis.close();
+			BufferedReader reader = TextDecoder.open(new FileInputStream(filePath), "UTF-8");
+			String line;
+			while ((line = reader.readLine()) != null) { jsonBuilder.append(line.trim()); }
+			reader.close();
 
 			String jsonString = jsonBuilder.toString();
 			jsonString = jsonString.substring(1, jsonString.length() - 1).trim();

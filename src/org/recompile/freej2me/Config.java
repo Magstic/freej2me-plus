@@ -23,13 +23,13 @@ import java.util.List;
 
 import java.io.File;
 import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 
 import org.recompile.mobile.Mobile;
+import org.recompile.mobile.TextDecoder;
 
 public class Config
 {
@@ -95,17 +95,12 @@ public class Config
 
 	public void init(String appname)
 	{
-        try
-        {
-            // For ISO-8859-1 encodings, we'll use UTF-8 for save paths, helps with chinese and special characters (Mirror RecordStore.java)
-            configPath = new String((Mobile.getPlatform().dataPath + "./config/" + appname).getBytes(System.getProperty("file.encoding")), System.getProperty("file.encoding").equals(Mobile.supportedEncodings[Mobile.ISO_8859_1]) ? "UTF-8" : Mobile.textEncoding);
-			configFile = configPath + "/game.conf";
-        }
-        catch (UnsupportedEncodingException e) { }
+		File configDir = new File(new File(Mobile.getPlatform().dataPath, "config"), appname);
+		configPath = configDir.getPath();
+		configFile = new File(configDir, "game.conf").getPath();
 		// Load Config //
 		try
 		{
-			File configDir = new File(configPath);
 			if (!configDir.exists()) { configDir.mkdirs(); }
 
 			configDir = new File(systemPath);
@@ -180,7 +175,7 @@ public class Config
 
 		try // Read Records
 		{
-			BufferedReader reader = new BufferedReader(new FileReader(cFile));
+			BufferedReader reader = TextDecoder.open(new FileInputStream(cFile), "UTF-8");
 			String line;
 			String[] parts;
 			while((line = reader.readLine())!=null)
@@ -235,7 +230,7 @@ public class Config
 			if(!settings.containsKey("dojaversion")) { settings.put("dojaversion", "200"); }
 
 			// System settings
-			reader = new BufferedReader(new FileReader(sFile));
+			reader = TextDecoder.open(new FileInputStream(sFile), "UTF-8");
 			while((line = reader.readLine())!=null)
 			{
 				parts = line.split(":");
@@ -328,7 +323,7 @@ public class Config
 		try
 		{
 			FileOutputStream fout = new FileOutputStream(cFile);
-			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fout));
+			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fout, "UTF-8"));
 
 			// Sort the config keys alphabetically before saving
 			List<String> sortedKeys = new ArrayList<String>(settings.keySet());
@@ -348,7 +343,7 @@ public class Config
 				Collections.sort(sortedKeys);
 
 				fout = new FileOutputStream(sFile);
-				writer = new BufferedWriter(new OutputStreamWriter(fout));
+				writer = new BufferedWriter(new OutputStreamWriter(fout, "UTF-8"));
 
 				for (String key : sortedKeys)
 				{
