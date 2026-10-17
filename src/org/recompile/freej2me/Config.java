@@ -30,6 +30,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+
 import org.recompile.mobile.Mobile;
 
 public class Config
@@ -280,7 +283,7 @@ public class Config
 		if (!sysSettings.containsKey("dumpGraphicsObjects")) { sysSettings.put("dumpGraphicsObjects", "off"); }
 		if (!sysSettings.containsKey("sound")) { sysSettings.put("sound", Mobile.sound ? "on" : "off"); }
 		if (!sysSettings.containsKey("soundfont")) { sysSettings.put("soundfont", "Default"); }
-		if (!sysSettings.containsKey("textfont")) { sysSettings.put("textfont", Mobile.useCustomTextFont ? "Custom" : "Default"); }
+		if (!sysSettings.containsKey("textfont")) { sysSettings.put("textfont", Mobile.textFont); }
 		if (!sysSettings.containsKey("hdtext")) { sysSettings.put("hdtext", "off"); }
 
 		for (int i = 0; i < KEY_NAMES.length; i++)
@@ -320,6 +323,7 @@ public class Config
 				{
 					String key = parts[0].trim();
 					String val = parts[1].trim();
+					if (key.equals("textfont")) { val = URLDecoder.decode(val, "UTF-8"); }
 					if (key.length() != 0 && val.length() != 0)
 					{
 						targetMap.put(key, val);
@@ -360,7 +364,12 @@ public class Config
 			writer = new BufferedWriter(new OutputStreamWriter(
 				new FileOutputStream(file), "ISO_8859_1"));
 			for (String key : sortedKeys)
-				{ writer.write(key + ":" + map.get(key) + "\n"); }
+			{
+				String value = map.get(key);
+				// Font family names must survive the config file's ISO-8859-1 encoding.
+				if (key.equals("textfont")) { value = URLEncoder.encode(value, "UTF-8"); }
+				writer.write(key + ":" + value + "\n");
+			}
 		}
 		catch (Exception e)
 		{

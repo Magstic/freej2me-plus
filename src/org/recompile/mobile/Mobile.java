@@ -107,8 +107,8 @@ public class Mobile
 	// Maximum amount of exclusive synths. Mainly useful for SMAF/MLD. MIDP can use just 1 or 2.
 	public static byte numExclusiveSynths = 4;
 
-	// Support for loading custom text fonts
-	public static boolean useCustomTextFont = false;
+	// Text font selection and rendering
+	public static String textFont = "Default";
 	public static byte fontSizeOffset = 0; // Size offset to tweak font sizing
 	public static volatile boolean useHighResolutionText = false;
 	static int highResolutionTextVersion = 0; // Invalidates presentation surfaces after mode changes
@@ -1061,10 +1061,8 @@ public class Mobile
 
 		numExclusiveSynths = (byte) Integer.parseInt(config.sysSettings.get("numsynths"));
 
-		String textFont = config.sysSettings.get("textfont");
-		if(textFont.equals("Custom"))       { useCustomTextFont = true; }
-		else if(textFont.equals("Default")) { useCustomTextFont = false; }
-		boolean highResolutionText = "on".equals(config.sysSettings.get("hdtext"));
+		textFont = config.sysSettings.get("textfont");
+		boolean highResolutionText = !MobilePlatform.isLibretro && "on".equals(config.sysSettings.get("hdtext"));
 		if(useHighResolutionText != highResolutionText)
 		{
 			highResolutionTextVersion++;

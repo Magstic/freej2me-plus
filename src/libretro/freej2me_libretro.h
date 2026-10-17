@@ -22,9 +22,6 @@
 #define BASE_HEIGHT 240
 #define MAX_WIDTH 854
 #define MAX_HEIGHT 854
-#define MAX_RENDER_SCALE 4 /* Matches HighResolutionImage.SCALE in the shared Java core. */
-#define MAX_FRAME_WIDTH (MAX_WIDTH * MAX_RENDER_SCALE)
-#define MAX_FRAME_HEIGHT (MAX_HEIGHT * MAX_RENDER_SCALE)
 
 /* Used as a limit to the string of core option updates to be sent to the Java app */
 #define PIPE_MAX_LEN 255
@@ -371,8 +368,8 @@ struct retro_core_option_v2_definition core_options[] =
 		"freej2me_textfont",
 		"System > Text Font",
 		"Text Font",
-		"Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes, so you might need to adjust the size offset.",
-		"Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes, so you might need to adjust the size offset.",
+		"Select a system font family, the default font, or a font file from '<freej2me-lr.jar folder>/freej2me_system/customFont'. Reload the game after changing fonts.",
+		"Select a system font family, the default font, or a font file from '<freej2me-lr.jar folder>/freej2me_system/customFont'. Reload the game after changing fonts.",
 		"system_settings",
 		{
 			{ "off", "Default" },
@@ -382,18 +379,17 @@ struct retro_core_option_v2_definition core_options[] =
 		"off"
 	},
 	{
-		"freej2me_hdtext",
-		"System > HD Text Rendering",
-		"HD Text Rendering",
-		"Render system text at 4x resolution after applying Font Size Offset. Reload the game to refresh cached text.",
-		"Render system text at 4x resolution after applying Font Size Offset. Reload the game to refresh cached text.",
+		"freej2me_fontpage",
+		"System > Font List Page",
+		"Font List Page",
+		"Select a page of system font families, then choose Text Font from that page. Each page contains up to 125 families. Reload the game after changing fonts.",
+		"Select a page of system font families, then choose Text Font from that page. Each page contains up to 125 families. Reload the game after changing fonts.",
 		"system_settings",
 		{
-			{ "off", "Disabled" },
-			{ "on",  "Enabled" },
+			{ "1", "1" },
 			{ NULL, NULL },
 		},
-		"off"
+		"1"
 	},
 	{
 		"freej2me_fontoffset",
@@ -1153,7 +1149,7 @@ struct retro_core_option_definition core_options_v1 [] =
 	{
 		"freej2me_textfont",
 		"Text Font",
-		"Selects whether you want to use a custom text font or not. 'Default' uses the font bundled with the system or Java VM, while 'Custom' allows you to place a custom font on '<freej2me-lr.jar folder>/freej2me_system/customFont' and use it on J2ME apps to simulate a specific phone's font family. Do note that some fonts may end up being too large or too small to fit in some screen sizes, so you might need to adjust the size offset.",
+		"Select a system font family, the default font, or a font file from '<freej2me-lr.jar folder>/freej2me_system/customFont'. Reload the game after changing fonts.",
 		{
 			{ "off", "Default" },
 			{ "on",  "Custom" },
@@ -1162,15 +1158,14 @@ struct retro_core_option_definition core_options_v1 [] =
 		"off"
 	},
 	{
-		"freej2me_hdtext",
-		"HD Text Rendering",
-		"Render system text at 4x resolution after applying Font Size Offset. Reload the game to refresh cached text.",
+		"freej2me_fontpage",
+		"Font List Page",
+		"Select a page of system font families, then choose Text Font from that page. Each page contains up to 125 families. Reload the game after changing fonts.",
 		{
-			{ "off", "Disabled" },
-			{ "on",  "Enabled" },
+			{ "1", "1" },
 			{ NULL, NULL },
 		},
-		"off"
+		"1"
 	},
 	{
 		"freej2me_fontoffset",
@@ -1670,10 +1665,6 @@ static const struct retro_variable vars[] =
 	{ /* Custom Text Font */
 		"freej2me_textfont",
 		"Text Font; off|on"
-	},
-	{ /* HD Text Rendering */
-		"freej2me_hdtext",
-		"HD Text Rendering; off|on"
 	},
 	{ /* Custom Text Font */
 		"freej2me_fontoffset",

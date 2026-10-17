@@ -20,6 +20,7 @@ import javax.microedition.lcdui.Font;
 
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.awt.font.TextAttribute;
 
@@ -28,6 +29,7 @@ import java.io.FilenameFilter;
 
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Arrays;
 
 public class PlatformFont
 {
@@ -61,6 +63,13 @@ public class PlatformFont
 	private static Graphics gc; // Used only to get the FontMetrics object for any created font
 	public java.awt.Font awtFont;
 	private static final File textfontDir = new File("freej2me_system" + File.separatorChar + "customFont" + File.separatorChar);
+
+	public static String[] getFontFamilies()
+	{
+		String[] families = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+		Arrays.sort(families);
+		return families;
+	}
 
 
 	public PlatformFont(int face, int style, int size, boolean isLCDUI)
@@ -142,31 +151,25 @@ public class PlatformFont
 			}
 		});
 
-		if (Mobile.useCustomTextFont && fontfiles != null && fontfiles.length > 0) // Load a custom font if enabled, and there is one
+		String fontFace = Mobile.textFont;
+		if(fontFace.equals("Default") || fontFace.equals("Custom"))
 		{
-            try
-			{
-                awtFont = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new File(textfontDir, fontfiles[0])).deriveFont(isLCDUI ? getStyle() : convertDoJaToLCDUIStyle(getStyle()), getPointSize());
-            }
-			catch (Exception e) // If there's an issue loading it, we can still fallback to the default
-			{
-				Mobile.log(Mobile.LOG_ERROR, PlatformFont.class.getPackage().getName() + "." + PlatformFont.class.getSimpleName() + ": " + "Failed to load custom font:" + e.getMessage());
-				// Fallback
-				String fontFace = "SansSerif";
-				if((isLCDUI ? getFace() : convertDoJaToLCDUIFace(getFace())) == Font.FACE_MONOSPACE) { fontFace = "Monospaced"; }
-				else if((isLCDUI ? getFace() : convertDoJaToLCDUIFace(getFace())) == Font.FACE_PROPORTIONAL) { fontFace = "Dialog"; }
-
-				awtFont = new java.awt.Font(fontFace, isLCDUI ? getStyle() : convertDoJaToLCDUIStyle(getStyle()), getPointSize());
-            }
-        }
-		else if(!Mobile.useCustomTextFont) // If the user is not going to use custom fonts, or there are no custom fonts in the directory, load the defaults
-		{
-			// We'll use SansSerif for SYSTEM
-			String fontFace = "SansSerif";
+			fontFace = "SansSerif";
 			if((isLCDUI ? getFace() : convertDoJaToLCDUIFace(getFace())) == Font.FACE_MONOSPACE) { fontFace = "Monospaced"; }
 			else if((isLCDUI ? getFace() : convertDoJaToLCDUIFace(getFace())) == Font.FACE_PROPORTIONAL) { fontFace = "Dialog"; }
+		}
+		awtFont = new java.awt.Font(fontFace, isLCDUI ? getStyle() : convertDoJaToLCDUIStyle(getStyle()), getPointSize());
 
-			awtFont = new java.awt.Font(fontFace, isLCDUI ? getStyle() : convertDoJaToLCDUIStyle(getStyle()), getPointSize());
+		if(Mobile.textFont.equals("Custom") && fontfiles != null && fontfiles.length > 0)
+		{
+			try
+			{
+				awtFont = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new File(textfontDir, fontfiles[0])).deriveFont(isLCDUI ? getStyle() : convertDoJaToLCDUIStyle(getStyle()), getPointSize());
+			}
+			catch(Exception e)
+			{
+				Mobile.log(Mobile.LOG_ERROR, PlatformFont.class.getPackage().getName() + "." + PlatformFont.class.getSimpleName() + ": " + "Failed to load custom font:" + e.getMessage());
+			}
 		}
 
 

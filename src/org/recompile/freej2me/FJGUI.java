@@ -63,6 +63,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -76,6 +77,7 @@ import javax.swing.border.TitledBorder;
 
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
+import org.recompile.mobile.PlatformFont;
 import org.recompile.freej2me.gamepad.GamepadReader;
 import org.recompile.freej2me.gamepad.MacGamepadReader;
 import org.recompile.freej2me.gamepad.LinuxGamepadReader;
@@ -289,7 +291,7 @@ public final class FJGUI
 	};
 	final String[] excSynthValues = {"1", "2", "3", "4"};
 	
-	final JCheckBoxMenuItem useCustomFont = new JCheckBoxMenuItem("Use custom text font", false);
+	final JMenuItem textFontMenuItem = new JMenuItem("Text Font...");
 	final JCheckBoxMenuItem highResolutionText = new JCheckBoxMenuItem("HD text rendering", false);
 
 	final JCheckBoxMenuItem[] dojaVersions =
@@ -704,6 +706,7 @@ public final class FJGUI
 		exitMenuItem.setActionCommand("Exit");
 		aboutMenuItem.setActionCommand("AboutMenu");
 		resChangeMenuItem.setActionCommand("ChangeResolution");
+		textFontMenuItem.setActionCommand("ChooseTextFont");
 		swingButtons[0].setActionCommand("CloseAboutMenu");
 		swingButtons[1].setActionCommand("RestartNow");
 		swingButtons[2].setActionCommand("RestartLater");
@@ -724,6 +727,7 @@ public final class FJGUI
 		exitMenuItem.addActionListener(menuItemListener);
 		aboutMenuItem.addActionListener(menuItemListener);
 		resChangeMenuItem.addActionListener(menuItemListener);
+		textFontMenuItem.addActionListener(menuItemListener);
 		swingButtons[0].addActionListener(menuItemListener);
 		swingButtons[1].addActionListener(menuItemListener);
 		swingButtons[2].addActionListener(menuItemListener);
@@ -1056,24 +1060,13 @@ public final class FJGUI
 		setToggle(ignoreVolumeChanges, "compatignorevolumechanges", false);
 		setToggle(MCV3HorFovFix, "compatmcv3horizfovfix", false);
 
-		// Special System Toggleable Settings. No use trying to commonize those
-		// in a "setSysToggle" since they are only two.
+		// System toggle settings.
 		useCustomMidi.addItemListener(new ItemListener()
 		{
 			public void itemStateChanged(ItemEvent e)
 			{
 				config.updateSysSetting("soundfont", useCustomMidi.isSelected() ? "Custom" : "Default");
 				hasPendingChange = true;
-			}
-		});
-
-		useCustomFont.addItemListener(new ItemListener()
-		{
-			public void itemStateChanged(ItemEvent e)
-			{
-				config.updateSysSetting("textfont", useCustomFont.isSelected() ? "Custom" : "Default");
-				hasPendingChange = true;
-				showRestartDialog();
 			}
 		});
 
@@ -1199,7 +1192,7 @@ public final class FJGUI
 		optionMenu.add(enableAudio);
 		optionMenu.add(useCustomMidi);
 		optionMenu.add(numExclusiveSynths);
-		optionMenu.add(useCustomFont);
+		optionMenu.add(textFontMenuItem);
 		optionMenu.add(highResolutionText);
 		optionMenu.add(resChangeMenuItem);
 		optionMenu.add(compatSettingsMenu);
@@ -1448,7 +1441,6 @@ public final class FJGUI
 		// These are special checkbox cases that don't use a config on/off
 		fullScreen.setSelected(FreeJ2ME.isFullscreen);
 		useCustomMidi.setSelected("Custom".equals(config.sysSettings.get("soundfont")));
-		useCustomFont.setSelected("Custom".equals(config.sysSettings.get("textfont")));
 		updateSysToggle(highResolutionText, "hdtext");
 
 		// Per-App RadioGroup Settings
@@ -1548,6 +1540,23 @@ public final class FJGUI
 						Mobile.getPlatform().fileName = jarfile;
 						showRestartDialog();
 					}
+				}
+			}
+			else if (command.equals("ChooseTextFont"))
+			{
+				String[] families = PlatformFont.getFontFamilies();
+				String[] choices = new String[families.length + 2];
+				choices[0] = "Default";
+				choices[1] = "Custom";
+				System.arraycopy(families, 0, choices, 2, families.length);
+				String current = config.sysSettings.get("textfont");
+				String selected = (String) JOptionPane.showInputDialog(main, null, "Text Font",
+					JOptionPane.PLAIN_MESSAGE, null, choices, current);
+				if (selected != null && !selected.equals(current))
+				{
+					config.updateSysSetting("textfont", selected);
+					hasPendingChange = true;
+					showRestartDialog();
 				}
 			}
 			else if (command.equals("OpenSp"))

@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 #if defined(__linux__) || defined(__APPLE__)
 #include <stdarg.h>
 #include <unistd.h>
@@ -32,6 +33,7 @@
 #include <retro_miscellaneous.h>
 
 #define NUM_ARGUMENTS 7
+#define FONT_PAGE_SIZE (RETRO_NUM_CORE_OPTION_VALUES_MAX - 3)
 
 const char *slash = path_default_slash();
 
@@ -55,6 +57,9 @@ static struct retro_rumble_interface rumble;
 static struct retro_log_callback logging;
 static retro_log_printf_t log_fn;
 
+static void register_core_options(void);
+static void update_font_options(void);
+
 void retro_set_video_refresh(retro_video_refresh_t fn) { Video = fn; }
 void retro_set_audio_sample(retro_audio_sample_t fn) { Audio = fn; }
 void retro_set_audio_sample_batch(retro_audio_sample_batch_t fn) { AudioBatch = fn;}
@@ -70,21 +75,15 @@ static void fallback_log(enum retro_log_level level, const char *fmt, ...)
 
 void retro_set_environment_core_info(retro_environment_t fn)
 {
-	int core_opt_version = 0;
-
 	/* Logging support */
 	if (fn(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging)) { log_fn = logging.log; }
 	else { log_fn = fallback_log; }
 
-	/* Checks if the core options version is v2 or v1*/
-	if (!Environ(RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION, &core_opt_version)) { core_opt_version = 0; }
-
 	Environ(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);
 	Environ(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, (void*)desc);
 
-	if (core_opt_version >= 2) { Environ(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2, &core_exposed_options); }
-	else if (core_opt_version >= 1) { Environ(RETRO_ENVIRONMENT_SET_CORE_OPTIONS, (void*)core_options); }
-	else { Environ(RETRO_ENVIRONMENT_SET_VARIABLES, (void*)vars); }
+	update_font_options();
+	register_core_options();
 }
 
 void retro_set_environment(retro_environment_t fn)
@@ -144,11 +143,10 @@ unsigned char readBuffer[PIPE_READ_BUFFER_SIZE];
 
 unsigned int frameWidth = MAX_WIDTH;
 unsigned int frameHeight = MAX_HEIGHT;
-int frameScale = 1;
 unsigned int frameSize = MAX_WIDTH * MAX_HEIGHT;
 unsigned int frameBufferSize = MAX_WIDTH * MAX_HEIGHT * 3;
-unsigned int frame[MAX_FRAME_WIDTH * MAX_FRAME_HEIGHT];
-unsigned char frameBuffer[MAX_FRAME_WIDTH * MAX_FRAME_HEIGHT * 3];
+unsigned int frame[MAX_WIDTH * MAX_HEIGHT];
+unsigned char frameBuffer[MAX_WIDTH * MAX_HEIGHT * 3];
 unsigned char frameHeader[15]; // This is always frameHeader's length in Libretro.java -1 (we read the status byte separately)
 struct retro_game_info gameinfo;
 
@@ -172,8 +170,14 @@ int gameFPS = 60; /* Auto(0), 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10 */
 int soundEnabled; /* also acts as a boolean */
 int customMidi; /* Also acts as a boolean */
 int numSynths = 4; 
-int customFont; /* Also acts as a boolean */
-int hdText = 0; /* Render system text at four times the logical resolution */
+static bool fontOptionsReady = false;
+static char *fontData;
+static char **fontFamilies;
+static unsigned int fontCount;
+static unsigned int fontPage;
+static char fontValues[FONT_PAGE_SIZE][4];
+static char fontPageValues[RETRO_NUM_CORE_OPTION_VALUES_MAX][4];
+static char *textFont;
 int fontOffset = 0; /* -4, -3, -2, -1, 0 (Default), 1, 2, 3, 4 */
 int dumpAudioStreams;
 int dumpGraphicsData; // Not really used yet
@@ -338,6 +342,117 @@ int read_from_pipe(void* pipe, void *data, int datasize)
 }
 #endif
 
+static bool read_pipe_data(void *data, int size)
+{
+	int offset = 0;
+	while (offset < size)
+	{
+		int count = read_from_pipe(pRead[0], (unsigned char*)data + offset, size - offset);
+		if (count <= 0) { return false; }
+		offset += count;
+	}
+	return true;
+}
+
+static void register_core_options(void)
+{
+	unsigned int version = 0;
+	if (!Environ(RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION, &version)) { version = 0; }
+	if (version >= 2) { Environ(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2, &core_exposed_options); }
+	else if (version >= 1) { Environ(RETRO_ENVIRONMENT_SET_CORE_OPTIONS, core_options_v1); }
+	else { Environ(RETRO_ENVIRONMENT_SET_VARIABLES, (void*)vars); }
+
+	struct retro_core_option_display display = { "freej2me_textfont", fontOptionsReady };
+	Environ(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY, &display);
+	display.key = "freej2me_fontpage";
+	display.visible = fontOptionsReady && fontCount > FONT_PAGE_SIZE;
+	Environ(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY, &display);
+}
+
+static void update_font_options(void)
+{
+	struct retro_core_option_value fonts[RETRO_NUM_CORE_OPTION_VALUES_MAX] = {{0}};
+	struct retro_core_option_value pages[RETRO_NUM_CORE_OPTION_VALUES_MAX] = {{0}};
+	unsigned int pageCount = fontOptionsReady ? (fontCount + FONT_PAGE_SIZE - 1) / FONT_PAGE_SIZE : RETRO_NUM_CORE_OPTION_VALUES_MAX - 1;
+	if (pageCount == 0) { pageCount = 1; }
+	fonts[0].value = "off";
+	fonts[0].label = "Default";
+	fonts[1].value = "on";
+	fonts[1].label = "Custom";
+
+	unsigned int first = fontPage * FONT_PAGE_SIZE;
+	unsigned int count = fontOptionsReady ? fontCount - first : FONT_PAGE_SIZE;
+	if (count > FONT_PAGE_SIZE) { count = FONT_PAGE_SIZE; }
+	/* Numeric values preserve frontend selections before Java supplies the family labels. */
+	for (unsigned int i = 0; i < count; i++)
+	{
+		snprintf(fontValues[i], sizeof(fontValues[i]), "%u", i);
+		fonts[i + 2].value = fontValues[i];
+		fonts[i + 2].label = fontOptionsReady ? fontFamilies[first + i] : NULL;
+	}
+	for (unsigned int i = 0; i < pageCount; i++)
+	{
+		snprintf(fontPageValues[i], sizeof(fontPageValues[i]), "%u", i + 1);
+		pages[i].value = fontPageValues[i];
+		pages[i].label = fontPageValues[i];
+	}
+
+	for (int i = 0; core_options[i].key; i++)
+	{
+		if (!strcmp(core_options[i].key, "freej2me_textfont")) { memcpy(core_options[i].values, fonts, sizeof(fonts)); }
+		if (!strcmp(core_options[i].key, "freej2me_fontpage")) { memcpy(core_options[i].values, pages, sizeof(pages)); }
+	}
+	for (int i = 0; core_options_v1[i].key; i++)
+	{
+		if (!strcmp(core_options_v1[i].key, "freej2me_textfont")) { memcpy(core_options_v1[i].values, fonts, sizeof(fonts)); }
+		if (!strcmp(core_options_v1[i].key, "freej2me_fontpage")) { memcpy(core_options_v1[i].values, pages, sizeof(pages)); }
+	}
+}
+
+static bool read_font_list(void)
+{
+	free(fontData);
+	free(fontFamilies);
+	fontData = NULL;
+	fontFamilies = NULL;
+	fontCount = 0;
+	unsigned char header[4];
+	if (!read_pipe_data(header, sizeof(header))) { return false; }
+	unsigned int size = ((unsigned int)header[0]<<24) | (header[1]<<16) | (header[2]<<8) | header[3];
+	if (size > INT_MAX) { return false; }
+	fontData = malloc((size_t)size + 1);
+	if (!fontData || !read_pipe_data(fontData, size)) { return false; }
+	fontData[size] = 0;
+	if (size > 0 && fontData[size - 1] != 0) { return false; }
+	for (unsigned int i = 0; i < size; i++) { if (fontData[i] == 0) { fontCount++; } }
+	if (fontCount > FONT_PAGE_SIZE * (RETRO_NUM_CORE_OPTION_VALUES_MAX - 1))
+	{
+		log_fn(RETRO_LOG_ERROR, "System font list exceeds the core option page limit.\n");
+		return false;
+	}
+	fontFamilies = malloc(sizeof(char*) * (fontCount + 1));
+	if (!fontFamilies) { return false; }
+	char *name = fontData;
+	for (unsigned int i = 0; i < fontCount; i++)
+	{
+		fontFamilies[i] = name;
+		name += strlen(name) + 1;
+	}
+
+	if (fontPage * FONT_PAGE_SIZE >= fontCount) { fontPage = 0; }
+	/* Restore the saved page while the initial option values are still registered. */
+	struct retro_variable var = { "freej2me_fontpage", NULL };
+	if (fontCount > FONT_PAGE_SIZE && Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		unsigned int page = strtoul(var.value, NULL, 10);
+		if (page > 0 && page <= (fontCount + FONT_PAGE_SIZE - 1) / FONT_PAGE_SIZE) { fontPage = page - 1; }
+	}
+	fontOptionsReady = true;
+	update_font_options();
+	register_core_options();
+	return true;
+}
+
 int freej2me_present(const char *path)
 {
 #ifdef _WIN32
@@ -479,18 +594,30 @@ static void check_variables()
 		else if (!strcmp(var.value, "1")) { numSynths = 1; }
 	}
 
-	var.key = "freej2me_textfont";
-	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	if (fontOptionsReady)
 	{
-		if (!strcmp(var.value, "off"))     { customFont = 0; }
-		else if (!strcmp(var.value, "on")) { customFont = 1; }
-	}
-
-	var.key = "freej2me_hdtext";
-	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-	{
-		if (!strcmp(var.value, "off"))     { hdText = 0; }
-		else if (!strcmp(var.value, "on")) { hdText = 1; }
+		var.key = "freej2me_fontpage";
+		if (fontCount > FONT_PAGE_SIZE && Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+		{
+			unsigned int page = strtoul(var.value, NULL, 10);
+			if (page > 0 && page <= (fontCount + FONT_PAGE_SIZE - 1) / FONT_PAGE_SIZE && page - 1 != fontPage)
+			{
+				fontPage = page - 1;
+				update_font_options();
+				register_core_options();
+			}
+		}
+		var.key = "freej2me_textfont";
+		if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+		{
+			free(textFont);
+			if (!strcmp(var.value, "off") || !strcmp(var.value, "on")) { textFont = strdup(var.value); }
+			else
+			{
+				unsigned int index = fontPage * FONT_PAGE_SIZE + strtoul(var.value, NULL, 10);
+				textFont = strdup(index < fontCount ? fontFamilies[index] : "off");
+			}
+		}
 	}
 
 	var.key = "freej2me_fontoffset";
@@ -818,11 +945,11 @@ static void check_variables()
 	/* Prepare a string to pass those core options to the Java app */
 	options_update = malloc(sizeof(char) * PIPE_MAX_LEN);
 
-	snprintf(options_update, PIPE_MAX_LEN, "FJ2ME_LR_OPTS:|%lux%lu|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d", screenRes[0], screenRes[1],
+	snprintf(options_update, PIPE_MAX_LEN, "FJ2ME_LR_OPTS:|%lux%lu|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d", screenRes[0], screenRes[1],
 		rotateScreen, phoneType, gameFPS, soundEnabled, customMidi, dumpAudioStreams, loggingLevel, spdHackNoAlpha, backlightColor, compatFantasyZoneFix,
-		compatTransToOriginOnGFXReset, customFont, fontOffset, dumpGraphicsData, deleteTemporaryKJXFiles, m3gUntextured, m3gWireframe, spdFrameRateUnlock, compatImmediateRepaintCalls,
+		compatTransToOriginOnGFXReset, fontOffset, dumpGraphicsData, deleteTemporaryKJXFiles, m3gUntextured, m3gWireframe, spdFrameRateUnlock, compatImmediateRepaintCalls,
 		compatOverridePlatCheck, compatSiemensFriendlyDraw, spdHackM3GHalfRes, dojaVersion, compatIgnoreVolumeChanges, spdHackMCV3HalfRes, spdHackMCV3NoLight, compatMCV3HorFovFix, mcv3Heap, mcv3TimeStats,
-		M3GAntiAliasMode, M3GBilinearMode, M3GDitheringMode, M3GPerspCorrMode, M3GPerspCorrFact, M3GMipmapMode, M3GDisableFog, compatRepaintOnSetCurrent, compatNoTranslateDrawRGB, numSynths, hdText);
+		M3GAntiAliasMode, M3GBilinearMode, M3GDitheringMode, M3GPerspCorrMode, M3GPerspCorrFact, M3GMipmapMode, M3GDisableFog, compatRepaintOnSetCurrent, compatNoTranslateDrawRGB, numSynths);
 	optstrlen = strlen(options_update);
 
 	/* 0xC = 12, which is the special case where the java app will receive the updated configs */
@@ -833,6 +960,13 @@ static void check_variables()
 	{
 		write_to_pipe(pWrite[1], optupdateevent, 5);
 		write_to_pipe(pWrite[1], options_update, optstrlen);
+		if (textFont)
+		{
+			unsigned int length = strlen(textFont);
+			unsigned char fontevent[5] = { 14, (length>>24)&0xFF, (length>>16)&0xFF, (length>>8)&0xFF, length&0xFF };
+			write_to_pipe(pWrite[1], fontevent, 5);
+			write_to_pipe(pWrite[1], textFont, length);
+		}
 		log_fn(RETRO_LOG_INFO, "Sent updated options to the Java app.\n");
 	}
 
@@ -1123,8 +1257,8 @@ void retro_run(void)
 
 		if(joymouseX<0) { joymouseX=0; }
 		if(joymouseY<0) { joymouseY=0; }
-		if(joymouseX>frameWidth/frameScale-17) { joymouseX=frameWidth/frameScale-17; }
-		if(joymouseY>frameHeight/frameScale)   { joymouseY=frameHeight/frameScale; }
+		if(joymouseX>frameWidth-17) { joymouseX=frameWidth-17; }
+		if(joymouseY>frameHeight)   { joymouseY=frameHeight; }
 
 		if(uses_mouse)
 		{
@@ -1170,8 +1304,8 @@ void retro_run(void)
 		{
 			if(touchP!=0)
 			{
-				touchX = (int)(((float)(touchX + 0x7FFF)) * ((float)(frameWidth/frameScale) / (float)0xFFFE));
-				touchY = (int)(((float)(touchY + 0x7FFF)) * ((float)(frameHeight/frameScale) / (float)0xFFFE));
+				touchX = (int)(((float)(touchX + 0x7FFF)) * ((float)frameWidth / (float)0xFFFE));
+				touchY = (int)(((float)(touchY + 0x7FFF)) * ((float)frameHeight / (float)0xFFFE));
 				joymouseAnalog = false;
 				joyevent[0] = 5; /* touch down */
 				joyevent[1] = (touchX >> 8) & 0xFF;
@@ -1264,12 +1398,10 @@ void retro_run(void)
 		{
 			w = (frameHeader[0]<<8) | (frameHeader[1]);
 			h = (frameHeader[2]<<8) | (frameHeader[3]);
-			/* Lower two bits: rotation; upper bits: presentation scale. */
-			r = frameHeader[4] & 3;
-			frameScale = frameHeader[4] >> 2;
-			if(w == 0 || h == 0 || w > MAX_FRAME_WIDTH || h > MAX_FRAME_HEIGHT || frameScale == 0 || frameScale > MAX_RENDER_SCALE)
+			r = frameHeader[4];
+			if(w == 0 || h == 0 || w > MAX_WIDTH || h > MAX_HEIGHT)
 			{
-				log_fn(RETRO_LOG_ERROR, "Invalid frame dimensions or presentation scale received from Java.\n");
+				log_fn(RETRO_LOG_ERROR, "Invalid frame dimensions received from Java.\n");
 				stoppedRunning = true;
 				return;
 			}
@@ -1306,8 +1438,8 @@ void retro_run(void)
 				/* update geometry */
 				Geometry.base_width = w;
 				Geometry.base_height = h;
-				Geometry.max_width = MAX_FRAME_WIDTH;
-				Geometry.max_height = MAX_FRAME_HEIGHT;
+				Geometry.max_width = MAX_WIDTH;
+				Geometry.max_height = MAX_HEIGHT;
 				Geometry.aspect_ratio = ((float)w / (float)h);
 				Environ(RETRO_ENVIRONMENT_SET_GEOMETRY, &Geometry);
 			}
@@ -1383,17 +1515,17 @@ void retro_run(void)
 		{
 			joymouseClickedTime--;
 
-			for(i=0; i<24*frameScale; i++)
+			for(i=0; i<24; i++)
 			{
-				for (j=0; j<17*frameScale; j++)
+				for (j=0; j<17; j++)
 				{
 					// Keep the pointer tip aligned with the logical click position.
-					int pointerX = (joymouseX - 6)*frameScale + j;
-					int pointerY = (joymouseY - 3)*frameScale + i;
+					int pointerX = joymouseX - 6 + j;
+					int pointerY = joymouseY - 3 + i;
 					t = pointerY*frameWidth + pointerX;
 					if(pointerX>=0 && pointerX<frameWidth && pointerY>=0 && pointerY<frameHeight)
 					{
-						switch (joymouseClickedImage[(i/frameScale)*17 + j/frameScale])
+						switch (joymouseClickedImage[i*17 + j])
 						{
 							case 1: frame[t] = pointerOutlineColor; break;
 							case 2: frame[t] = pointerInnerColor; break;
@@ -1409,17 +1541,17 @@ void retro_run(void)
 		{
 			joymouseTime--;
 
-			for(i=0; i<24*frameScale; i++)
+			for(i=0; i<24; i++)
 			{
-				for (j=0; j<17*frameScale; j++)
+				for (j=0; j<17; j++)
 				{
 					// Keep the pointer tip aligned with the logical click position.
-					int pointerX = (joymouseX - 6)*frameScale + j;
-					int pointerY = (joymouseY - 3)*frameScale + i;
+					int pointerX = joymouseX - 6 + j;
+					int pointerY = joymouseY - 3 + i;
 					t = pointerY*frameWidth + pointerX;
 					if(pointerX>=0 && pointerX<frameWidth && pointerY>=0 && pointerY<frameHeight)
 					{
-						switch (joymouseImage[(i/frameScale)*17 + j/frameScale])
+						switch (joymouseImage[i*17 + j])
 						{
 							case 1: frame[t] = pointerOutlineColor; break;
 							case 2: frame[t] = pointerInnerColor; break;
@@ -1468,8 +1600,8 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
 	memset(info, 0, sizeof(*info));
 	info->geometry.base_width   = BASE_WIDTH;
 	info->geometry.base_height  = BASE_HEIGHT;
-	info->geometry.max_width    = MAX_FRAME_WIDTH;
-	info->geometry.max_height   = MAX_FRAME_HEIGHT;
+	info->geometry.max_width    = MAX_WIDTH;
+	info->geometry.max_height   = MAX_HEIGHT;
 	info->geometry.aspect_ratio = ((float)BASE_WIDTH) / ((float)BASE_HEIGHT);
 
 	info->timing.fps = DEFAULT_FPS;
@@ -1480,6 +1612,18 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
 
 void retro_deinit(void)
 {
+	if (!restarting)
+	{
+		free(fontData);
+		free(fontFamilies);
+		free(textFont);
+		fontData = NULL;
+		fontFamilies = NULL;
+		textFont = NULL;
+		fontCount = 0;
+		fontPage = 0;
+		fontOptionsReady = false;
+	}
 	if(isRunning())
 	{
 #if defined(__linux__) || defined(__APPLE__)
@@ -1720,6 +1864,12 @@ bool javaOpen(char *cmd, char **params)
 
 	CloseHandle(javaProcess.hThread); // Close the thread handle, not needed
 #endif
+
+	if (!read_font_list())
+	{
+		log_fn(RETRO_LOG_ERROR, "Failed to receive the system font list from Java.\n");
+		return false;
+	}
 
 	/* wait for java process to respond */
 	int t = 0;
