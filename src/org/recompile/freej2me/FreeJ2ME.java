@@ -23,6 +23,7 @@ package org.recompile.freej2me;
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
 import org.recompile.mobile.PlatformGraphics;
+import org.recompile.mobile.PlatformImage;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -31,6 +32,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
@@ -928,33 +930,42 @@ public class FreeJ2ME
 
 					return;
 				}
-				// Draw Pause or Fast-Forward indicators before showing the frame on screen
-				if(Mobile.isPaused)
+				PlatformImage frontbuffer = Mobile.getPlatform().getLcdFrontbuffer();
+				synchronized (frontbuffer)
 				{
-					((PlatformGraphics)Mobile.getPlatform().getLcdFrontbufferGraphics()).drawPauseIndicator();
-				}
-				else if (MobilePlatform.pressedKeys[20]) // Check if fast-forward is active
-				{
-					((PlatformGraphics)Mobile.getPlatform().getLcdFrontbufferGraphics()).drawFastForwardIndicator();
-				}
+					// Draw Pause or Fast-Forward indicators before showing the frame on screen
+					if(Mobile.isPaused)
+					{
+						((PlatformGraphics)Mobile.getPlatform().getLcdFrontbufferGraphics()).drawPauseIndicator();
+					}
+					else if (MobilePlatform.pressedKeys[20]) // Check if fast-forward is active
+					{
+						((PlatformGraphics)Mobile.getPlatform().getLcdFrontbufferGraphics()).drawFastForwardIndicator();
+					}
 
-				if (Mobile.rotateDisplay == 0) { g.drawImage(Mobile.getPlatform().getLcdFrontbuffer().getCanvas(), cx, cy, cw, ch, null); }
-				else
-				{
-					if(Mobile.rotateDisplay == 90)
+					BufferedImage frame = frontbuffer.getPresentationCanvas();
+					if(frame.getWidth() != frontbuffer.getWidth())
 					{
-						((Graphics2D) g).rotate(Math.toRadians(90), cw/2, cw/2);
-						g.drawImage(Mobile.getPlatform().getLcdFrontbuffer().getCanvas(), 0, cx, ch, cw, null);
+						((Graphics2D) g).setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 					}
-					else if(Mobile.rotateDisplay == 180)
+					if (Mobile.rotateDisplay == 0) { g.drawImage(frame, cx, cy, cw, ch, null); }
+					else
 					{
-						((Graphics2D) g).rotate(Math.toRadians(180), cw/2, ch/2);
-						g.drawImage(Mobile.getPlatform().getLcdFrontbuffer().getCanvas(), -cx, cy, cw, ch, null);
-					}
-					else if(Mobile.rotateDisplay == 270)
-					{
-						((Graphics2D) g).rotate(Math.toRadians(270), ch/2, ch/2);
-						g.drawImage(Mobile.getPlatform().getLcdFrontbuffer().getCanvas(), 0, cx, ch, cw, null);
+						if(Mobile.rotateDisplay == 90)
+						{
+							((Graphics2D) g).rotate(Math.toRadians(90), cw/2, cw/2);
+							g.drawImage(frame, 0, cx, ch, cw, null);
+						}
+						else if(Mobile.rotateDisplay == 180)
+						{
+							((Graphics2D) g).rotate(Math.toRadians(180), cw/2, ch/2);
+							g.drawImage(frame, -cx, cy, cw, ch, null);
+						}
+						else if(Mobile.rotateDisplay == 270)
+						{
+							((Graphics2D) g).rotate(Math.toRadians(270), ch/2, ch/2);
+							g.drawImage(frame, 0, cx, ch, cw, null);
+						}
 					}
 				}
 			}

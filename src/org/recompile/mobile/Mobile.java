@@ -110,6 +110,8 @@ public class Mobile
 	// Support for loading custom text fonts
 	public static boolean useCustomTextFont = false;
 	public static byte fontSizeOffset = 0; // Size offset to tweak font sizing
+	public static volatile boolean useHighResolutionText = false;
+	static int highResolutionTextVersion = 0; // Invalidates presentation surfaces after mode changes
 
 	// Enable/Disable audio dumping
 	public static boolean dumpAudioStreams = false;
@@ -1062,6 +1064,12 @@ public class Mobile
 		String textFont = config.sysSettings.get("textfont");
 		if(textFont.equals("Custom"))       { useCustomTextFont = true; }
 		else if(textFont.equals("Default")) { useCustomTextFont = false; }
+		boolean highResolutionText = "on".equals(config.sysSettings.get("hdtext"));
+		if(useHighResolutionText != highResolutionText)
+		{
+			highResolutionTextVersion++;
+			useHighResolutionText = highResolutionText;
+		}
 
 		// Then move on to per-app settings
 		lcdWidth = Integer.parseInt(config.settings.get("scrwidth"));

@@ -200,6 +200,7 @@ public class Config
 				sysSettings.put("sound", "on");
 				sysSettings.put("soundfont", "Default");
 				sysSettings.put("textfont", "Default");
+				sysSettings.put("hdtext", "off");
 				// AWT Inputs
 				updateAWTInputs();
 				saveSystemConfig();
@@ -280,6 +281,7 @@ public class Config
 		if (!sysSettings.containsKey("sound")) { sysSettings.put("sound", Mobile.sound ? "on" : "off"); }
 		if (!sysSettings.containsKey("soundfont")) { sysSettings.put("soundfont", "Default"); }
 		if (!sysSettings.containsKey("textfont")) { sysSettings.put("textfont", Mobile.useCustomTextFont ? "Custom" : "Default"); }
+		if (!sysSettings.containsKey("hdtext")) { sysSettings.put("hdtext", "off"); }
 
 		for (int i = 0; i < KEY_NAMES.length; i++)
 		{

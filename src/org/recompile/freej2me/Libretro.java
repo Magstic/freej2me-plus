@@ -18,14 +18,16 @@ package org.recompile.freej2me;
 
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
+import org.recompile.mobile.PlatformImage;
 
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.net.URLDecoder;
 
 public class Libretro
 {
 	private int lcdWidth, lcdHeight, lastPressedKey = -1;
-	volatile int[] lcdData;
 
 	private static volatile boolean canPause = false;
 
@@ -33,10 +35,10 @@ public class Libretro
 	private static final long PAUSE_DELAY_MS = 333;
 	private static volatile long lastCoreUpdateTime = 0; // Tracks last core update for pause checks
 
-	private byte[] frameBuffer = new byte[854*854*3];
+	private byte[] frameBuffer = new byte[0];
 	private final byte[] frameHeader = new byte[]{(byte)0xFE,
 		0, 0, 0, 0, // Display data
-		0,          // Rotation enabled
+		0,          // Lower two bits: rotation; upper bits: presentation scale
 		0, 0, 0, 0, // Vibration duration
 		0, 0, 0, 0, // Vibration Strength
 		0, 0};      // Restart requested, and encoding requested
@@ -79,7 +81,6 @@ public class Libretro
 		/* Once it finishes parsing all arguments, it's time to set up freej2me-lr */
 
 		Mobile.setPlatform(new MobilePlatform(lcdWidth, lcdHeight), new Runnable() { public void run() { settingsChanged(); } });
-		lcdData = Mobile.getPlatform().getLcdFrontbuffer().getDataBuffer();
 
 		// The painter here is only really used to check for frontend pauses
 		Mobile.getPlatform().setPainter(new Runnable()
@@ -181,13 +182,7 @@ public class Libretro
 								{
 									if(Mobile.libretroRestartRequested == 1)
 									{
-										frameHeader[14] = Mobile.libretroRestartRequested;
-										frameHeader[15] = Mobile.libretroEncodingRequested;
-
-										System.out.write(frameHeader, 0, 16);
-
-										System.out.write(frameBuffer, 0, lcdData.length*3);
-										System.out.flush();
+										sendFrame();
 										Thread.sleep(Integer.MAX_VALUE); // Wait for as long as possible until the libretro core kills this
 									}
 								}
@@ -306,6 +301,7 @@ public class Libretro
 								Mobile.config.settings.put("compatnotranslatedrawrgb", Integer.parseInt(cfgtokens[40]) == 1 ? "on" : "off");
 
 								Mobile.config.sysSettings.put("numsynths", "" + Integer.parseInt(cfgtokens[41]));
+								Mobile.config.sysSettings.put("hdtext", Integer.parseInt(cfgtokens[42]) == 1 ? "on" : "off");
 
 								Mobile.config.saveConfig();
 								settingsChanged();
@@ -359,43 +355,7 @@ public class Libretro
 								/* Send Frame to Libretro */
 								try
 								{
-									//frameHeader[0] = (byte)0xFE;
-									frameHeader[1] = (byte)((lcdWidth>>8)&0xFF);
-									frameHeader[2] = (byte)((lcdWidth)&0xFF);
-									frameHeader[3] = (byte)((lcdHeight>>8)&0xFF);
-									frameHeader[4] = (byte)((lcdHeight)&0xFF);
-
-									frameHeader[6] = (byte)((Mobile.vibrationDuration>>24) & 0xFF);
-									frameHeader[7] = (byte)((Mobile.vibrationDuration>>16) & 0xFF);
-									frameHeader[8] = (byte)((Mobile.vibrationDuration>>8) & 0xFF);
-									frameHeader[9] = (byte)((Mobile.vibrationDuration) & 0xFF);
-
-									frameHeader[10] = (byte)((Mobile.vibrationStrength>>24) & 0xFF);
-									frameHeader[11] = (byte)((Mobile.vibrationStrength>>16) & 0xFF);
-									frameHeader[12] = (byte)((Mobile.vibrationStrength>>8) & 0xFF);
-									frameHeader[13] = (byte)((Mobile.vibrationStrength) & 0xFF);
-
-									frameHeader[14] = Mobile.libretroRestartRequested;
-									frameHeader[15] = Mobile.libretroEncodingRequested;
-
-									System.out.write(frameHeader, 0, 16);
-
-									/* Vibration duration should be set to zero to prevent constant sends of the same data, so update it here */
-									Mobile.vibrationDuration = 0;
-
-									/* Send display data to libretro */
-									synchronized (Mobile.getPlatform().getLcdFrontbuffer())
-									{
-										for(int i=0; i<lcdData.length; i++)
-										{
-											frameBuffer[3*i]   = (byte)((lcdData[i]>>16)&0xFF);
-											frameBuffer[3*i+1] = (byte)((lcdData[i]>>8)&0xFF);
-											frameBuffer[3*i+2] = (byte)((lcdData[i])&0xFF);
-										}
-
-										System.out.write(frameBuffer, 0, lcdData.length*3);
-										System.out.flush();
-									}
+									sendFrame();
 								}
 								catch (Exception e)
 								{
@@ -451,18 +411,57 @@ public class Libretro
 		return file.toURI().toString();
 	}
 
+	private void sendFrame()
+	{
+		PlatformImage frontbuffer = Mobile.getPlatform().getLcdFrontbuffer();
+		synchronized (frontbuffer)
+		{
+			BufferedImage image = frontbuffer.getPresentationCanvas();
+			int[] data = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
+			int width = image.getWidth();
+			int height = image.getHeight();
+			int scale = width / frontbuffer.getWidth();
+			if(frameBuffer.length != data.length*3) { frameBuffer = new byte[data.length*3]; }
+
+			frameHeader[1] = (byte)((width>>8)&0xFF);
+			frameHeader[2] = (byte)(width&0xFF);
+			frameHeader[3] = (byte)((height>>8)&0xFF);
+			frameHeader[4] = (byte)(height&0xFF);
+			frameHeader[5] = (byte)((Mobile.rotateDisplay / 90) | (scale<<2));
+			frameHeader[6] = (byte)((Mobile.vibrationDuration>>24)&0xFF);
+			frameHeader[7] = (byte)((Mobile.vibrationDuration>>16)&0xFF);
+			frameHeader[8] = (byte)((Mobile.vibrationDuration>>8)&0xFF);
+			frameHeader[9] = (byte)(Mobile.vibrationDuration&0xFF);
+			frameHeader[10] = (byte)((Mobile.vibrationStrength>>24)&0xFF);
+			frameHeader[11] = (byte)((Mobile.vibrationStrength>>16)&0xFF);
+			frameHeader[12] = (byte)((Mobile.vibrationStrength>>8)&0xFF);
+			frameHeader[13] = (byte)(Mobile.vibrationStrength&0xFF);
+			frameHeader[14] = Mobile.libretroRestartRequested;
+			frameHeader[15] = Mobile.libretroEncodingRequested;
+			Mobile.vibrationDuration = 0;
+
+			for(int i=0; i<data.length; i++)
+			{
+				frameBuffer[3*i] = (byte)((data[i]>>16)&0xFF);
+				frameBuffer[3*i+1] = (byte)((data[i]>>8)&0xFF);
+				frameBuffer[3*i+2] = (byte)(data[i]&0xFF);
+			}
+
+			System.out.write(frameHeader, 0, frameHeader.length);
+			System.out.write(frameBuffer, 0, frameBuffer.length);
+			System.out.flush();
+		}
+	}
+
 	private void settingsChanged()
 	{
 		Mobile.updateSettings();
-
-		frameHeader[5] = (byte) (Mobile.rotateDisplay / 90);
 
 		if(lcdWidth != Mobile.lcdWidth || lcdHeight != Mobile.lcdHeight)
 		{
 			lcdWidth = Mobile.lcdWidth;
 			lcdHeight = Mobile.lcdHeight;
 			Mobile.getPlatform().resizeLCD(lcdWidth, lcdHeight);
-			lcdData = Mobile.getPlatform().getLcdFrontbuffer().getDataBuffer();
 		}
 	}
 }

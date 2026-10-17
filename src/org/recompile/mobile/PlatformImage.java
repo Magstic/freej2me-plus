@@ -29,6 +29,7 @@ import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.game.Sprite;
 
 import javax.imageio.ImageIO;
+import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
@@ -41,16 +42,44 @@ public class PlatformImage
 	protected BufferedImage canvas;
 
 	protected int[] dataBuffer;
-
+	private HighResolutionImage highResolutionImage;
+	private int highResolutionTextVersion;
 	private boolean isMutable = false;
-
 	private boolean is2bpp = false; // SIEMENS: False = 1bpp, True = 2bpp
+
+	final HighResolutionImage getHighResolutionImage()
+	{
+		if(highResolutionImage != null && (!Mobile.useHighResolutionText || highResolutionTextVersion != Mobile.highResolutionTextVersion))
+		{
+			highResolutionImage = null;
+		}
+		return highResolutionImage;
+	}
+
+	final HighResolutionImage createHighResolutionImage()
+	{
+		HighResolutionImage image = getHighResolutionImage();
+		if(image == null && Mobile.useHighResolutionText)
+		{
+			highResolutionTextVersion = Mobile.highResolutionTextVersion;
+			highResolutionImage = new HighResolutionImage(canvas);
+		}
+		return highResolutionImage;
+	}
+
+	public BufferedImage getPresentationCanvas()
+	{
+		HighResolutionImage image = getHighResolutionImage();
+		if(image == null) { return canvas; }
+		image.syncPixels();
+		return image.canvas;
+	}
 
 	public BufferedImage getCanvas() { return canvas; }
 
 	public int[] getDataBuffer() { return dataBuffer; }
 
-	public void setCanvas(BufferedImage newCanvas) { canvas = newCanvas; }
+	public void setCanvas(BufferedImage newCanvas) { canvas = newCanvas; highResolutionImage = null; }
 
 	/*
 	 * Previously these reused the same graphics object, but this lead to issues due
@@ -194,6 +223,7 @@ public class PlatformImage
 		final int[] tempData = ((DataBufferInt) source.getCanvas().getRaster().getDataBuffer()).getData();
 
 		System.arraycopy(tempData, 0, dataBuffer, 0, tempData.length);
+		copyHighResolutionImage(source, 0, 0, source.getWidth(), source.getHeight(), Sprite.TRANS_NONE);
 	}
 
 	public PlatformImage(byte[] imageData, int imageOffset, int imageLength, boolean mutable) // DoJa also uses this one, creates mutable images like DirectGraphics
@@ -260,6 +290,7 @@ public class PlatformImage
 
 		canvas = transformImage(sub, transform);
 		dataBuffer = ((DataBufferInt) canvas.getRaster().getDataBuffer()).getData();
+		copyHighResolutionImage(image, x, y, Width, Height, transform);
 	}
 
 	// These constructors and methods are exclusive to DoJa's Image classes
@@ -274,6 +305,26 @@ public class PlatformImage
 		final int[] tempData = ((DataBufferInt) source.getCanvas().getRaster().getDataBuffer()).getData();
 
 		System.arraycopy(tempData, 0, dataBuffer, 0, tempData.length);
+		copyHighResolutionImage(source, 0, 0, source.getWidth(), source.getHeight(), Sprite.TRANS_NONE);
+	}
+
+	private void copyHighResolutionImage(PlatformImage source, int x, int y, int width, int height, int transform)
+	{
+		HighResolutionImage image = source.getHighResolutionImage();
+		if(image == null) { return; }
+		image.syncPixels();
+		int scale = HighResolutionImage.SCALE;
+		BufferedImage region = new BufferedImage(width * scale, height * scale, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = region.createGraphics();
+		g.setComposite(AlphaComposite.Src);
+		g.drawImage(image.canvas, -x * scale, -y * scale, null);
+		g.dispose();
+		highResolutionImage = new HighResolutionImage(canvas);
+		highResolutionTextVersion = Mobile.highResolutionTextVersion;
+		g = highResolutionImage.canvas.createGraphics();
+		g.setComposite(AlphaComposite.Src);
+		g.drawImage(transformImage(region, transform), 0, 0, null);
+		g.dispose();
 	}
 
 	public PlatformImage(int Width, int Height, int[] data, int off)
@@ -359,9 +410,35 @@ public class PlatformImage
 
 		// Get the raw pixel data array directly from the canvas
 		dataBuffer[y * canvas.getWidth() + x] = color;
+		HighResolutionImage image = getHighResolutionImage();
+		if(image != null) { image.setPixel(y * canvas.getWidth() + x, color); }
 	}
 
 	public boolean isMutable() { return isMutable; }
+
+	// Uses PlatformGraphics' DoJa transform constants, including mapped MIDP transforms.
+	static final int getTransformedPixelIndex(int x, int y, int width, int height, int stride, int transform)
+	{
+		switch(transform)
+		{
+			case PlatformGraphics.FLIP_HORIZONTAL:
+				return y * stride + width - 1 - x;
+			case PlatformGraphics.FLIP_VERTICAL:
+				return (height - 1 - y) * stride + x;
+			case PlatformGraphics.FLIP_ROTATE:
+				return (height - 1 - y) * stride + width - 1 - x;
+			case PlatformGraphics.FLIP_ROTATE_RIGHT:
+				return (height - 1 - x) * stride + y;
+			case PlatformGraphics.FLIP_ROTATE_LEFT:
+				return x * stride + width - 1 - y;
+			case PlatformGraphics.FLIP_ROTATE_RIGHT_VERTICAL:
+				return (height - 1 - x) * stride + width - 1 - y;
+			case PlatformGraphics.FLIP_ROTATE_RIGHT_HORIZONTAL:
+				return x * stride + y;
+			default:
+				return y * stride + x;
+		}
+	}
 
 	public static final BufferedImage transformImage(final BufferedImage image, final int transform)
 	{

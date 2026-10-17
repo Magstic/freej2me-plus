@@ -144,10 +144,11 @@ unsigned char readBuffer[PIPE_READ_BUFFER_SIZE];
 
 unsigned int frameWidth = MAX_WIDTH;
 unsigned int frameHeight = MAX_HEIGHT;
+int frameScale = 1;
 unsigned int frameSize = MAX_WIDTH * MAX_HEIGHT;
 unsigned int frameBufferSize = MAX_WIDTH * MAX_HEIGHT * 3;
-unsigned int frame[MAX_WIDTH * MAX_HEIGHT];
-unsigned char frameBuffer[MAX_WIDTH * MAX_HEIGHT * 3];
+unsigned int frame[MAX_FRAME_WIDTH * MAX_FRAME_HEIGHT];
+unsigned char frameBuffer[MAX_FRAME_WIDTH * MAX_FRAME_HEIGHT * 3];
 unsigned char frameHeader[15]; // This is always frameHeader's length in Libretro.java -1 (we read the status byte separately)
 struct retro_game_info gameinfo;
 
@@ -172,6 +173,7 @@ int soundEnabled; /* also acts as a boolean */
 int customMidi; /* Also acts as a boolean */
 int numSynths = 4; 
 int customFont; /* Also acts as a boolean */
+int hdText = 0; /* Render system text at four times the logical resolution */
 int fontOffset = 0; /* -4, -3, -2, -1, 0 (Default), 1, 2, 3, 4 */
 int dumpAudioStreams;
 int dumpGraphicsData; // Not really used yet
@@ -482,6 +484,13 @@ static void check_variables()
 	{
 		if (!strcmp(var.value, "off"))     { customFont = 0; }
 		else if (!strcmp(var.value, "on")) { customFont = 1; }
+	}
+
+	var.key = "freej2me_hdtext";
+	if (Environ(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		if (!strcmp(var.value, "off"))     { hdText = 0; }
+		else if (!strcmp(var.value, "on")) { hdText = 1; }
 	}
 
 	var.key = "freej2me_fontoffset";
@@ -809,11 +818,11 @@ static void check_variables()
 	/* Prepare a string to pass those core options to the Java app */
 	options_update = malloc(sizeof(char) * PIPE_MAX_LEN);
 
-	snprintf(options_update, PIPE_MAX_LEN, "FJ2ME_LR_OPTS:|%lux%lu|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d", screenRes[0], screenRes[1],
+	snprintf(options_update, PIPE_MAX_LEN, "FJ2ME_LR_OPTS:|%lux%lu|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d", screenRes[0], screenRes[1],
 		rotateScreen, phoneType, gameFPS, soundEnabled, customMidi, dumpAudioStreams, loggingLevel, spdHackNoAlpha, backlightColor, compatFantasyZoneFix,
 		compatTransToOriginOnGFXReset, customFont, fontOffset, dumpGraphicsData, deleteTemporaryKJXFiles, m3gUntextured, m3gWireframe, spdFrameRateUnlock, compatImmediateRepaintCalls,
 		compatOverridePlatCheck, compatSiemensFriendlyDraw, spdHackM3GHalfRes, dojaVersion, compatIgnoreVolumeChanges, spdHackMCV3HalfRes, spdHackMCV3NoLight, compatMCV3HorFovFix, mcv3Heap, mcv3TimeStats,
-		M3GAntiAliasMode, M3GBilinearMode, M3GDitheringMode, M3GPerspCorrMode, M3GPerspCorrFact, M3GMipmapMode, M3GDisableFog, compatRepaintOnSetCurrent, compatNoTranslateDrawRGB, numSynths);
+		M3GAntiAliasMode, M3GBilinearMode, M3GDitheringMode, M3GPerspCorrMode, M3GPerspCorrFact, M3GMipmapMode, M3GDisableFog, compatRepaintOnSetCurrent, compatNoTranslateDrawRGB, numSynths, hdText);
 	optstrlen = strlen(options_update);
 
 	/* 0xC = 12, which is the special case where the java app will receive the updated configs */
@@ -1114,8 +1123,8 @@ void retro_run(void)
 
 		if(joymouseX<0) { joymouseX=0; }
 		if(joymouseY<0) { joymouseY=0; }
-		if(joymouseX>frameWidth-17) { joymouseX=frameWidth-17; }
-		if(joymouseY>frameHeight)   { joymouseY=frameHeight; }
+		if(joymouseX>frameWidth/frameScale-17) { joymouseX=frameWidth/frameScale-17; }
+		if(joymouseY>frameHeight/frameScale)   { joymouseY=frameHeight/frameScale; }
 
 		if(uses_mouse)
 		{
@@ -1161,8 +1170,8 @@ void retro_run(void)
 		{
 			if(touchP!=0)
 			{
-				touchX = (int)(((float)(touchX + 0x7FFF)) * ((float)frameWidth / (float)0xFFFE));
-				touchY = (int)(((float)(touchY + 0x7FFF)) * ((float)frameHeight / (float)0xFFFE));
+				touchX = (int)(((float)(touchX + 0x7FFF)) * ((float)(frameWidth/frameScale) / (float)0xFFFE));
+				touchY = (int)(((float)(touchY + 0x7FFF)) * ((float)(frameHeight/frameScale) / (float)0xFFFE));
 				joymouseAnalog = false;
 				joyevent[0] = 5; /* touch down */
 				joyevent[1] = (touchX >> 8) & 0xFF;
@@ -1255,7 +1264,15 @@ void retro_run(void)
 		{
 			w = (frameHeader[0]<<8) | (frameHeader[1]);
 			h = (frameHeader[2]<<8) | (frameHeader[3]);
-			r = (frameHeader[4]);
+			/* Lower two bits: rotation; upper bits: presentation scale. */
+			r = frameHeader[4] & 3;
+			frameScale = frameHeader[4] >> 2;
+			if(w == 0 || h == 0 || w > MAX_FRAME_WIDTH || h > MAX_FRAME_HEIGHT || frameScale == 0 || frameScale > MAX_RENDER_SCALE)
+			{
+				log_fn(RETRO_LOG_ERROR, "Invalid frame dimensions or presentation scale received from Java.\n");
+				stoppedRunning = true;
+				return;
+			}
 
 			/* Read vibration event */
 			int preRumbleTime = ( (frameHeader[5]<<24) | (frameHeader[6]<<16) | (frameHeader[7]<<8) | (frameHeader[8]));
@@ -1289,8 +1306,8 @@ void retro_run(void)
 				/* update geometry */
 				Geometry.base_width = w;
 				Geometry.base_height = h;
-				Geometry.max_width = MAX_WIDTH;
-				Geometry.max_height = MAX_HEIGHT;
+				Geometry.max_width = MAX_FRAME_WIDTH;
+				Geometry.max_height = MAX_FRAME_HEIGHT;
 				Geometry.aspect_ratio = ((float)w / (float)h);
 				Environ(RETRO_ENVIRONMENT_SET_GEOMETRY, &Geometry);
 			}
@@ -1300,7 +1317,8 @@ void retro_run(void)
 		status = 0;
 		do
 		{
-			stat = read_from_pipe(pRead[0], readBuffer, PIPE_READ_BUFFER_SIZE);
+			int remaining = frameBufferSize - status;
+			stat = read_from_pipe(pRead[0], readBuffer, remaining < PIPE_READ_BUFFER_SIZE ? remaining : PIPE_READ_BUFFER_SIZE);
 			if (stat<=0) break;
 			for(i=0; i<stat; i++)
 			{
@@ -1365,15 +1383,17 @@ void retro_run(void)
 		{
 			joymouseClickedTime--;
 
-			for(i=0; i<24; i++)
+			for(i=0; i<24*frameScale; i++)
 			{
-				for (j=0; j<17; j++)
+				for (j=0; j<17*frameScale; j++)
 				{
-					// the -3 and -5 are so that the tip of the pointer aligns with the position that will be clicked
-					t = ((joymouseY + i - 3)*frameWidth)+(joymouseX + j - 6);
-					if(t>=0 && t<sizeof(frame))
+					// Keep the pointer tip aligned with the logical click position.
+					int pointerX = (joymouseX - 6)*frameScale + j;
+					int pointerY = (joymouseY - 3)*frameScale + i;
+					t = pointerY*frameWidth + pointerX;
+					if(pointerX>=0 && pointerX<frameWidth && pointerY>=0 && pointerY<frameHeight)
 					{
-						switch (joymouseClickedImage[(i*17)+j])
+						switch (joymouseClickedImage[(i/frameScale)*17 + j/frameScale])
 						{
 							case 1: frame[t] = pointerOutlineColor; break;
 							case 2: frame[t] = pointerInnerColor; break;
@@ -1389,15 +1409,17 @@ void retro_run(void)
 		{
 			joymouseTime--;
 
-			for(i=0; i<24; i++)
+			for(i=0; i<24*frameScale; i++)
 			{
-				for (j=0; j<17; j++)
+				for (j=0; j<17*frameScale; j++)
 				{
-					// the -3 and -5 are so that the tip of the pointer aligns with the position that will be clicked
-					t = ((joymouseY + i - 3)*frameWidth)+(joymouseX + j - 6);
-					if(t>=0 && t<sizeof(frame))
+					// Keep the pointer tip aligned with the logical click position.
+					int pointerX = (joymouseX - 6)*frameScale + j;
+					int pointerY = (joymouseY - 3)*frameScale + i;
+					t = pointerY*frameWidth + pointerX;
+					if(pointerX>=0 && pointerX<frameWidth && pointerY>=0 && pointerY<frameHeight)
 					{
-						switch (joymouseImage[(i*17)+j])
+						switch (joymouseImage[(i/frameScale)*17 + j/frameScale])
 						{
 							case 1: frame[t] = pointerOutlineColor; break;
 							case 2: frame[t] = pointerInnerColor; break;
@@ -1446,8 +1468,8 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
 	memset(info, 0, sizeof(*info));
 	info->geometry.base_width   = BASE_WIDTH;
 	info->geometry.base_height  = BASE_HEIGHT;
-	info->geometry.max_width    = MAX_WIDTH;
-	info->geometry.max_height   = MAX_HEIGHT;
+	info->geometry.max_width    = MAX_FRAME_WIDTH;
+	info->geometry.max_height   = MAX_FRAME_HEIGHT;
 	info->geometry.aspect_ratio = ((float)BASE_WIDTH) / ((float)BASE_HEIGHT);
 
 	info->timing.fps = DEFAULT_FPS;

@@ -22,6 +22,9 @@
 #define BASE_HEIGHT 240
 #define MAX_WIDTH 854
 #define MAX_HEIGHT 854
+#define MAX_RENDER_SCALE 4 /* Matches HighResolutionImage.SCALE in the shared Java core. */
+#define MAX_FRAME_WIDTH (MAX_WIDTH * MAX_RENDER_SCALE)
+#define MAX_FRAME_HEIGHT (MAX_HEIGHT * MAX_RENDER_SCALE)
 
 /* Used as a limit to the string of core option updates to be sent to the Java app */
 #define PIPE_MAX_LEN 255
@@ -374,6 +377,20 @@ struct retro_core_option_v2_definition core_options[] =
 		{
 			{ "off", "Default" },
 			{ "on",  "Custom" },
+			{ NULL, NULL },
+		},
+		"off"
+	},
+	{
+		"freej2me_hdtext",
+		"System > HD Text Rendering",
+		"HD Text Rendering",
+		"Render system text at 4x resolution after applying Font Size Offset. Reload the game to refresh cached text.",
+		"Render system text at 4x resolution after applying Font Size Offset. Reload the game to refresh cached text.",
+		"system_settings",
+		{
+			{ "off", "Disabled" },
+			{ "on",  "Enabled" },
 			{ NULL, NULL },
 		},
 		"off"
@@ -1145,6 +1162,17 @@ struct retro_core_option_definition core_options_v1 [] =
 		"off"
 	},
 	{
+		"freej2me_hdtext",
+		"HD Text Rendering",
+		"Render system text at 4x resolution after applying Font Size Offset. Reload the game to refresh cached text.",
+		{
+			{ "off", "Disabled" },
+			{ "on",  "Enabled" },
+			{ NULL, NULL },
+		},
+		"off"
+	},
+	{
 		"freej2me_fontoffset",
 		"Font Size Offset",
 		"Adjust the offset used for font sizing in order to make text bigger or smaller. Also helps with custom fonts that might be too big or small by default.",
@@ -1642,6 +1670,10 @@ static const struct retro_variable vars[] =
 	{ /* Custom Text Font */
 		"freej2me_textfont",
 		"Text Font; off|on"
+	},
+	{ /* HD Text Rendering */
+		"freej2me_hdtext",
+		"HD Text Rendering; off|on"
 	},
 	{ /* Custom Text Font */
 		"freej2me_fontoffset",

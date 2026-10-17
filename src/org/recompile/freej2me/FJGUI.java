@@ -290,6 +290,7 @@ public final class FJGUI
 	final String[] excSynthValues = {"1", "2", "3", "4"};
 	
 	final JCheckBoxMenuItem useCustomFont = new JCheckBoxMenuItem("Use custom text font", false);
+	final JCheckBoxMenuItem highResolutionText = new JCheckBoxMenuItem("HD text rendering", false);
 
 	final JCheckBoxMenuItem[] dojaVersions =
 	{
@@ -1082,6 +1083,8 @@ public final class FJGUI
 			public void run() { showRestartDialog(); }
 		});
 		setSysToggle(enableAudio, "sound");
+		setSysToggle(highResolutionText, "hdtext");
+		highResolutionText.setToolTipText("Render system text at 4x resolution after applying Font Size Offset. Reload the game to refresh cached text.");
 		setSysToggle(deleteTemporaryKJXFiles, "deleteTempKJXFiles");
 		setSysToggle(dumpAudioData, "dumpAudioStreams");
 		setSysToggle(dumpGraphicsData, "dumpGraphicsObjects");
@@ -1197,6 +1200,7 @@ public final class FJGUI
 		optionMenu.add(useCustomMidi);
 		optionMenu.add(numExclusiveSynths);
 		optionMenu.add(useCustomFont);
+		optionMenu.add(highResolutionText);
 		optionMenu.add(resChangeMenuItem);
 		optionMenu.add(compatSettingsMenu);
 		optionMenu.add(mapInputs);
@@ -1445,6 +1449,7 @@ public final class FJGUI
 		fullScreen.setSelected(FreeJ2ME.isFullscreen);
 		useCustomMidi.setSelected("Custom".equals(config.sysSettings.get("soundfont")));
 		useCustomFont.setSelected("Custom".equals(config.sysSettings.get("textfont")));
+		updateSysToggle(highResolutionText, "hdtext");
 
 		// Per-App RadioGroup Settings
 		updateRadioGroup(dojaVersions, dojaVersionValues, "dojaversion", false);
