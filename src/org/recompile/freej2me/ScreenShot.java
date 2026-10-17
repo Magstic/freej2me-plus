@@ -17,7 +17,12 @@
 package org.recompile.freej2me;
 
 import org.recompile.mobile.Mobile;
+import org.recompile.mobile.PlatformImage;
 
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
 import java.lang.Exception;
@@ -57,7 +62,29 @@ public class ScreenShot
 			}
 
 			File outputfile = new File(fileName);
-			ImageIO.write(Mobile.getPlatform().getLcdFrontbuffer().getCanvas(), "png", outputfile);
+			Dimension size = FreeJ2ME.app.getDisplaySize();
+			BufferedImage image = new BufferedImage(Math.max(1, size.width), Math.max(1, size.height), BufferedImage.TYPE_INT_ARGB);
+			Graphics2D g = image.createGraphics();
+			PlatformImage frontbuffer = Mobile.getPlatform().getLcdFrontbuffer();
+			synchronized (frontbuffer)
+			{
+				BufferedImage frame = frontbuffer.getPresentationCanvas();
+				if(frame.getWidth() != frontbuffer.getWidth())
+				{
+					g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+				}
+				if(Mobile.rotateDisplay == 90) { g.translate(image.getWidth(), 0); }
+				else if(Mobile.rotateDisplay == 180) { g.translate(image.getWidth(), image.getHeight()); }
+				else if(Mobile.rotateDisplay == 270) { g.translate(0, image.getHeight()); }
+				g.rotate(Math.toRadians(Mobile.rotateDisplay));
+				if(Mobile.rotateDisplay == 90 || Mobile.rotateDisplay == 270)
+				{
+					g.drawImage(frame, 0, 0, image.getHeight(), image.getWidth(), null);
+				}
+				else { g.drawImage(frame, 0, 0, image.getWidth(), image.getHeight(), null); }
+			}
+			g.dispose();
+			ImageIO.write(image, "png", outputfile);
 			Mobile.log(Mobile.LOG_INFO, ScreenShot.class.getPackage().getName() + "." + ScreenShot.class.getSimpleName() + ": " + "Saved screenshot: " + outputfile.toString());
 		}
 		catch (Exception e)

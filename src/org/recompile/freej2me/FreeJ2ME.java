@@ -751,6 +751,8 @@ public class FreeJ2ME
 		lcd.updateScale((int)nw, (int)nh);
 	}
 
+	public Dimension getDisplaySize() { return new Dimension(lcd.cw, lcd.ch); }
+
 	public void toggleFullscreen()
 	{
 		isFullscreen = !isFullscreen;
