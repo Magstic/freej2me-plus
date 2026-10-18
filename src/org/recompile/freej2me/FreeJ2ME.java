@@ -567,6 +567,7 @@ public class FreeJ2ME
 				main.pack();
 			}
 
+			fjGUI.clearChanged();
 			Mobile.getPlatform().runJar();
 		}
 		else
