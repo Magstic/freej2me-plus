@@ -29,6 +29,7 @@
 #if defined(_WIN32)
 #include <windows.h>
 #include <direct.h>
+#include <wchar.h>
 #else
 #include <dirent.h>
 #include <unistd.h>
@@ -79,14 +80,30 @@
 
 static bool file_exists(const char *path)
 {
+#if defined(_WIN32)
+	wchar_t widePath[BUNDLED_JRE_PATH_MAX];
+	if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, widePath, BUNDLED_JRE_PATH_MAX))
+		return false;
+	return GetFileAttributesW(widePath) != INVALID_FILE_ATTRIBUTES;
+#else
 	struct stat st;
 	return stat(path, &st) == 0;
+#endif
 }
 
 static bool is_dir(const char *path)
 {
+#if defined(_WIN32)
+	wchar_t widePath[BUNDLED_JRE_PATH_MAX];
+	DWORD attributes;
+	if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, widePath, BUNDLED_JRE_PATH_MAX))
+		return false;
+	attributes = GetFileAttributesW(widePath);
+	return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
+#else
 	struct stat st;
 	return stat(path, &st) == 0 && (st.st_mode & S_IFDIR);
+#endif
 }
 
 static void make_dirs(const char *path)
@@ -105,7 +122,9 @@ static void make_dirs(const char *path)
 			if (!is_dir(tmp))
 			{
 #if defined(_WIN32)
-				_mkdir(tmp);
+				wchar_t widePath[BUNDLED_JRE_PATH_MAX];
+				if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, tmp, -1, widePath, BUNDLED_JRE_PATH_MAX))
+					_wmkdir(widePath);
 #else
 				mkdir(tmp, 0755);
 #endif
@@ -115,36 +134,53 @@ static void make_dirs(const char *path)
 	}
 }
 
+#if defined(_WIN32)
+/* Keep filenames in UTF-16 while walking the directory. */
+static void remove_tree_wide(const wchar_t *path)
+{
+	wchar_t pattern[BUNDLED_JRE_PATH_MAX];
+	WIN32_FIND_DATAW fd;
+	HANDLE h;
+
+	if (swprintf(pattern, BUNDLED_JRE_PATH_MAX, L"%ls\\*", path) < 0)
+		return;
+	h = FindFirstFileW(pattern, &fd);
+	if (h != INVALID_HANDLE_VALUE)
+	{
+		do
+		{
+			wchar_t child[BUNDLED_JRE_PATH_MAX];
+			if (!wcscmp(fd.cFileName, L".") || !wcscmp(fd.cFileName, L".."))
+				continue;
+			if (swprintf(child, BUNDLED_JRE_PATH_MAX, L"%ls\\%ls", path, fd.cFileName) < 0)
+				continue;
+			if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+			{
+				if (fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+					RemoveDirectoryW(child);
+				else
+					remove_tree_wide(child);
+			}
+			else
+			{
+				SetFileAttributesW(child, FILE_ATTRIBUTE_NORMAL);
+				DeleteFileW(child);
+			}
+		} while (FindNextFileW(h, &fd));
+		FindClose(h);
+	}
+	RemoveDirectoryW(path);
+}
+#endif
+
 /* Deletes a directory and everything in it; a previous unpack, or one that
  * was interrupted. Symbolic links are removed, not followed. */
 static void remove_tree(const char *path)
 {
 #if defined(_WIN32)
-	char pattern[BUNDLED_JRE_PATH_MAX];
-	WIN32_FIND_DATAA fd;
-	HANDLE h;
-
-	snprintf(pattern, sizeof(pattern), "%s\\*", path);
-	h = FindFirstFileA(pattern, &fd);
-	if (h != INVALID_HANDLE_VALUE)
-	{
-		do
-		{
-			char child[BUNDLED_JRE_PATH_MAX];
-			if (!strcmp(fd.cFileName, ".") || !strcmp(fd.cFileName, ".."))
-				continue;
-			snprintf(child, sizeof(child), "%s\\%s", path, fd.cFileName);
-			if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-				remove_tree(child);
-			else
-			{
-				SetFileAttributesA(child, FILE_ATTRIBUTE_NORMAL);
-				DeleteFileA(child);
-			}
-		} while (FindNextFileA(h, &fd));
-		FindClose(h);
-	}
-	RemoveDirectoryA(path);
+	wchar_t widePath[BUNDLED_JRE_PATH_MAX];
+	if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, widePath, BUNDLED_JRE_PATH_MAX))
+		remove_tree_wide(widePath);
 #else
 	DIR *dir = opendir(path);
 	struct dirent *entry;
@@ -174,15 +210,18 @@ static bool run_tar(const char *archive, const char *dest)
 {
 #if defined(_WIN32)
 	char cmd[BUNDLED_JRE_PATH_MAX * 2 + 32];
-	STARTUPINFOA si;
+	wchar_t wideCommand[BUNDLED_JRE_PATH_MAX * 2 + 32];
+	STARTUPINFOW si;
 	PROCESS_INFORMATION pi;
 	DWORD code = 1;
 
 	snprintf(cmd, sizeof(cmd), "tar.exe -xf \"%s\" -C \"%s\"", archive, dest);
+	if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, cmd, -1, wideCommand, BUNDLED_JRE_PATH_MAX * 2 + 32))
+		return false;
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);
 	ZeroMemory(&pi, sizeof(pi));
-	if (!CreateProcessA(NULL, cmd, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
+	if (!CreateProcessW(NULL, wideCommand, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
 		return false;
 	WaitForSingleObject(pi.hProcess, INFINITE);
 	GetExitCodeProcess(pi.hProcess, &code);
@@ -210,17 +249,35 @@ bool bundled_jre_find(const char *systemDir,
 	char archive[BUNDLED_JRE_PATH_MAX], parentDir[BUNDLED_JRE_PATH_MAX], runtimeDir[BUNDLED_JRE_PATH_MAX];
 	char tmpDir[BUNDLED_JRE_PATH_MAX], unpacked[BUNDLED_JRE_PATH_MAX];
 	char stampPath[BUNDLED_JRE_PATH_MAX], stamp[BUNDLED_JRE_PATH_MAX], current[BUNDLED_JRE_PATH_MAX];
+#if defined(_WIN32)
+	struct _stat64 st;
+	wchar_t wideArchive[BUNDLED_JRE_PATH_MAX], wideStamp[BUNDLED_JRE_PATH_MAX];
+#else
 	struct stat st;
+#endif
+	int archiveStatus;
 	FILE *f;
 
-	snprintf(archive, sizeof(archive), "%s%sfreej2me_plus_runtime_" RUNTIME_PLATFORM RUNTIME_ARCHIVE_EXT, systemDir, SLASH);
-	snprintf(parentDir, sizeof(parentDir), "%s%sfreej2me_plus_runtime", systemDir, SLASH);
-	snprintf(runtimeDir, sizeof(runtimeDir), "%s%s" RUNTIME_PLATFORM, parentDir, SLASH);
-	snprintf(java, java_len, "%s%sbin%s" JAVA_EXE, runtimeDir, SLASH, SLASH);
-	snprintf(stampPath, sizeof(stampPath), "%s%s.source", runtimeDir, SLASH);
+	if ((size_t)snprintf(archive, sizeof(archive), "%s%sfreej2me_plus_runtime_" RUNTIME_PLATFORM RUNTIME_ARCHIVE_EXT, systemDir, SLASH) >= sizeof(archive) ||
+		(size_t)snprintf(parentDir, sizeof(parentDir), "%s%sfreej2me_plus_runtime", systemDir, SLASH) >= sizeof(parentDir) ||
+		(size_t)snprintf(runtimeDir, sizeof(runtimeDir), "%s%s" RUNTIME_PLATFORM, parentDir, SLASH) >= sizeof(runtimeDir) ||
+		(size_t)snprintf(java, java_len, "%s%sbin%s" JAVA_EXE, runtimeDir, SLASH, SLASH) >= java_len ||
+		(size_t)snprintf(stampPath, sizeof(stampPath), "%s%s.source", runtimeDir, SLASH) >= sizeof(stampPath))
+	{
+		log(RETRO_LOG_ERROR, "Java runtime path is too long: %s\n", systemDir);
+		return false;
+	}
 
 	/* No archive: a runtime unpacked by hand, if there is one */
-	if (stat(archive, &st) != 0 || (st.st_mode & S_IFDIR))
+#if defined(_WIN32)
+	if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, archive, -1, wideArchive, BUNDLED_JRE_PATH_MAX) ||
+		!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, stampPath, -1, wideStamp, BUNDLED_JRE_PATH_MAX))
+		return false;
+	archiveStatus = _wstat64(wideArchive, &st);
+#else
+	archiveStatus = stat(archive, &st);
+#endif
+	if (archiveStatus != 0 || (st.st_mode & S_IFDIR))
 	{
 		if (!file_exists(java))
 			return false;
@@ -231,7 +288,12 @@ bool bundled_jre_find(const char *systemDir,
 	/* Unpacked from this same archive already */
 	snprintf(stamp, sizeof(stamp), "%lld %lld", (long long)st.st_size, (long long)st.st_mtime);
 	current[0] = '\0';
-	if ((f = fopen(stampPath, "r")) != NULL)
+#if defined(_WIN32)
+	f = _wfopen(wideStamp, L"r");
+#else
+	f = fopen(stampPath, "r");
+#endif
+	if (f != NULL)
 	{
 		if (!fgets(current, sizeof(current), f))
 			current[0] = '\0';
@@ -254,7 +316,8 @@ bool bundled_jre_find(const char *systemDir,
 	/* Into a directory of its own first, so that an interrupted unpack never
 	 * passes for a complete one. The archive holds
 	 * freej2me_plus_runtime/<platform>/. */
-	snprintf(tmpDir, sizeof(tmpDir), "%s%sfreej2me_plus_runtime.tmp", systemDir, SLASH);
+	if ((size_t)snprintf(tmpDir, sizeof(tmpDir), "%s%sfreej2me_plus_runtime.tmp", systemDir, SLASH) >= sizeof(tmpDir))
+		return false;
 	remove_tree(tmpDir);
 	make_dirs(tmpDir);
 	if (!run_tar(archive, tmpDir))
@@ -263,8 +326,12 @@ bool bundled_jre_find(const char *systemDir,
 		remove_tree(tmpDir);
 		return false;
 	}
-	snprintf(unpacked, sizeof(unpacked), "%s%sfreej2me_plus_runtime%s" RUNTIME_PLATFORM, tmpDir, SLASH, SLASH);
-	snprintf(current, sizeof(current), "%s%sbin%s" JAVA_EXE, unpacked, SLASH, SLASH);
+	if ((size_t)snprintf(unpacked, sizeof(unpacked), "%s%sfreej2me_plus_runtime%s" RUNTIME_PLATFORM, tmpDir, SLASH, SLASH) >= sizeof(unpacked) ||
+		(size_t)snprintf(current, sizeof(current), "%s%sbin%s" JAVA_EXE, unpacked, SLASH, SLASH) >= sizeof(current))
+	{
+		remove_tree(tmpDir);
+		return false;
+	}
 	if (!file_exists(current))
 	{
 		log(RETRO_LOG_ERROR, "%s holds no freej2me_plus_runtime/" RUNTIME_PLATFORM "/bin/" JAVA_EXE "\n", archive);
@@ -273,14 +340,26 @@ bool bundled_jre_find(const char *systemDir,
 	}
 	remove_tree(runtimeDir);
 	make_dirs(parentDir);
+#if defined(_WIN32)
+	wchar_t wideUnpacked[BUNDLED_JRE_PATH_MAX], wideRuntime[BUNDLED_JRE_PATH_MAX];
+	if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, unpacked, -1, wideUnpacked, BUNDLED_JRE_PATH_MAX) ||
+		!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, runtimeDir, -1, wideRuntime, BUNDLED_JRE_PATH_MAX) ||
+		_wrename(wideUnpacked, wideRuntime) != 0)
+#else
 	if (rename(unpacked, runtimeDir) != 0)
+#endif
 	{
 		log(RETRO_LOG_ERROR, "Could not move the unpacked Java runtime to %s\n", runtimeDir);
 		remove_tree(tmpDir);
 		return false;
 	}
 	remove_tree(tmpDir);
-	if ((f = fopen(stampPath, "w")) != NULL)
+#if defined(_WIN32)
+	f = _wfopen(wideStamp, L"w");
+#else
+	f = fopen(stampPath, "w");
+#endif
+	if (f != NULL)
 	{
 		fputs(stamp, f);
 		fclose(f);
