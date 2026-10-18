@@ -32,7 +32,7 @@
 #include <file/file_path.h>
 #include <retro_miscellaneous.h>
 
-#define NUM_ARGUMENTS 7
+#define NUM_ARGUMENTS 6
 #define FONT_PAGE_SIZE (RETRO_NUM_CORE_OPTION_VALUES_MAX - 3)
 
 const char *slash = path_default_slash();
@@ -111,7 +111,7 @@ int pWrite[2];
 #elif _WIN32
 BOOL succeeded = FALSE;
 PROCESS_INFORMATION javaProcess;
-STARTUPINFO startInfo;
+STARTUPINFOW startInfo;
 HANDLE pRead[2];
 HANDLE pWrite[2];
 #endif
@@ -137,7 +137,6 @@ float analogDeadzone = 0.10f; // Additional Deadzone over libretro for input rea
 
 bool stoppedRunning = false;
 bool resetRequested = false;
-unsigned int characterEncoding = 0; // Character encoding used by FreeJ2ME's app. Normally starts with UTF-8
 
 unsigned char readBuffer[PIPE_READ_BUFFER_SIZE];
 
@@ -147,7 +146,7 @@ unsigned int frameSize = MAX_WIDTH * MAX_HEIGHT;
 unsigned int frameBufferSize = MAX_WIDTH * MAX_HEIGHT * 3;
 unsigned int frame[MAX_WIDTH * MAX_HEIGHT];
 unsigned char frameBuffer[MAX_WIDTH * MAX_HEIGHT * 3];
-unsigned char frameHeader[15]; // This is always frameHeader's length in Libretro.java -1 (we read the status byte separately)
+unsigned char frameHeader[14]; // This is always frameHeader's length in Libretro.java -1 (we read the status byte separately)
 struct retro_game_info gameinfo;
 
 bool frameRequested = false;
@@ -456,7 +455,9 @@ static bool read_font_list(void)
 int freej2me_present(const char *path)
 {
 #ifdef _WIN32
-	return _access(path, 0) == 0;
+	wchar_t widePath[PATH_MAX_LENGTH];
+	if(!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, widePath, PATH_MAX_LENGTH)) { return false; }
+	return _waccess(widePath, 0) == 0;
 #else
 	return access(path, F_OK) == 0;
 #endif
@@ -1003,18 +1004,15 @@ void retro_init(void)
 	}
 
 	/* Check if freej2me's app actually exists and notify the user if it doesn't */
-	char *freej2mePath = malloc(sizeof(char) * PIPE_MAX_LEN);
-	snprintf(freej2mePath, sizeof(char) * PIPE_MAX_LEN, "%s/%s", systemPath, freej2meapp);
+	char freej2mePath[PATH_MAX_LENGTH];
+	int pathLength = snprintf(freej2mePath, sizeof(freej2mePath), "%s/%s", systemPath, freej2meapp);
 
-	if (!freej2me_present(freej2mePath))
+	if (pathLength < 0 || pathLength >= sizeof(freej2mePath) || !freej2me_present(freej2mePath))
 	{
-		free(freej2mePath);
 		Environ(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, (void*)&messages[SYSTEM_NOT_FOUND_MSG]);
 		log_fn(RETRO_LOG_ERROR, "Error: %s does not exist in the system dir.\n", freej2meapp);
 		return;
 	}
-
-	free(freej2mePath);
 
 	/* Allocate memory for launch arguments */
 	params = (char**)malloc(sizeof(char*) * NUM_ARGUMENTS);
@@ -1024,11 +1022,10 @@ void retro_init(void)
 	params[0] = strdup("javaw");
 #endif
 	params[1] = strdup("-jar");
-	params[2] = strdup(supported_encodings[characterEncoding]);
-	params[3] = strdup(freej2meapp);
-	params[4] = strdup(resArg[0]);
-	params[5] = strdup(resArg[1]);
-	params[6] = NULL; // Null-terminate the array
+	params[2] = strdup(freej2meapp);
+	params[3] = strdup(resArg[0]);
+	params[4] = strdup(resArg[1]);
+	params[5] = NULL; // Null-terminate the array
 
 	log_fn(RETRO_LOG_INFO, "Preparing to open FreeJ2ME-Plus' Java app.\n");
 
@@ -1074,8 +1071,12 @@ bool retro_load_game(const struct retro_game_info *info)
 	}
 
 	char savepath[PATH_MAX_LENGTH];
-	snprintf(savepath, sizeof(savepath), "%s%sfreej2me%s", savedir, slash, slash);
-	len = strlen(savepath);
+	len = snprintf(savepath, sizeof(savepath), "%s%sfreej2me%s", savedir, slash, slash);
+	if(len < 0 || len >= sizeof(savepath))
+	{
+		log_fn(RETRO_LOG_ERROR, "Save path is too long: %s\n", savedir);
+		return false;
+	}
 
 	unsigned char saveevent[5] = { 0xB, (len>>24)&0xFF, (len>>16)&0xFF, (len>>8)&0xFF, len&0xFF };
 	write_to_pipe(pWrite[1], saveevent, 5);
@@ -1087,9 +1088,17 @@ bool retro_load_game(const struct retro_game_info *info)
 	char romPath[PATH_MAX_LENGTH];
 
 #if defined(__linux__) || defined(__APPLE__)
-	realpath(info->path, romPath);
+	if(!realpath(info->path, romPath))
+	{
+		log_fn(RETRO_LOG_ERROR, "Couldn't resolve game path: %s\n", info->path);
+		return false;
+	}
 #elif _WIN32
-	_fullpath(romPath, info->path, PATH_MAX_LENGTH);
+	wchar_t widePath[PATH_MAX_LENGTH], fullPath[PATH_MAX_LENGTH];
+	if(!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, info->path, -1, widePath, PATH_MAX_LENGTH)) { return false; }
+	DWORD pathLength = GetFullPathNameW(widePath, PATH_MAX_LENGTH, fullPath, NULL);
+	if(pathLength == 0 || pathLength >= PATH_MAX_LENGTH ||
+		!WideCharToMultiByte(CP_UTF8, 0, fullPath, -1, romPath, sizeof(romPath), NULL, NULL)) { return false; }
 #endif
 
 	len = strlen(romPath);
@@ -1392,7 +1401,7 @@ void retro_run(void)
 		/* read frame header */
 		frameRequested = false;
 		framesDropped = 0;
-		status = read_from_pipe(pRead[0], frameHeader, 15); // This is always frameHeader's length in Libretro.java -1 (we already read the previous status byte above into the "t" variable)
+		status = read_from_pipe(pRead[0], frameHeader, sizeof(frameHeader));
 
 		if(status>0)
 		{
@@ -1409,9 +1418,6 @@ void retro_run(void)
 			/* Read vibration event */
 			int preRumbleTime = ( (frameHeader[5]<<24) | (frameHeader[6]<<16) | (frameHeader[7]<<8) | (frameHeader[8]));
 			rumbleStrength = ( (frameHeader[9]<<24) | (frameHeader[10]<<16) | (frameHeader[11]<<8) | (frameHeader[12]));
-
-			/* Read if a restart request was sent (normally used to change character encoding) */
-			characterEncoding = frameHeader[14];
 
 			// restart request received, honor it
 			if(frameHeader[13] == 1) { resetRequested = true; }
@@ -1745,6 +1751,10 @@ bool javaOpen(char *cmd, char **params)
 
 		chdir(systemPath);
 
+#if defined(__linux__)
+		/* The JVM's filesystem encoding follows its locale, even when pipe data is UTF-8. */
+		setenv("LC_ALL", "C.UTF-8", 1);
+#endif
 		execvp(cmd, params);
 
 		/* execvp failure! */
@@ -1824,6 +1834,7 @@ bool javaOpen(char *cmd, char **params)
 
 	/* Try starting the child process. Windows requires the commandline argument to be a single string. */
 	char cmdWin[PATH_MAX_LENGTH];
+	wchar_t wideCommand[PATH_MAX_LENGTH], wideSystemPath[PATH_MAX_LENGTH];
 
 	snprintf(cmdWin, PATH_MAX_LENGTH, "%s", params[0]); // First argument needs no space separator
 
@@ -1836,24 +1847,32 @@ bool javaOpen(char *cmd, char **params)
 		}
 	}
 
-	GetStartupInfo(&startInfo);
+	if(!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, cmdWin, -1, wideCommand, PATH_MAX_LENGTH) ||
+		!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, systemPath, -1, wideSystemPath, PATH_MAX_LENGTH)) { return false; }
+
+	GetStartupInfoW(&startInfo);
 	startInfo.dwFlags = STARTF_USESTDHANDLES;
 	startInfo.hStdInput = pWrite[0]; // Child's stdin
 	startInfo.hStdOutput = pRead[1];  // Child's stdout
 	startInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
 
-	if(!CreateProcess( NULL, /* Module name */
-		cmdWin,              /* Command line args */
+	if(!CreateProcessW( NULL, /* Module name */
+		wideCommand,         /* Command line args */
 		NULL,                /* Process handle not inheritable */
 		NULL,                /* Thread handle not inheritable */
 		TRUE,                /* Set handle inheritance to TRUE */
 		0,                   /* No creation flags */
 		NULL,                /* Use parent's environment block */
-		systemPath,          /* Use libretro's "system" dir as starting directory */
+		wideSystemPath,      /* Use libretro's "system" dir as starting directory */
 		&startInfo,          /* Pointer to STARTUPINFO structure */
 		&javaProcess ))      /* Pointer to PROCESS_INFORMATION structure */
 	{ /* If it fails, this block is executed */
 		log_fn(RETRO_LOG_ERROR, "Couldn't create process, error: %lu\n", GetLastError() );
+		CloseHandle(pWrite[0]);
+		CloseHandle(pWrite[1]);
+		CloseHandle(pRead[0]);
+		CloseHandle(pRead[1]);
+		return false;
 	}
 
 	log_fn(RETRO_LOG_INFO, "Created process! PID=%d \n", javaProcess.dwProcessId);

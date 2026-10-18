@@ -19,9 +19,10 @@ package com.siemens.mp.io;
 //import java.io.File; // Can't import that here, as this class is also called "File"
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
+import java.io.Writer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -95,7 +96,7 @@ public class File
     {
         try
         {
-            FileWriter writer = new FileWriter(fileName, true);
+            Writer writer = new OutputStreamWriter(new FileOutputStream(fileName, true), Mobile.textEncoding);
             writer.write(infoString + "\n");
             writer.flush();
             writer.close();

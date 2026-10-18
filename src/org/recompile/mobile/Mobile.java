@@ -19,15 +19,14 @@ package org.recompile.mobile;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.jar.Attributes;
-import java.util.jar.JarFile;
-import java.util.jar.Manifest;
 
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Canvas;
@@ -35,6 +34,7 @@ import javax.microedition.media.Manager;
 import javax.microedition.midlet.MIDlet;
 
 import org.recompile.freej2me.Config;
+import org.recompile.freej2me.FreeJ2ME;
 
 import com.nttdocomo.ui.IApplication;
 
@@ -219,8 +219,7 @@ public class Mobile
 	public static boolean isFastForwarding = false;
 	public static boolean isPaused = false;
 	public static volatile float fastForwardMultiplier = 20.0f;
-	public static byte libretroRestartRequested = 0; // Set when FreeJ2ME has to be restarted in some way (often to change character encoding)
-	public static byte libretroEncodingRequested = 0; // Encoding FreeJ2ME requested to be re-opened with (check the restartApp() method below)
+	public static byte libretroRestartRequested = 0; // Set when FreeJ2ME has to be restarted
 
 	// Vodafone has a use for this, but maybe this can be made into an actual viewport AA toggle
 	public static boolean isAAEnabled = false;
@@ -1000,7 +999,7 @@ public class Mobile
         if (logFile.exists()) { logFile.delete(); }
 		// Create system dir if not available yet and try writing to the log file
 		logFile.getParentFile().mkdirs();
-		try { logWriter = new BufferedWriter(new FileWriter(logFile, true)); } // This one doesn't need to be closed, it dies with FreeJ2ME-Plus
+		try { logWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logFile, true), "UTF-8")); } // This one doesn't need to be closed, it dies with FreeJ2ME-Plus
 		catch(IOException e) { System.out.println("Failed to preparate file writer: " + e.getMessage()); e.printStackTrace(); }
 
 		new Thread(new Runnable()
@@ -1230,60 +1229,45 @@ public class Mobile
 		return false;
 	}
 
+	public static void setTextEncoding(String encoding)
+	{
+		textEncoding = encoding;
+		System.setProperty("microedition.encoding", encoding);
+	}
+
+	public static String decodeString(byte[] data)
+	{
+		try { return new String(data, textEncoding); }
+		catch(UnsupportedEncodingException e) { throw new IllegalArgumentException(e); }
+	}
+
+	public static byte[] encodeString(String text)
+	{
+		try { return text.getBytes(textEncoding); }
+		catch(UnsupportedEncodingException e) { throw new IllegalArgumentException(e); }
+	}
+
 	public static void restartApp()
 	{
+		if(MobilePlatform.isLibretro)
+		{
+			libretroRestartRequested = 1;
+			return;
+		}
+
 		try
 		{
 			String java = System.getProperty("java.home") + "/bin/java";
 			String classPath = System.getProperty("java.class.path");
-
-			// Get the main class name
-			String mainClass = getMainClassFromJar("file:" + classPath);
-
-			String jarPath = null;
-
+			ProcessBuilder processBuilder = new ProcessBuilder(new String[] { java, "-cp", classPath, FreeJ2ME.class.getName() });
 			if(MobilePlatform.fileName != null)
 			{
-				File jarFile = new File(platform.fileName.replace("file:", "").trim());
-				jarPath = jarFile.getCanonicalPath();
+				processBuilder.command().add(MobilePlatform.getFormattedLocation(MobilePlatform.fileName));
+				if(MobilePlatform.spFileName != null) { processBuilder.command().add("sp=" + MobilePlatform.getFormattedLocation(MobilePlatform.spFileName)); }
 			}
-
-			if(!MobilePlatform.isLibretro)
-			{
-				String[] commands = new String[] { java, "-jar", "-Dfile.encoding="+textEncoding, classPath, jarPath};
-
-				ProcessBuilder processBuilder = null;
-
-				if(jarPath != null) { processBuilder = new ProcessBuilder(new String[] { java, "-jar", "-Dfile.encoding="+textEncoding, classPath, jarPath}); }
-				else { processBuilder = new ProcessBuilder(new String[] { java, "-jar", "-Dfile.encoding="+textEncoding, classPath}); }
-
-				processBuilder.start();
-
-				System.exit(0);
-			}
-			else // Libretro governs loading the process up again and not the jar, so post a request for it to do so
-			{
-				libretroRestartRequested = 1;
-				if(textEncoding.equals("ISO_8859_1"))         { libretroEncodingRequested = 0; }
-				else if(textEncoding.equals("Shift_JIS"))     { libretroEncodingRequested = 1; }
-				else if(textEncoding.equals("EUC_KR"))        { libretroEncodingRequested = 2; }
-				// TODO: Support other encodings
-			}
+			processBuilder.start();
+			System.exit(0);
 		}
 		catch(Exception e) { log(Mobile.LOG_INFO, Mobile.class.getPackage().getName() + "." + Mobile.class.getSimpleName() + ": " + "Failed to restart FreeJ2ME: " + e.getMessage()); e.printStackTrace(); }
 	}
-
-	private static String getMainClassFromJar(String classPath)
-	{
-        try
-		{
-            URL jarUrl = new URL(classPath);
-
-			JarFile jarFile = new JarFile(jarUrl.getFile());
-			Manifest manifest = jarFile.getManifest();
-			Attributes attributes = manifest.getMainAttributes();
-			return attributes.getValue("Main-Class");
-        }
-		catch (Exception e) { return null; } // This normally shouldn't fail
-    }
 }

@@ -57,7 +57,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.util.HashMap;
 
 import javax.imageio.ImageIO;
@@ -317,7 +316,7 @@ public class FreeJ2ME
 			String java = System.getProperty("java.home") + "/bin/java";
 			String classPath = System.getProperty("java.class.path");
 
-			String[] commands = new String[] { java, "-Dfile.encoding="+Mobile.textEncoding, "-cp", classPath, FreeJ2ME.class.getName() };
+			String[] commands = new String[] { java, "-cp", classPath, FreeJ2ME.class.getName() };
 
 			// Start a new instance
 			ProcessBuilder processBuilder = new ProcessBuilder(commands);
@@ -339,8 +338,8 @@ public class FreeJ2ME
 		int argIndex = 0;
 		if(args.length > argIndex)
 		{
-			try { MobilePlatform.fileName = getFormattedLocation(URLDecoder.decode(args[0], Mobile.textEncoding)); }
-			catch(Exception e) { }
+			try { MobilePlatform.fileName = MobilePlatform.getFormattedLocation(args[0]); }
+			catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, FreeJ2ME.class.getPackage().getName() + "." + FreeJ2ME.class.getSimpleName() + ": " + e.getMessage()); }
 			argIndex++;
 		}
 
@@ -350,9 +349,9 @@ public class FreeJ2ME
 			try
 			{
 				spOnCmd = true;
-				MobilePlatform.spFileName = getFormattedLocation(URLDecoder.decode(spPath, Mobile.textEncoding));
+				MobilePlatform.spFileName = MobilePlatform.getFormattedLocation(spPath);
 			}
-			catch (Exception e) { }
+			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, FreeJ2ME.class.getPackage().getName() + "." + FreeJ2ME.class.getSimpleName() + ": " + e.getMessage()); }
 			argIndex++;
 		}
 
@@ -675,21 +674,6 @@ public class FreeJ2ME
 				}
 			}
 		}
-	}
-
-	private static String getFormattedLocation(String loc)
-	{
-		if (loc.startsWith("file://") || loc.startsWith("http://") || loc.startsWith("https://"))
-			return loc;
-
-		File file = new File(loc);
-		if(!file.isFile())
-		{
-			Mobile.log(Mobile.LOG_ERROR, FreeJ2ME.class.getPackage().getName() + "." + FreeJ2ME.class.getSimpleName() + ": " + "File not found...");
-			System.exit(0);
-		}
-
-		return file.toURI().toString();
 	}
 
 	private boolean settingsChanged(boolean fromGUI)

@@ -378,7 +378,7 @@ public final class MLDDecoder
 
 		for(int i = 0; i < chunkSize; i++) { byteData[i] = (byte) (state.input[state.decodePos++]); }
 
-		String MLDTrackData = new String(byteData);
+		String MLDTrackData = Mobile.decodeString(byteData);
 
 		Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Version: " + MLDTrackData);
 	}
@@ -391,7 +391,7 @@ public final class MLDDecoder
 
 		for(int i = 0; i < chunkSize; i++) { byteData[i] = (byte) (state.input[state.decodePos++]); }
 
-		String MLDTrackData = new String(byteData);
+		String MLDTrackData = Mobile.decodeString(byteData);
 
 		Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Date: " + MLDTrackData);
 	}
@@ -418,7 +418,7 @@ public final class MLDDecoder
 
 		for(int i = 0; i < chunkSize; i++) { byteData[i] = (byte) (state.input[state.decodePos++]); }
 
-		String MLDTrackData = new String(byteData);
+		String MLDTrackData = Mobile.decodeString(byteData);
 
 		Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Copyright: " + MLDTrackData);
 	}
@@ -431,7 +431,7 @@ public final class MLDDecoder
 
 		for(int i = 0; i < chunkSize; i++) { byteData[i] = (byte) (state.input[state.decodePos++]); }
 
-		String MLDTrackData = new String(byteData);
+		String MLDTrackData = Mobile.decodeString(byteData);
 
 		Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Code: " + MLDTrackData);
 	}
@@ -459,7 +459,7 @@ public final class MLDDecoder
 
 		for(int i = 0; i < chunkSize; i++) { byteData[i] = (byte) (state.input[state.decodePos++]); }
 
-		String contentProvider = new String(byteData);
+		String contentProvider = Mobile.decodeString(byteData);
 
 		Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Content Provider: " + contentProvider);
 	}
@@ -485,7 +485,7 @@ public final class MLDDecoder
 
 		for(int i = 0; i < chunkSize; i++) { byteData[i] = (byte) (state.input[state.decodePos++]); }
 
-		String author = new String(byteData);
+		String author = Mobile.decodeString(byteData);
 
 		Mobile.log(Mobile.LOG_DEBUG, MLDDecoder.class.getPackage().getName() + "." + MLDDecoder.class.getSimpleName() + ": " +"Author: " + author);
 	}
@@ -1930,7 +1930,7 @@ public final class MLDDecoder
 		private static void addTrackName(Track track, String name) throws InvalidMidiDataException
 		{
 			MetaMessage meta = new MetaMessage();
-			byte[] data = name.getBytes();
+			byte[] data = Mobile.encodeString(name);
 			meta.setMessage(0x03, data, data.length);
 			track.add(new MidiEvent(meta, 0L));
 		}

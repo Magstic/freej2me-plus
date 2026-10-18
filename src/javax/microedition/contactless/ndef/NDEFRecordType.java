@@ -16,6 +16,8 @@
 */
 package javax.microedition.contactless.ndef;
 
+import org.recompile.mobile.Mobile;
+
 public class NDEFRecordType 
 {
 
@@ -50,7 +52,7 @@ public class NDEFRecordType
 
     public String getName() { return name; }
 
-    public byte[] getNameAsBytes() { return name != null ? name.getBytes() : null; }
+    public byte[] getNameAsBytes() { return name != null ? Mobile.encodeString(name) : null; }
 
     @Override
     public int hashCode() 

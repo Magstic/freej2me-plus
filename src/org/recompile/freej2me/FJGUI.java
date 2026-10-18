@@ -44,8 +44,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
+import java.io.InputStreamReader;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -500,7 +501,7 @@ public final class FJGUI
 		this.config = config;
 
 		debugContent = new StringBuilder();
-		try { logReader = new BufferedReader(new FileReader(Mobile.logFile)); }
+		try { logReader = new BufferedReader(new InputStreamReader(new FileInputStream(Mobile.logFile), "UTF-8")); }
 		catch(Exception e) { System.out.println("Failed to create log window writer:" + e.getMessage()); }
 
 		// Flatten those buttons, their default look is pretty ugly.

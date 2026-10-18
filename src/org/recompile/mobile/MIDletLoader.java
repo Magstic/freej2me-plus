@@ -135,9 +135,8 @@ public class MIDletLoader extends URLClassLoader
 
 		try
 		{
-			String jarName = new File(url.getFile()).getName().replace('.', '_');
-			suitename = jarName;
 			File file = new File(url.toURI());
+			suitename = file.getName().replace('.', '_');
 			jarFile = new JarFile(file);
 			loadJarEntries();
 			baseUrl = url;
@@ -164,7 +163,7 @@ public class MIDletLoader extends URLClassLoader
 		System.setProperty("microedition.broadcast.supports.timedrecording", "true");
 		System.setProperty("microedition.broadcast.version", "1.0");
 		System.setProperty("microedition.configuration", "CLDC-1.1");
-		System.setProperty("microedition.encoding", System.getProperty("file.encoding"));
+		System.setProperty("microedition.encoding", Mobile.textEncoding);
 		System.setProperty("microedition.io.file.FileConnection.version", "1.0");
 		System.setProperty("microedition.jtwi.version", "1.0");
 		System.setProperty("microedition.locale", "en-US");
@@ -220,7 +219,7 @@ public class MIDletLoader extends URLClassLoader
 		properties.put("microedition.broadcast.supports.timedrecording", "true");
 		properties.put("microedition.broadcast.version", "1.0");
 		properties.put("microedition.configuration", "CLDC-1.1");
-		properties.put("microedition.encoding", System.getProperty("file.encoding"));
+		properties.put("microedition.encoding", Mobile.textEncoding);
 		properties.put("microedition.io.file.FileConnection.version", "1.0");
 		properties.put("microedition.jtwi.version", "1.0");
 		properties.put("microedition.locale", "en-US");
@@ -390,14 +389,14 @@ public class MIDletLoader extends URLClassLoader
 		}
 	}
 
-	public static void parseDescriptorInto(InputStream is, Map<String, String> keyValueMap)
+	public static void parseDescriptorInto(InputStream is, Map<String, String> keyValueMap, String encoding)
 	{
 		boolean hasMIDlet = false;
 		String currentKey = null;
 		StringBuilder currentValue = new StringBuilder();
 		try
 		{
-			BufferedReader br = new BufferedReader(new InputStreamReader(is));
+			BufferedReader br = new BufferedReader(new InputStreamReader(is, encoding));
 			try
 			{
 				String line;
@@ -526,7 +525,7 @@ public class MIDletLoader extends URLClassLoader
 
 		if(url != null) // Standard MIDlet manifest is present (at least i assume so)
 		{
-			try { parseDescriptorInto(url.openStream(), properties); }
+			try { parseDescriptorInto(url.openStream(), properties, "UTF-8"); }
 			catch (Exception e)
 			{
 				Mobile.log(Mobile.LOG_ERROR, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "Can't Read Jar Manifest!");
@@ -566,8 +565,7 @@ public class MIDletLoader extends URLClassLoader
 						{
 							Mobile.log(Mobile.LOG_INFO, MIDletLoader.class.getPackage().getName() + "." + MIDletLoader.class.getSimpleName() + ": " + "JAM File Found! " + jamFileFound);
 
-							Mobile.textEncoding = "Shift_JIS";
-							MobilePlatform.checkFileEncoding();
+							Mobile.setTextEncoding("Shift_JIS");
 
 							URL jamURL = jamFileFound.toURI().toURL();
 							parseJamDescriptorInto(jamURL.openStream(), properties);
@@ -983,16 +981,14 @@ public class MIDletLoader extends URLClassLoader
 			if(name.startsWith("com.kddi.") || name.startsWith("com.j_phone."))
 			{
 				Mobile.isKDDI = true;
-				Mobile.textEncoding = "Shift_JIS";
-				MobilePlatform.checkFileEncoding();
+				Mobile.setTextEncoding("Shift_JIS");
 			}
 			return loadClass(name, true);
 		}
 		else if (name.startsWith("com.nttdocomo.") && Mobile.isDoJa)
 		{
 			Mobile.isDoJa = true;
-			Mobile.textEncoding = "Shift_JIS";
-			MobilePlatform.checkFileEncoding();
+			Mobile.setTextEncoding("Shift_JIS");
 			return loadClass(name, true);
 		}
 
@@ -1027,6 +1023,7 @@ public class MIDletLoader extends URLClassLoader
 	// Used to build the RMS json, not much else
 	public String getProperty(String key)
 	{
+		if(key.equals("microedition.encoding")) { return Mobile.textEncoding; }
 		if(properties.containsKey(key)) { return properties.get(key); }
 		else { return ""; }
 	}
@@ -1300,6 +1297,21 @@ public class MIDletLoader extends URLClassLoader
 				else if (opcode == INVOKEVIRTUAL && name.equals("getResourceAsStream") && owner.equals("java/lang/Class"))
 				{
 					mv.visitMethodInsn(INVOKESTATIC, "org/recompile/mobile/Mobile", name, "(Ljava/lang/Class;Ljava/lang/String;)Ljava/io/InputStream;");
+				}
+				else if(("java/lang/String".equals(owner) && (("<init>".equals(name) && ("([B)V".equals(desc) || "([BII)V".equals(desc))) || ("getBytes".equals(name) && "()[B".equals(desc)))) ||
+					("java/io/InputStreamReader".equals(owner) && "<init>".equals(name) && "(Ljava/io/InputStream;)V".equals(desc)) ||
+					("java/io/OutputStreamWriter".equals(owner) && "<init>".equals(name) && "(Ljava/io/OutputStream;)V".equals(desc)) ||
+					("java/io/ByteArrayOutputStream".equals(owner) && "toString".equals(name) && "()Ljava/lang/String;".equals(desc)))
+				{
+					// Game text uses the phone's encoding; host paths keep the JVM's encoding.
+					mv.visitFieldInsn(GETSTATIC, "org/recompile/mobile/Mobile", "textEncoding", "Ljava/lang/String;");
+					mv.visitMethodInsn(opcode, owner, name, desc.replace(")", "Ljava/lang/String;)"));
+				}
+				else if("java/io/PrintStream".equals(owner) && "<init>".equals(name) && ("(Ljava/io/OutputStream;)V".equals(desc) || "(Ljava/io/OutputStream;Z)V".equals(desc)))
+				{
+					if("(Ljava/io/OutputStream;)V".equals(desc)) { mv.visitInsn(ICONST_0); }
+					mv.visitFieldInsn(GETSTATIC, "org/recompile/mobile/Mobile", "textEncoding", "Ljava/lang/String;");
+					mv.visitMethodInsn(opcode, owner, name, "(Ljava/io/OutputStream;ZLjava/lang/String;)V");
 				}
 				else
 				{

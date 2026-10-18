@@ -105,13 +105,8 @@ public class RecordStore
 		this.vendorname = vendorname;
 		this.suitename = suitename;
 
-		try
-		{
-			// For ISO-8859-1 encodings, we'll use UTF-8 for save paths, helps with chinese and special characters
-			rmsPath = new String((Mobile.getPlatform().dataPath + "./rms/"+suitename).getBytes(System.getProperty("file.encoding")), System.getProperty("file.encoding").equals(Mobile.supportedEncodings[Mobile.ISO_8859_1]) ? "UTF-8" : Mobile.textEncoding);
-			rmsFile = rmsPath+"/"+basename+".rms";
-		}
-		catch (UnsupportedEncodingException e) { } // Shouldn't really happen
+		rmsPath = Mobile.getPlatform().dataPath + "./rms/" + suitename;
+		rmsFile = rmsPath+"/"+basename+".rms";
 
 		// Check if the record directory exists, if not, create it.
 		try
@@ -327,11 +322,7 @@ public class RecordStore
 		{
 			Mobile.log(Mobile.LOG_DEBUG, RecordStore.class.getPackage().getName() + "." + RecordStore.class.getSimpleName() + ": " + "Deleting RecordStore "+recordStoreName);
 
-			// Just like for saving, we use UTF-8 ONLY IF Mobile encoding is ISO_8859_1, handling Shift_JIS and EUC_KR as normal.
-			String encoding = System.getProperty("file.encoding").equals(Mobile.supportedEncodings[Mobile.ISO_8859_1]) ? "UTF-8" : Mobile.textEncoding;
-
 			String folderPath = Mobile.getPlatform().dataPath + "./rms/" + Mobile.getPlatform().loader.suitename;
-			folderPath = new String(folderPath.getBytes(System.getProperty("file.encoding")), encoding);
 
 			File folder = new File(folderPath);
 
@@ -342,8 +333,7 @@ public class RecordStore
 
 			if (fileNames == null || fileNames.length == 0) { throw new RecordStoreNotFoundException("RecordStore not found: " + recordStoreName); }
 
-			String base64prefix = generateBaseName(Mobile.getPlatform().loader.vendorname, recordStoreName);
-			String prefix = new String(base64prefix.getBytes(System.getProperty("file.encoding")), encoding);
+			String prefix = generateBaseName(Mobile.getPlatform().loader.vendorname, recordStoreName);
 			boolean exists = false;
 
 			for (int i = 0; i < fileNames.length; i++)
@@ -481,7 +471,7 @@ public class RecordStore
 		{
 			try
 			{
-				rmsPath = new String((Mobile.getPlatform().dataPath + "./rms/"+Mobile.getPlatform().loader.suitename).getBytes(System.getProperty("file.encoding")), System.getProperty("file.encoding").equals(Mobile.supportedEncodings[Mobile.ISO_8859_1]) ? "UTF-8" : Mobile.textEncoding);
+				rmsPath = Mobile.getPlatform().dataPath + "./rms/" + Mobile.getPlatform().loader.suitename;
 				File rmsDir = new File(rmsPath);
 				if (!rmsDir.exists()) { rmsDir.mkdirs(); }
 			}
@@ -829,7 +819,7 @@ public class RecordStore
 		try
 		{
 			FileOutputStream fos = new FileOutputStream(rmsPath + "/" + basename + ".rms");
-			fos.write(jsonBuilder.toString().getBytes());
+			fos.write(jsonBuilder.toString().getBytes(Mobile.textEncoding));
 			fos.close();
 
 			for(int i = 1; i < recordIds.size(); i++) // Write Binary Data
@@ -879,7 +869,7 @@ public class RecordStore
 			Map<String, Object> jsonMap = new HashMap<String, Object>();
 			StringBuilder jsonBuilder = new StringBuilder();
 			FileInputStream fis = new FileInputStream(rmsFile);
-			Scanner scanner = new Scanner(fis);
+			Scanner scanner = new Scanner(fis, Mobile.textEncoding);
 			while (scanner.hasNextLine()) { jsonBuilder.append(scanner.nextLine().trim()); }
 
 			scanner.close();
@@ -1060,7 +1050,7 @@ public class RecordStore
 			Map<String, Object> jsonMap = new HashMap<String, Object>();
 			StringBuilder jsonBuilder = new StringBuilder();
 			FileInputStream fis = new FileInputStream(filePath);
-			Scanner scanner = new Scanner(fis);
+			Scanner scanner = new Scanner(fis, Mobile.textEncoding);
 			while (scanner.hasNextLine()) { jsonBuilder.append(scanner.nextLine().trim()); }
 
 			scanner.close();

@@ -33,7 +33,7 @@ public class FileDataInput implements java.io.DataInput, RandomAccessible
     {
         this.file = new RandomAccessFile(filePath, "r");
         this.dataInput = new DataInputStream(new FileInputStream(filePath));
-        this.reader = new BufferedReader(new InputStreamReader(dataInput));
+        this.reader = new BufferedReader(new InputStreamReader(dataInput, "Shift_JIS"));
     }
 
     public void close() throws IOException 

@@ -29,13 +29,6 @@
 // The max amount of phone keys currently supported (might increase since KDDI and SKT/SK-VM phones tend to have more)
 #define PHONE_KEYS 20
 
-static const char *supported_encodings[] =
-{
-	"-Dfile.encoding=ISO_8859_1",
-	"-Dfile.encoding=Shift_JIS",
-	"-Dfile.encoding=EUC_KR"
-};
-
 /* Input mapping variables and descriptions */
 static const struct retro_controller_description port_1[] =
 {

@@ -21,10 +21,8 @@ import org.recompile.mobile.MobilePlatform;
 import org.recompile.mobile.PlatformImage;
 import org.recompile.mobile.PlatformFont;
 
-import java.io.File;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.net.URLDecoder;
 
 public class Libretro
 {
@@ -42,7 +40,7 @@ public class Libretro
 		0,          // Rotation
 		0, 0, 0, 0, // Vibration duration
 		0, 0, 0, 0, // Vibration Strength
-		0, 0};      // Restart requested, and encoding requested
+		0};         // Restart requested
 
 	/*
 	 * StringBuilder used to get the updated configs from the libretro core
@@ -67,15 +65,7 @@ public class Libretro
 		*/
 		Mobile.getPlatform().isLibretro = true;
 
-		/*
-		 * Checks if the boot-time arguments were received -> width, height
-		 *
-		 * NOTE:
-		 * Due to differences in how linux and win32 pass their cmd arguments,
-		 * we can't explicitly check for a given size
-		 * on the argv array. Linux includes the "java", "-jar" and
-		 * "path/to/freej2me" into the array while WIN32 doesn't.
-		 */
+		// Boot-time arguments: width, height.
 		lcdWidth =  Integer.parseInt(args[0]);
 		lcdHeight = Integer.parseInt(args[1]);
 
@@ -117,14 +107,14 @@ public class Libretro
 			int count = 0;
 			int code;
 			byte[] buffer;
-			int bytesRead = 0;
 			String path;
+			DataInputStream input = new DataInputStream(System.in);
 
 			try // to read keys
 			{
 				while(true)
 				{
-					bin = System.in.read(); // Blocks until there's data available
+					bin = input.read(); // Blocks until there's data available
 					if(bin==-1) { return; }
 
 					din[count] = (int)(bin & 0xFF);
@@ -176,19 +166,10 @@ public class Libretro
 
 							case 10: // load jar
 								buffer = new byte[code];
-								bytesRead = System.in.read(buffer);
+								input.readFully(buffer);
+								path = new String(buffer, "UTF-8");
 
-								path = new String(buffer, 0, bytesRead);
-
-								if(Mobile.getPlatform().load(getFormattedLocation(URLDecoder.decode(path, Mobile.textEncoding))))
-								{
-									if(Mobile.libretroRestartRequested == 1)
-									{
-										sendFrame();
-										Thread.sleep(Integer.MAX_VALUE); // Wait for as long as possible until the libretro core kills this
-									}
-								}
-								else
+								if(!Mobile.getPlatform().load(path))
 								{
 									Mobile.log(Mobile.LOG_ERROR, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + "Couldn't load jar...");
 									System.exit(0);
@@ -197,17 +178,17 @@ public class Libretro
 
 							case 11: // set save path
 								buffer = new byte[code];
-								bytesRead = System.in.read(buffer);
+								input.readFully(buffer);
 
-								Mobile.getPlatform().dataPath = new String(buffer, 0, bytesRead);
+								Mobile.getPlatform().dataPath = new String(buffer, "UTF-8");
 							break;
 
 
 							case 12: // Received settings from libretro core
 								buffer = new byte[code];
-								bytesRead = System.in.read(buffer);
+								input.readFully(buffer);
 
-								String cfgvars = new String(buffer, 0, bytesRead);
+								String cfgvars = new String(buffer, "UTF-8");
 								/* Tokens: [0]="FJ2ME_LR_OPTS:", [1]=width, [2]=height, [3]=rotate, [4]=phone, [5]=fps, ... */
 								cfgtokens = cfgvars.split("[| x]", 0);
 								/*
@@ -308,14 +289,12 @@ public class Libretro
 							break;
 
 							case 13: // Run jar
-								buffer = new byte[code];
-								bytesRead = System.in.read(buffer);
 								Mobile.getPlatform().runJar();
 							break;
 
 							case 14: // Select a text font by its UTF-8 family name
 								buffer = new byte[code];
-								new DataInputStream(System.in).readFully(buffer);
+								input.readFully(buffer);
 								String textFont = new String(buffer, "UTF-8");
 								if(textFont.equals("off")) { textFont = "Default"; }
 								else if(textFont.equals("on")) { textFont = "Custom"; }
@@ -410,21 +389,6 @@ public class Libretro
 		}
 	}
 
-	private static String getFormattedLocation(String loc)
-	{
-		if (loc.startsWith("file://") || loc.startsWith("http://") || loc.startsWith("https://"))
-			return loc;
-
-		File file = new File(loc);
-		if(!file.isFile())
-		{
-			Mobile.log(Mobile.LOG_ERROR, Libretro.class.getPackage().getName() + "." + Libretro.class.getSimpleName() + ": " + "File '" + loc + "' not found...");
-			System.exit(0);
-		}
-
-		return file.toURI().toString();
-	}
-
 	private void sendFontList()
 	{
 		try
@@ -474,7 +438,6 @@ public class Libretro
 			frameHeader[12] = (byte)((Mobile.vibrationStrength>>8)&0xFF);
 			frameHeader[13] = (byte)(Mobile.vibrationStrength&0xFF);
 			frameHeader[14] = Mobile.libretroRestartRequested;
-			frameHeader[15] = Mobile.libretroEncodingRequested;
 			Mobile.vibrationDuration = 0;
 
 			for(int i=0; i<data.length; i++)

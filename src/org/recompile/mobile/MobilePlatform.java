@@ -18,7 +18,6 @@ package org.recompile.mobile;
 
 import java.net.URI;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -89,20 +88,6 @@ public class MobilePlatform
 
 	public MobilePlatform(int width, int height)
 	{
-		boolean isUsingValidEncoding = false;
-
-		// Check whether we're using any of the valid encodings before starting the jar, otherwise we'll be defaulting to ISO_8859_1
-		for (String encoding : Mobile.supportedEncodings)
-		{
-			if (encoding.equals(System.getProperty("file.encoding"))) { isUsingValidEncoding = true; }
-		}
-
-		if(!isUsingValidEncoding)
-		{
-			Mobile.textEncoding = Mobile.supportedEncodings[Mobile.ISO_8859_1];
-			checkFileEncoding();
-		}
-
 		resizeLCD(width, height);
 
 		painter = new Runnable()
@@ -594,9 +579,26 @@ public class MobilePlatform
 	******** Jar/Jad Loading ********
 */
 
+	public static String getFormattedLocation(String loc) throws Exception
+	{
+		if(loc.startsWith("http://") || loc.startsWith("https://")) { return loc; }
+
+		File file = loc.startsWith("file:") ? new File(new URI(loc)) : new File(loc);
+		if(!file.isFile()) { throw new IOException("File not found: " + loc); }
+		return file.toURI().toASCIIString();
+	}
+
 	public boolean load(String fileName)
 	{
 		Map<String, String> descriptorProperties = new HashMap<String, String>();
+
+		try { fileName = getFormattedLocation(fileName); }
+		catch(Exception e)
+		{
+			Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + e.getMessage());
+			return false;
+		}
+		Mobile.setTextEncoding(Mobile.supportedEncodings[Mobile.ISO_8859_1]);
 
 		/*
 		 * Java treats "!/" sequences as a pointer to a file inside a jar, which will cause
@@ -626,9 +628,9 @@ public class MobilePlatform
 				DataInputStream dis = new DataInputStream(inputStream);
 				byte[] magic = new byte[3];
 				dis.read(magic, 0, 3);
-				if (!Arrays.equals(magic, "KJX".getBytes()))
+				if (!Arrays.equals(magic, "KJX".getBytes("US-ASCII")))
 				{
-					throw new Exception("KJX Header string does not match: " + new String(magic));
+					throw new Exception("KJX Header string does not match: " + new String(magic, "US-ASCII"));
 				}
 
 				byte startJadPos = dis.readByte();
@@ -638,7 +640,7 @@ public class MobilePlatform
 				byte lenJadFileName = dis.readByte();
 				byte[] jadFileName = new byte[lenJadFileName];
 				dis.read(jadFileName, 0, lenJadFileName);
-				kjxJadFileName = new String(jadFileName);
+				kjxJadFileName = new String(jadFileName, Mobile.textEncoding);
 
 				int bufSize = 2048;
 				byte[] buf = new byte[bufSize];
@@ -666,7 +668,7 @@ public class MobilePlatform
 				try
 				{
 					InputStream targetStream = new FileInputStream(tmpfile);
-					MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties);
+					MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties, Mobile.textEncoding);
 					targetStream.close();
 				}
 				catch (IOException e)
@@ -693,11 +695,7 @@ public class MobilePlatform
 				// Send dumped jar path to loader
 				URL jar = tmpfile.toURI().toURL();
 				loader = new MIDletLoader(jar, descriptorProperties);
-				if (Mobile.isDoJa)
-				{
-					Mobile.textEncoding = "Shift_JIS";
-					MobilePlatform.checkFileEncoding();
-				}
+				if (Mobile.isDoJa) { Mobile.setTextEncoding("Shift_JIS"); }
 				Mobile.config.init(loader.suitename);
 
 				return true;
@@ -765,34 +763,23 @@ public class MobilePlatform
 				if (isMsd)
 				{
 					Mobile.isSKT = true;
-					Mobile.textEncoding = "EUC_KR";
-					MobilePlatform.checkFileEncoding();
-				}
-
-				String preparedFileName = fileName.replace("file:", "").trim();
-				try { preparedFileName = URLDecoder.decode(preparedFileName, Mobile.textEncoding); }
-				catch (Exception e)
-				{
-					System.err.println("Error decoding file name: " + e.getMessage());
-					return false;
+					Mobile.setTextEncoding("EUC_KR");
 				}
 
 				InputStream targetStream = null;
 				try
 				{
-					targetStream = new FileInputStream(preparedFileName);
-					try { MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties); }
+					targetStream = new FileInputStream(new File(new URI(fileName)));
+					try { MIDletLoader.parseDescriptorInto(targetStream, descriptorProperties, isMsd ? "EUC_KR" : "UTF-8"); }
 					finally { targetStream.close(); }
 				}
-				catch (IOException e)
+				catch (Exception e)
 				{
 					Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Failed to load descriptor data: " + e.getMessage());
 					return false;
 				}
 
 				// JAD/MSD file was parsed, so get the jar path and load it next
-
-				// String jarUrl = descriptorProperties.getOrDefault("MIDlet-Jar-URL", preparedFileName.replace(".jad", ".jar"));
 
 				// We will not support downloading jars from the internet on the fly,
 				// unless there is a very good reason to do so.
@@ -806,11 +793,7 @@ public class MobilePlatform
 			{
 				URL jar = new URL(fileName);
 				loader = new MIDletLoader(jar, descriptorProperties);
-				if (Mobile.isDoJa)
-				{
-					Mobile.textEncoding = Mobile.supportedEncodings[Mobile.SHIFT_JIS];
-					MobilePlatform.checkFileEncoding();
-				}
+				if (Mobile.isDoJa) { Mobile.setTextEncoding(Mobile.supportedEncodings[Mobile.SHIFT_JIS]); }
 				Mobile.config.init(loader.suitename);
 
 				return true;
@@ -848,15 +831,6 @@ public class MobilePlatform
 		{
 			Mobile.log(Mobile.LOG_ERROR, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "Error Running Jar");
 			e.printStackTrace();
-		}
-	}
-
-	public static void checkFileEncoding()
-	{
-		if(!System.getProperty("file.encoding").equals(Mobile.textEncoding))
-		{
-			Mobile.log(Mobile.LOG_INFO, MobilePlatform.class.getPackage().getName() + "." + MobilePlatform.class.getSimpleName() + ": " + "different encoding: " + System.getProperty("file.encoding") + " while it should be " + Mobile.textEncoding + ". Restarting freeJ2ME to apply new encoding");
-			Mobile.restartApp();
 		}
 	}
 
