@@ -35,10 +35,10 @@ public class PlatformFont
 {
 	protected static final byte[] fontSizes =
 	{
-		 7,  8, 9, 11, // < 128 minimum px dimension
-		 9, 11, 13, 14, // < 176 minimum px dimension
-		10, 12, 13, 15, // < 220 minimum px dimension
-		11, 13, 15, 17, // >= 220 minimum px dimension
+		 8,  8,  8,  8, // < 128 minimum px dimension
+		10, 10, 10, 10, // < 176 minimum px dimension
+		12, 12, 12, 12, // < 220 minimum px dimension
+		12, 12, 12, 12, // >= 220 minimum px dimension
 	};
 
 	// Helps LCDUI to better adjust for different screen sizes.
@@ -139,7 +139,7 @@ public class PlatformFont
 			catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformFont.class.getPackage().getName() + "." + PlatformFont.class.getSimpleName() + ": " + "Failed to create custom font dir:" + e.getMessage()); }
 		}
 
-		/* Get the first ttf font in the directory, if there's any */
+		/* List the available custom fonts */
 		String[] fontfiles = textfontDir.list(new FilenameFilter()
 		{
 			@Override
@@ -162,9 +162,16 @@ public class PlatformFont
 
 		if(Mobile.textFont.equals("Custom") && fontfiles != null && fontfiles.length > 0)
 		{
+			String fontfile = fontfiles[0];
+			String sizePattern = "(?i).*(?<![0-9])" + getPointSize() + "px.*";
+			for(String filename : fontfiles)
+			{
+				if(filename.matches(sizePattern)) { fontfile = filename; break; }
+			}
+
 			try
 			{
-				awtFont = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new File(textfontDir, fontfiles[0])).deriveFont(isLCDUI ? getStyle() : convertDoJaToLCDUIStyle(getStyle()), getPointSize());
+				awtFont = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new File(textfontDir, fontfile)).deriveFont(isLCDUI ? getStyle() : convertDoJaToLCDUIStyle(getStyle()), getPointSize());
 			}
 			catch(Exception e)
 			{
