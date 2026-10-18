@@ -24,6 +24,7 @@ import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiSystem;
+import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
@@ -44,6 +45,7 @@ import javax.microedition.media.PlayerListener;
 
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformPlayer;
+import org.recompile.mobile.dls.DlsReceiver;
 
 public class SMAFPlayer extends BasicPlayer implements MetaEventListener, LineListener
 {
@@ -244,14 +246,16 @@ public class SMAFPlayer extends BasicPlayer implements MetaEventListener, LineLi
 		}
 	}
 
-	private void prepareMidiSubsystem()
+	private void prepareMidiSubsystem() throws MidiUnavailableException
 	{
 		if (!synthReserved)
 		{
+			Receiver customReceiver = Manager.createDlsReceiver(midiSequence);
 			this.synthIdx = Manager.retrieveAvailableSynthIndex();
 			this.synthesizer = Manager.exclusiveSynths[synthIdx];
-			this.receiver = Manager.exclusiveReceivers[synthIdx];
+			this.receiver = customReceiver != null ? customReceiver : Manager.exclusiveReceivers[synthIdx];
 			this.midi = Manager.exclusiveSequencers[synthIdx];
+			Manager.exclusiveTransmitters[synthIdx].setReceiver(this.receiver);
 			this.synthReserved = true;
 		}
 	}
@@ -277,6 +281,11 @@ public class SMAFPlayer extends BasicPlayer implements MetaEventListener, LineLi
 					}
 				}
 
+				if(receiver instanceof DlsReceiver)
+				{
+					receiver.close();
+					Manager.exclusiveTransmitters[synthIdx].setReceiver(Manager.exclusiveReceivers[synthIdx]);
+				}
 				Manager.releaseSynthIndex(synthIdx);
 				synthReserved = false;
 				this.midi.removeMetaEventListener(this);

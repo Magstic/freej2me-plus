@@ -34,6 +34,7 @@ import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
+import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.Synthesizer;
@@ -45,6 +46,8 @@ import org.recompile.mobile.PlatformPlayer;
 import org.recompile.mobile.players.BasicPlayer;
 import org.recompile.mobile.JavaxPlatformPlayer;
 import org.recompile.mobile.SiemensPlatformPlayer;
+import org.recompile.mobile.dls.DlsBank;
+import org.recompile.mobile.dls.DlsSynth;
 
 public class Manager
 {
@@ -55,6 +58,7 @@ public class Manager
 	private static File soundfontDir = new File("freej2me_system" + File.separatorChar + "customMIDI" + File.separatorChar);
 	private static Soundbank customSoundfont;
 	private static Soundbank defaultSoundbank = null;
+	private static DlsBank customDlsBank;
 
 	private static volatile boolean engineReady = false;
 	public static Synthesizer[] exclusiveSynths;
@@ -320,41 +324,58 @@ public class Manager
 			try
 			{
 				soundfontDir.mkdirs();
-				File dummyFile = new File(soundfontDir.getPath() + File.separatorChar + "place sf2 file or gm for early java 6 here");
+				File dummyFile = new File(soundfontDir, "place dls, sf2 file or gm for early java 6 here");
 				dummyFile.createNewFile();
 			}
 			catch(IOException e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Failed to create custom midi dir:" + e.getMessage()); }
 		}
 
-		/* Get the first sf2 or gm soundfont in the directory */
-		String[] fontfile = soundfontDir.list(new FilenameFilter()
+		customDlsBank = null;
+		customSoundfont = defaultSoundbank;
+		if(!Mobile.useCustomMidi) { return; }
+
+		File[] fonts = soundfontDir.listFiles(new FilenameFilter()
 		{
 			@Override
 			public boolean accept(File f, String soundfont)
 			{
 				String lowerCaseFont = soundfont.toLowerCase();
-				return lowerCaseFont.endsWith(".sf2") || lowerCaseFont.endsWith(".gm");
+				return new File(f, soundfont).isFile() && (lowerCaseFont.endsWith(".dls") || lowerCaseFont.endsWith(".sf2") || lowerCaseFont.endsWith(".gm"));
 			}
 		});
 
-		/*
-			* Only really set the player to use a custom midi soundfont if there is
-			* at least one inside the directory.
-			*/
-		if(Mobile.useCustomMidi && fontfile != null && fontfile.length > 0)
+		File dlsFile = null, soundfontFile = null;
+		if(fonts != null)
+		{
+			for(File font : fonts)
+			{
+				if(font.getName().toLowerCase().endsWith(".dls"))
+				{
+					if(dlsFile == null) { dlsFile = font; }
+				}
+				else if(soundfontFile == null) { soundfontFile = font; }
+			}
+		}
+
+		// Prefer DLS when both DLS and Java Sound banks are present.
+		if(dlsFile != null)
 		{
 			try
 			{
-				// Load the first .sf2 font available, if there's none that's valid, don't set any and use JVM's default
-				customSoundfont = MidiSystem.getSoundbank(new File(soundfontDir, fontfile[0]));
+				customDlsBank = DlsSynth.load(dlsFile);
+				Mobile.log(Mobile.LOG_INFO, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Loaded DLS MIDI bank: " + dlsFile.getName());
+				return;
 			}
-			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Could not load soundfont into synth: " + e.getMessage());}
+			catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Could not load DLS bank: " + e.getMessage()); }
 		}
-		else if (!Mobile.useCustomMidi) { customSoundfont = defaultSoundbank; }
-		else
+		if(soundfontFile != null)
+		{
+			try { customSoundfont = MidiSystem.getSoundbank(soundfontFile); }
+			catch(Exception e) { Mobile.log(Mobile.LOG_ERROR, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Could not load soundfont into synth: " + e.getMessage()); }
+		}
+		else if(dlsFile == null)
 		{
 			Mobile.log(Mobile.LOG_WARNING, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Custom MIDI enabled but there's no soundfont in: " + (soundfontDir.getPath() + File.separatorChar));
-			customSoundfont = defaultSoundbank;
 		}
 	}
 
@@ -425,6 +446,12 @@ public class Manager
 
 	public static Soundbank getCustomSoundfont() { return customSoundfont; }
 
+	public static Receiver createDlsReceiver(Sequence sequence) throws MidiUnavailableException
+	{
+		if(customDlsBank == null) { return null; }
+		return DlsSynth.createReceiver(customDlsBank, sequence);
+	}
+
 	public static synchronized void prepareMediaEngine()
 	{
 		// Is it already prepped? Nothing to do then...
@@ -443,7 +470,6 @@ public class Manager
 				exclusiveSequencers[i] = MidiSystem.getSequencer(false);
 
 				exclusiveSequencers[i].open();
-				exclusiveSequencers[i].getTransmitter().setReceiver(exclusiveSynths[i].getReceiver());
 
 				exclusiveReceivers[i] = exclusiveSynths[i].getReceiver();
 				exclusiveTransmitters[i] = exclusiveSequencers[i].getTransmitter();
@@ -454,8 +480,6 @@ public class Manager
 			toneChannel = toneSynth.getChannels()[15]; // Also get the last channel of the last synth, to minimize chances of this causing issues with other MIDI streams
 
 			toneSequencer = exclusiveSequencers[Mobile.numExclusiveSynths-1];
-			toneSequencer.getTransmitter().setReceiver(toneReceiver);
-			toneSequencer.open();
 
 			engineReady = true;
 			Mobile.log(Mobile.LOG_DEBUG, Manager.class.getPackage().getName() + "." + Manager.class.getSimpleName() + ": " + "Synthesizer for sequenced and tone data is ready.");

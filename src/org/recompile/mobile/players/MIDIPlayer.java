@@ -39,6 +39,7 @@ import javax.microedition.media.decoders.MIDIPatcher;
 
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.PlatformPlayer;
+import org.recompile.mobile.dls.DlsReceiver;
 
 public class MIDIPlayer extends BasicPlayer implements MetaEventListener
 {
@@ -256,10 +257,12 @@ public class MIDIPlayer extends BasicPlayer implements MetaEventListener
 	{
 		if(!synthReserved)
 		{
+			Receiver customReceiver = Manager.createDlsReceiver(midiSequence);
 			this.synthIdx = Manager.retrieveAvailableSynthIndex();
 			this.synthesizer = Manager.exclusiveSynths[synthIdx];
-			this.receiver = Manager.exclusiveReceivers[synthIdx];
+			this.receiver = customReceiver != null ? customReceiver : Manager.exclusiveReceivers[synthIdx];
 			this.midi = Manager.exclusiveSequencers[synthIdx];
+			Manager.exclusiveTransmitters[synthIdx].setReceiver(this.receiver);
 			synthReserved = true;
 		}
 	}
@@ -285,6 +288,11 @@ public class MIDIPlayer extends BasicPlayer implements MetaEventListener
 					}
 				}
 
+				if(receiver instanceof DlsReceiver)
+				{
+					receiver.close();
+					Manager.exclusiveTransmitters[synthIdx].setReceiver(Manager.exclusiveReceivers[synthIdx]);
+				}
 				Manager.releaseSynthIndex(synthIdx);
 				synthReserved = false;
 				this.midi.removeMetaEventListener(this);

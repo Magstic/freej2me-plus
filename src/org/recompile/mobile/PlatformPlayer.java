@@ -869,12 +869,13 @@ public class PlatformPlayer implements Player
 
 			try
 			{
-				MidiChannel midiChannels[] = player.synthesizer.getChannels();
-				if(channel < 0 || channel > midiChannels.length || volume < 0 || volume > 127) {throw new IllegalArgumentException("midiControl: Tried to call setChannelVolume with invalid args");}
+				if(channel < 0 || channel > 15 || volume < 0 || volume > 127) {throw new IllegalArgumentException("midiControl: Tried to call setChannelVolume with invalid args");}
 
 				// Set the volume on the MIDI channel
 				channelVolume[channel] = volume; // For tracking purposes, whenever getChannelVolume is called.
-				midiChannels[channel].controlChange(7, volume);
+				ShortMessage message = new ShortMessage();
+				message.setMessage(ShortMessage.CONTROL_CHANGE, channel, 7, volume);
+				player.receiver.send(message, -1);
 			}
 			catch (Exception e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Midi setChannelVolume failed: " + e.getMessage());}
 		}
@@ -1042,14 +1043,18 @@ public class PlatformPlayer implements Player
 			{
 				SMAFPlayer sequencer = (SMAFPlayer) player;
 
-				MidiChannel midiChannels[] = sequencer.synthesizer.getChannels();
-
 				if(sequencer.isRunning())
 				{
-					for (int channel = 0; channel < midiChannels.length; channel++)
+					try
 					{
-						midiChannels[channel].controlChange(10, panning);
+						ShortMessage message = new ShortMessage();
+						for (int channel = 0; channel < 16; channel++)
+						{
+							message.setMessage(ShortMessage.CONTROL_CHANGE, channel, 10, panning);
+							sequencer.receiver.send(message, -1);
+						}
 					}
+					catch(InvalidMidiDataException e) { Mobile.log(Mobile.LOG_ERROR, PlatformPlayer.class.getPackage().getName() + "." + PlatformPlayer.class.getSimpleName() + ": " + "Invalid SMAF pan value: " + e.getMessage()); }
 				}
 				panValue = panning;
 			}
