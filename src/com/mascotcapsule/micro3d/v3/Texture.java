@@ -6,9 +6,12 @@
 
 package com.mascotcapsule.micro3d.v3;
 
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
 import org.recompile.mobile.Mobile;
 //import javax.microedition.lcdui.Image;
 import com.nttdocomo.ui.UIException;
@@ -253,6 +256,22 @@ public class Texture {
 		}
 
 		palette = newPalette;
+	}
+
+	public final BufferedImage createDebugImage() {
+		byte[] indices = bitmapData;
+		int[] rgb = envmapData;
+		int[] colors = origPalette != null ? origPalette : palette;
+		if ((indices == null || colors == null) && rgb == null) { return null; }
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				int index = y * paddedWidth + x;
+				pixels[y * width + x] = rgb != null ? 0xff000000 | rgb[index] : colors[indices[index] & 0xff];
+			}
+		}
+		return image;
 	}
 
 	public final void dispose() {

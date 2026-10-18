@@ -16,6 +16,8 @@
 */
 package javax.microedition.m3g;
 
+import java.awt.image.BufferedImage;
+
 import org.recompile.mobile.Mobile;
 
 public class Image2D extends Object3D
@@ -215,6 +217,15 @@ public class Image2D extends Object3D
 	public int getWidth() { return this.width; }
 
 	public boolean isMutable() { return this.mutable; }
+
+	public BufferedImage createDebugImage()
+	{
+		int[] pixels = image;
+		if(pixels == null) { return null; }
+		BufferedImage copy = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		copy.setRGB(0, 0, width, height, pixels, 0, width);
+		return copy;
+	}
 
 	public void set(int x, int y, int w, int h, byte[] image)
 	{

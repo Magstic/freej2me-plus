@@ -107,6 +107,7 @@ public final class FJGUI
 
 	/* And this is meant to be a local reference of FreeJ2ME's config */
 	private Config config;
+	private MemoryView memoryView;
 
 	/* AWT's main JMenuBar */
 	final JMenuBar menuBar = new JMenuBar();
@@ -477,6 +478,7 @@ public final class FJGUI
 	final JCheckBoxMenuItem dumpAudioData = new JCheckBoxMenuItem("Dump Audio Streams", false);
 	final JCheckBoxMenuItem dumpGraphicsData = new JCheckBoxMenuItem("Dump Graphics Objects", false);
 	final JCheckBoxMenuItem showDebugWindows = new JCheckBoxMenuItem("Show Debug Windows", false);
+	final JMenuItem memoryViewMenuItem = new JMenuItem("Memory View...");
 
 	// M3G Debugging
 	final JCheckBoxMenuItem M3GUntextured = new JCheckBoxMenuItem("Draw Only Vertex Colors", false);
@@ -707,6 +709,7 @@ public final class FJGUI
 		aboutMenuItem.setActionCommand("AboutMenu");
 		resChangeMenuItem.setActionCommand("ChangeResolution");
 		textFontMenuItem.setActionCommand("ChooseTextFont");
+		memoryViewMenuItem.setActionCommand("MemoryView");
 		swingButtons[0].setActionCommand("CloseAboutMenu");
 		swingButtons[1].setActionCommand("RestartNow");
 		swingButtons[2].setActionCommand("RestartLater");
@@ -728,6 +731,7 @@ public final class FJGUI
 		aboutMenuItem.addActionListener(menuItemListener);
 		resChangeMenuItem.addActionListener(menuItemListener);
 		textFontMenuItem.addActionListener(menuItemListener);
+		memoryViewMenuItem.addActionListener(menuItemListener);
 		swingButtons[0].addActionListener(menuItemListener);
 		swingButtons[1].addActionListener(menuItemListener);
 		swingButtons[2].addActionListener(menuItemListener);
@@ -1235,6 +1239,7 @@ public final class FJGUI
 		debugMenu.add(dumpAudioData);
 		debugMenu.add(dumpGraphicsData);
 		debugMenu.add(showDebugWindows);
+		debugMenu.add(memoryViewMenuItem);
 		debugMenu.add(logLevel);
 		debugMenu.add(M3GDebug);
 		debugMenu.add(MCV3Debug);
@@ -1573,6 +1578,13 @@ public final class FJGUI
 			}
 			else if(command.equals("Close")) { FreeJ2ME.closeApp(); }
 			else if(command.equals("Screenshot")) { ScreenShot.takeScreenshot(false); }
+			else if(command.equals("MemoryView"))
+			{
+				if(memoryView == null) { memoryView = new MemoryView(main); }
+				if(!memoryView.isVisible()) { memoryView.positionNextTo(main); }
+				memoryView.setVisible(true);
+				memoryView.toFront();
+			}
 			else if(command.equals("PauseResume")) { MobilePlatform.pauseResumeApp(); }
 			else if(command.equals("Exit")) { System.exit(0); }
 			else if(command.equals("AboutMenu")) { swingDialogs[1].setLocationRelativeTo(main); swingDialogs[1].setVisible(true); }
@@ -1791,6 +1803,7 @@ public final class FJGUI
 
 	public void setMainFrame(JFrame mainFrame)
 	{
+		if(memoryView != null) { memoryView.dispose(); memoryView = null; }
 		main = mainFrame;
 		// So that the console window and memory stats follow the main window around
 		main.addComponentListener(new ComponentAdapter()

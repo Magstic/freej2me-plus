@@ -1002,7 +1002,9 @@ public class MIDletLoader extends URLClassLoader
 			resource = name.replace(".", "/") + ".class";
 			stream = super.getResourceAsStream(resource);
 			code = instrument(stream);
-			return defineClass(name.replace("/", "."), code, 0, code.length);
+			Class<?> type = defineClass(name.replace("/", "."), code, 0, code.length);
+			if(!MobilePlatform.isLibretro) { MemoryInspector.registerClass(type, code.length); }
+			return type;
 		}
 		catch (Exception e)
 		{
@@ -1019,6 +1021,8 @@ public class MIDletLoader extends URLClassLoader
 		// We need to discern these messaging packages in order to return valid "Connection" classes for SMS
 		if (name.contains("javax.wireless.messaging")) { Mobile.usingMessagingAPI = true; }
 	}
+
+	public Object getApplication() { return Mobile.isDoJa ? IAppliInst : midletInst; }
 
 	// Used to build the RMS json, not much else
 	public String getProperty(String key)
@@ -1074,6 +1078,8 @@ public class MIDletLoader extends URLClassLoader
 	private class ASMVisitor extends ClassAdapter
 	{
 		private String superName;
+		private String className;
+		private boolean hasInitializer;
 
 		public ASMVisitor(ClassVisitor visitor)
 		{
@@ -1128,6 +1134,7 @@ public class MIDletLoader extends URLClassLoader
 		public void visit(final int version, final int access, final String name, final String signature, final String superName, final String[] interfaces)
 		{
 			this.superName = superName;
+			this.className = name.replace('/', '.');
 
 			// Remap super class and interfaces if they point to vendor graphics
 			String mappedSuper = mapInternalName(superName);
@@ -1162,6 +1169,7 @@ public class MIDletLoader extends URLClassLoader
 
 		public MethodVisitor visitMethod(int access, String name, final String desc, final String signature, final String[] exceptions)
 		{
+			if("<clinit>".equals(name)) { hasInitializer = true; }
 
 			String mappedDesc = mapDesc(desc);
 
@@ -1192,9 +1200,31 @@ public class MIDletLoader extends URLClassLoader
 			{
 				visitor = new ASMSecureUtilWorkaroundMethodVisitor(visitor);
 			}
-			else { visitor = new ASMMethodVisitor(visitor); }
+			else { visitor = new ASMMethodVisitor(visitor, name); }
 
 			return visitor;
+		}
+
+		private void writeClassInitialized(MethodVisitor visitor)
+		{
+			// Class.forName also works with game class files that predate Java 5 class literals.
+			visitor.visitLdcInsn(className);
+			visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Class", "forName", "(Ljava/lang/String;)Ljava/lang/Class;");
+			visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "org/recompile/mobile/MemoryInspector", "classInitialized", "(Ljava/lang/Class;)V");
+		}
+
+		public void visitEnd()
+		{
+			if(!MobilePlatform.isLibretro && !hasInitializer)
+			{
+				MethodVisitor visitor = super.visitMethod(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
+				visitor.visitCode();
+				writeClassInitialized(visitor);
+				visitor.visitInsn(Opcodes.RETURN);
+				visitor.visitMaxs(1, 0);
+				visitor.visitEnd();
+			}
+			super.visitEnd();
 		}
 
 		private class ASMSecureUtilWorkaroundMethodVisitor extends MethodAdapter
@@ -1222,10 +1252,21 @@ public class MIDletLoader extends URLClassLoader
 		private class ASMMethodVisitor extends MethodAdapter implements Opcodes
 		{
 			private boolean methodHasScreenDraw = false, foundPlatformCheck = false;
+			private final String methodName;
 
-			public ASMMethodVisitor(MethodVisitor visitor)
+			public ASMMethodVisitor(MethodVisitor visitor, String name)
 			{
 				super(visitor);
+				methodName = name;
+			}
+
+			public void visitInsn(int opcode)
+			{
+				if(!MobilePlatform.isLibretro && opcode == Opcodes.RETURN && "<clinit>".equals(methodName))
+				{
+					writeClassInitialized(mv);
+				}
+				super.visitInsn(opcode);
 			}
 
 			public void visitMethodInsn(int opcode, String owner, String name, String desc)
