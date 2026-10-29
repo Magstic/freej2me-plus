@@ -18,6 +18,7 @@
 package org.recompile.mobile;
 
 import java.awt.image.BufferedImage;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -29,6 +30,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
+
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiEvent;
+import javax.sound.midi.MidiMessage;
+import javax.sound.midi.Receiver;
+import javax.sound.midi.Sequence;
+import javax.sound.midi.Track;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.Line;
+
+import org.recompile.mobile.players.BasicPlayer;
 
 public final class MemoryInspector
 {
@@ -201,8 +213,8 @@ public final class MemoryInspector
 	private static void addReference(Snapshot snapshot, IdentityHashMap<Object, Entry> seen, List<Object> pending, Entry source, String name, Object value)
 	{
 		Entry target = null;
-		// Emulator implementation objects are not part of the application's heap.
-		if(value != null && !getClassName(value.getClass()).startsWith("org.recompile."))
+		// Keep application-owned media data, but stop at host audio devices and decoders.
+		if(value != null && !isEmulatorInternal(value))
 		{
 			target = seen.get(value);
 			if(target == null)
@@ -222,11 +234,60 @@ public final class MemoryInspector
 		}
 	}
 
+	private static boolean isEmulatorInternal(Object value)
+	{
+		if(value instanceof MidiDevice || value instanceof Receiver || value instanceof Line || value instanceof AudioInputStream) { return true; }
+		return value.getClass().getName().startsWith("org.recompile.") &&
+			!(value instanceof PlatformPlayer || value instanceof BasicPlayer || value instanceof InputStream);
+	}
+
 	private static void scanObject(Snapshot snapshot, IdentityHashMap<Object, Entry> seen, List<Object> pending, Object object)
 	{
 		Entry entry = seen.get(object);
 		Class<?> type = object.getClass();
-		if(type.isArray())
+		if(object instanceof MIDletLoader.ResourceInputStream)
+		{
+			entry.estimatedBytes += 16; // Buffer reference, position, mark and count.
+			addReference(snapshot, seen, pending, entry, "buf", ((MIDletLoader.ResourceInputStream)object).getBuffer());
+			return;
+		}
+		else if(object instanceof Sequence)
+		{
+			Track[] tracks = ((Sequence)object).getTracks();
+			entry.estimatedBytes += 12 + 4L * tracks.length;
+			for(int i = 0; i < tracks.length; i++) { addReference(snapshot, seen, pending, entry, "tracks[" + i + "]", tracks[i]); }
+			return;
+		}
+		else if(object instanceof Track)
+		{
+			Track track = (Track)object;
+			int length = track.size();
+			entry.estimatedBytes += 4L * length;
+			for(int i = 0; i < length; i++)
+			{
+				// Playback may edit a track while the snapshot is being collected.
+				try { addReference(snapshot, seen, pending, entry, "events[" + i + "]", track.get(i)); }
+				catch(ArrayIndexOutOfBoundsException e) { break; }
+			}
+			return;
+		}
+		else if(object instanceof MidiEvent)
+		{
+			MidiEvent event = (MidiEvent)object;
+			entry.estimatedBytes += 12;
+			entry.fields.add(new Reference(entry, null, "tick", Long.toString(event.getTick())));
+			addReference(snapshot, seen, pending, entry, "message", event.getMessage());
+			return;
+		}
+		else if(object instanceof MidiMessage)
+		{
+			int length = ((MidiMessage)object).getLength();
+			// Estimate message storage without copying the host's MIDI byte arrays.
+			entry.estimatedBytes += 24L + length;
+			entry.fields.add(new Reference(entry, null, "length", Integer.toString(length)));
+			return;
+		}
+		else if(type.isArray())
 		{
 			int length = Array.getLength(object);
 			Class<?> component = type.getComponentType();
@@ -289,8 +350,10 @@ public final class MemoryInspector
 		}
 		for(Class<?> current = type; current != null; current = current.getSuperclass())
 		{
-			// Stop at the host implementation boundary, including shared platform base classes.
-			if(current.getName().startsWith("org.recompile.") || current.getName().startsWith("java.") ||
+			// Inspect stream buffers and media data without following the host audio subsystem.
+			if((current.getName().startsWith("org.recompile.") &&
+				!(PlatformPlayer.class.isAssignableFrom(current) || BasicPlayer.class.isAssignableFrom(current) || InputStream.class.isAssignableFrom(current))) ||
+				(current.getName().startsWith("java.") && !current.getName().startsWith("java.io.")) ||
 				current.getName().startsWith("sun.") || current.getName().startsWith("jdk.")) { break; }
 			readFields(snapshot, seen, pending, entry, current, object);
 		}

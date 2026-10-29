@@ -530,8 +530,10 @@ public final class MemoryView extends JFrame
 		Runtime runtime = Runtime.getRuntime();
 		heapUsage.setText("JVM heap: " + ((runtime.totalMemory() - runtime.freeMemory()) / 1024) + " / " + (runtime.maxMemory() / 1024) + " KiB");
 		long total = snapshot.estimatedBytes;
-		totalMemoryUsed.setText(String.format(Locale.US, "%.1f KiB (estimate)", total / 1024.0));
-		totalMemoryUsed.setToolTipText("Estimated storage reachable from application roots: " + total + " bytes; excludes class data and emulator render buffers");
+		totalMemoryUsed.setText(String.format(Locale.US, "%.1f KiB (%s)", total / 1024.0,
+			snapshot.unreadableFields == 0 ? "estimate" : "incomplete estimate"));
+		totalMemoryUsed.setToolTipText("Estimated storage reachable from application roots, including stream buffers and media data: " +
+			total + " bytes; excludes class data, emulator render buffers and host audio devices");
 		statistics.setText("Loaded classes: " + snapshot.classBytes.size() + "   Class data: " + snapshot.loadedClassBytes +
 			" bytes\nObjects: " + snapshot.entries.size() + "   Estimated storage: " + snapshot.estimatedBytes +
 			" bytes");

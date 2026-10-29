@@ -681,7 +681,7 @@ public class MIDletLoader extends URLClassLoader
 				count = stream.read(data);
 				if(count!=-1) { buffer.write(data, 0, count); }
 			}
-			return new ByteArrayInputStream(buffer.toByteArray());
+			return new ResourceInputStream(buffer.toByteArray());
 		}
 		catch (Exception e)
 		{
@@ -867,7 +867,7 @@ public class MIDletLoader extends URLClassLoader
 				if(count!=-1) { buffer.write(data, 0, count); }
 			}
 
-			if(!isSiemens) { return new ByteArrayInputStream(buffer.toByteArray()); }
+			if(!isSiemens) { return new ResourceInputStream(buffer.toByteArray()); }
 			else { return new SiemensInputStream(buffer.toByteArray()); }
 		}
 		catch (Exception e)
@@ -1033,13 +1033,21 @@ public class MIDletLoader extends URLClassLoader
  * Special Siemens Stuff
  * ************************************************************** */
 
+	static final class ResourceInputStream extends ByteArrayInputStream
+	{
+		ResourceInputStream(byte[] data) { super(data); }
+
+		// Expose the retained buffer to Memory View without opening JDK modules.
+		byte[] getBuffer() { return buf; }
+	}
+
 	private class SiemensInputStream extends InputStream
 	{
-		private ByteArrayInputStream iostream;
+		private ResourceInputStream iostream;
 
 		public SiemensInputStream(byte[] data)
 		{
-			iostream = new ByteArrayInputStream(data);
+			iostream = new ResourceInputStream(data);
 		}
 
 		public int read()
